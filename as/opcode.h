@@ -50,7 +50,6 @@ enum
     RMBOP,
     SECTOP,
     SETOP,
-    SETDPOP,
     TEXTOP,
     WARNOP,
 
@@ -59,18 +58,11 @@ enum
     ALL,			/* all address modes allowed, like LDA */
     ALTER,			/* all but immediate, like STA */
     IMMED,			/* immediate only (ANDCC, ORCC) */
-    INDEXD,			/* indexed (LEA's) */
     INHER,			/* inherent, like CLC or CLRA */
-    LONG,			/* long branches */
     SHORT,			/* short branches */
-    SSTAK,			/* S-stack (PSHS, PULS) */
-    SWAP,			/* TFR, EXG */
-    USTAK			/* U-stack (PSHU,PULU) */
 };
 
 /* Special opcodes. */
 
 # define JMP_OPCODE		0x7E
 # define JSR_OPCODE		0xBD
-# define PAGE1_OPCODE		0x10
-# define PAGE2_OPCODE		0x11

@@ -19,64 +19,18 @@ FORWARD reg_pt regchk P((void));
 FORWARD void reldata P((void));
 FORWARD void segadj P((void));
 
-/* 6809 opcode constants */
+/* 6801/6803 opcode constants */
 
 /* bits for indexed addressing */
 
 #define INDIRECTBIT 0x10
 #define INDEXBIT    0x80	/* except 5 bit offset */
-#define PCRELBIT    0x04	/* PC relative (in certain cases) */
 #define RRBITS      0x60	/* register select bits */
 
 PRIVATE opcode_t rrindex[] =	/* register and index bits for indexed adr */
 {
 	0x60 | INDEXBIT,	/* S */
-	0x40 | INDEXBIT,	/* U */
 	0x00 | INDEXBIT,	/* X */
-	0x20 | INDEXBIT,	/* Y */
-	PCRELBIT | INDEXBIT,	/* PC */
-};
-
-PRIVATE opcode_t pushpull[] =	/* push/pull codes  */
-{
-	0x40,			/* S */
-	0x40,			/* U */
-	0x10,			/* X */
-	0x20,			/* Y */
-	0x80,			/* PC */
-	0x02,			/* A */
-	0x04,			/* B */
-	0x01,			/* CC */
-	0x08,			/* DP */
-	0x06,			/* D */
-};
-
-PRIVATE opcode_t tfrexg1[] =	/* transfer/exchange codes for source reg */
-{
-	0x40,			/* S */
-	0x30,			/* U */
-	0x10,			/* X */
-	0x20,			/* Y */
-	0x50,			/* PC */
-	0x80,			/* A */
-	0x90,			/* B */
-	0xA0,			/* CC */
-	0xB0,			/* DP */
-	0x00,			/* D */
-};
-
-PRIVATE opcode_t tfrexg2[] =	/* transfer/exchange codes for target reg */
-{
-	0x04,			/* S */
-	0x03,			/* U */
-	0x01,			/* X */
-	0x02,			/* Y */
-	0x05,			/* PC */
-	0x08,			/* A */
-	0x09,			/* B */
-	0x0A,			/* CC */
-	0x0B,			/* DP */
-	0x00,			/* D */
 };
 
 FORWARD void checkpostinc P((void));
@@ -87,7 +41,6 @@ FORWARD void getindexnopost P((void));
 FORWARD void inderror P((char *err_str));
 FORWARD reg_pt indreg P((reg_pt maxindex));
 FORWARD void predec1 P((void));
-FORWARD void sustack P((reg_pt stackreg));
 
 PRIVATE void checkpostinc()
 {
@@ -197,32 +150,16 @@ PRIVATE void do1altind()
 	expres();
 	if (sym == COMMA) {	/* offset from register */
 		getsym();
-		if ((reg = indreg(PCREG)) == NOREG)
-			return;
 		postb |= 0x8;	/* default 8 bit offset */
-		if (reg == PCREG) {
-			reldata();
-			if (!(lastexp.data & (RELBIT | UNDBIT))) {
-				lastexp.offset = lastexp.offset - lc;
-				if (page != 0x0)
-					lastexp.offset -= 0x4;	/* extra for instruction */
-				else
-					lastexp.offset -= 0x3;	/* 3 byte instruction
-								   assuming 8 bit offset */
-			}
-		}
 		if (byteflag) {
 			if (!(lastexp.data & (RELBIT | UNDBIT)) &&
 			    !is8bitsignedoffset(lastexp.offset))
 				error(ABOUNDS);	/* forced short form is impossible */
 			++mcount;
 		} else if (wordflag || lastexp.data & (FORBIT | RELBIT | UNDBIT) || !is8bitsignedoffset(lastexp.offset)) {	/* 16 bit offset */
-			if (postb & PCRELBIT && !(lastexp.data & RELBIT))
-				--lastexp.offset;	/* instruction 1 longer than already
-							   allowed */
 			postb |= 0x1;
 			mcount += 0x2;
-		} else if (!(postb & PCRELBIT) && (offset_t) (lastexp.offset + 0x10) < 0x20 && !(postb & INDIRECTBIT && lastexp.offset != 0x0)) {	/* 5 bit offset */
+		} else if ((offset_t) (lastexp.offset + 0x10) < 0x20 && !(postb & INDIRECTBIT && lastexp.offset != 0x0)) {	/* 5 bit offset */
 			postb &= RRBITS | INDIRECTBIT;
 			if (lastexp.offset == 0x0)
 				postb |= 0x84;	/* index with zero offset */
@@ -370,45 +307,7 @@ PUBLIC void mlong()
 	}
 }
 
-/* PSHS and PULS */
-
-PUBLIC void msstak()
-{
-	sustack(SREG);
-}
-
-/* TFR and EXG */
-
-PUBLIC void mswap()
-{
-	reg_pt reg;
-
-	mcount = 0x2;
-	if ((reg = regchk()) == NOREG)
-		error(REGEXP);
-	else {
-		postb = tfrexg1[reg];
-		getsym();
-		if (sym != COMMA)
-			error(COMEXP);
-		else {
-			getsym();
-			if ((reg = regchk()) == NOREG)
-				error(REGEXP);
-			else if ((postb |= tfrexg2[reg])
-				 & 0x88 && (postb & 0x88) != 0x88)
-				error(ILLREG);	/* registers not of same size */
-		}
-		getsym();
-	}
-}
-
 /* PSHU and PULU */
-
-PUBLIC void mustak()
-{
-	sustack(UREG);
-}
 
 PRIVATE void predec1()
 {
@@ -417,27 +316,6 @@ PRIVATE void predec1()
 	else {
 		postb |= 0x82;
 		getindexnopost();
-	}
-}
-
-/* common routine for PSHS/PULS/PSHU/PULU */
-
-PRIVATE void sustack(stackreg)
-reg_pt stackreg;
-{
-	reg_pt reg;
-
-	mcount = 0x2;
-	while ((reg = regchk()) != NOREG) {
-		if (reg == stackreg) {
-			error(ILLREG);	/* cannot stack self */
-			break;
-		}
-		postb |= pushpull[reg];
-		getsym();
-		if (sym != COMMA)
-			break;
-		getsym();
 	}
 }
 

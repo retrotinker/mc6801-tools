@@ -56,7 +56,6 @@ PRIVATE pfv rout_table[] = {
 	prmb,
 	psect,
 	pset,
-	psetdp,
 	ptext,
 	pwarn,
 	/* end of pseudo-ops */
@@ -64,13 +63,8 @@ PRIVATE pfv rout_table[] = {
 	mall,			/* all address modes allowed, like LDA */
 	malter,			/* all but immediate, like STA */
 	mimmed,			/* immediate only (ANDCC, ORCC) */
-	mindex,			/* indexed (LEA's) */
 	minher,			/* inherent, like CLC or CLRA */
-	mlong,			/* long branches */
 	mshort,			/* short branches */
-	msstak,			/* S-stack      (PSHS, PULS) */
-	mswap,			/* TFR, EXG */
-	mustak,			/* U-stack      (PSHU,PULU) */
 };
 
 FORWARD void asline P((void));
@@ -198,23 +192,6 @@ PRIVATE void asline()
 		return;
 	}
 	mnsize = 0;
-	if ((page = (symptr->data & (PAGE1 | PAGE2))) != 0) {
-#ifdef MNSIZE
-		if (page == (PAGE1 | PAGE2)) {
-			mnsize = 1;
-			page = 0;
-		} else
-#endif
-		{
-#ifdef PAGE2_OPCODE
-			if (page == PAGE2)
-				page = PAGE2_OPCODE;
-			else
-#endif
-				page = PAGE1_OPCODE;
-			mcount = 1;
-		}
-	}
 	opcode = symptr->value_reg_or_op.op.opcode;
 	routine = rout_table[symptr->value_reg_or_op.op.routine];
 	getsym();

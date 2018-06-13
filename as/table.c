@@ -10,8 +10,6 @@
 #define hconv(ch) ((unsigned char) (ch) - 0x41)	/* better form for hashing */
 
 EXTERN char ops[];
-EXTERN char page1ops[];
-EXTERN char page2ops[];
 EXTERN char regs[];
 
 #ifdef DEBUG_HASH
@@ -28,8 +26,6 @@ PUBLIC void inst_keywords()
 {
 	install(regs, REGBIT);
 	install(ops, 0);
-	install(page1ops, PAGE1);
-	install(page2ops, PAGE2);
 }
 
 PRIVATE void install(keyptr, data)

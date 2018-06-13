@@ -52,16 +52,12 @@ enum
 
 /* Index regs must be first, then PC. */
     SREG,
-    UREG,
     XREG,
-    YREG,
-#define MAXINDREG	YREG
+#define MAXINDREG	XREG
 
-    PCREG,
     AREG,
     BREG,
     CCREG,
-    DPREG,
     DREG,
 
     NOREG

@@ -943,19 +943,6 @@ PUBLIC void pset()
 		doequset(labptr->type & LABIT ? 0 : VARBIT);
 }
 
-/* SETDP pseudo-op */
-
-PUBLIC void psetdp()
-{
-	absexpres();
-	if (!(lastexp.data & UNDBIT)) {
-		dirpag = lastexp.offset;
-		popflags = POPLO;
-		if (lastexp.offset >= 0x100)
-			datatoobig();
-	}
-}
-
 /* .TEXT pseudo-op */
 
 PUBLIC void ptext()
