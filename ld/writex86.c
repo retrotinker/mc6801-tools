@@ -647,7 +647,7 @@ PRIVATE void writeheader()
 	header.a_magic[0] = A_MAGIC0;
 	header.a_magic[1] = A_MAGIC1;
 	header.a_flags = sepid ? A_SEP : A_EXEC;
-	header.a_cpu = A_M6809;
+	header.a_cpu = A_M6801;
 	header.a_hdrlen = FILEHEADERLENGTH;
 	offtocn((char *)&header.a_text, etextpadoff - btextoffset,
 		sizeof header.a_text);
