@@ -3,32 +3,25 @@ CFLAGS=-O
 LDFLAGS=-s
 LIBDIR=$(PREFIX)/bin
 BINDIR=$(PREFIX)/bin
+AS=as01
 
 OBJS		=as.o assemble.o errors.o express.o \
 		 genbin.o genlist.o genobj.o gensym.o \
 		 keywords.o macro.o mops.o pops.o readsrc.o \
 		 scan.o table.o typeconv.o alloc.o
 
-all: as09
+all: as01
 
-as09: $(OBJS)
+as01: $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS) -o $@
 
-as86_encap: as86_encap.sh
-	sed -e "s:%%LIBDIR%%:$(LIBDIR):" -e "s:%%BINDIR%%:$(BINDIR):" \
-		< as86_encap.sh > tmp
-	@mv -f tmp $@
-	chmod +x $@
-	
 install: all
 	install -d $(LIBDIR)
-	install -m 755 as09 $(LIBDIR)
-#	install -d $(BINDIR)
-#	install -m 755 as86_encap $(BINDIR)/as86_encap
+	install -m 755 as01 $(LIBDIR)
 	-@rm -f tmp
 
 clean realclean clobber:
-	rm -f *.o as09 as86_encap
+	rm -f *.o as01
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
