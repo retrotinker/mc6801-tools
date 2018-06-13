@@ -2,17 +2,6 @@
 
 /* Copyright (C) 1994 Bruce Evans */
 
-/* one of these target processors must be defined */
-
-#undef  I8086			/* Intel 8086 */
-#undef  I80386			/* Intel 80386 */
-#define MC6809			/* Motorola 6809 */
-
-/* one of these target operating systems must be defined */
-
-#undef  EDOS			/* generate EDOS executable */
-#define MINIX			/* generate Minix executable */
-
 /* these may need to be defined to suit the source processor */
 
 #define HOST_8BIT		/* enable some 8-bit optimizations */
