@@ -1,0 +1,5 @@
+*.o
+as/as01
+ld/ld01
+ld/objcopy01
+ld/objdump01
