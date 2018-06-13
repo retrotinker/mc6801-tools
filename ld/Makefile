@@ -20,27 +20,27 @@ DEFS	=-DREL_OUTPUT
 OBJS= dumps.o io.o ld.o readobj.o table.o typeconv.o linksyms.o mkar.o \
       writex86.o
 
-all: ld09 objchop catimage objdump09 objcopy09
+all: ld01 objdump01 objcopy01
 
-ld09: $(OBJS)
+ld01: $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS) -o $@
 
-objdump09: objdump86.c
+objdump01: objdump86.c
 	$(CC) $(LDFLAGS) $< -o $@
 
-objcopy09: objcopy.c
+objcopy01: objcopy.c
 	$(CC) $(LDFLAGS) $< -o $@
 
-install: ld09 objdump09
+install: ld01 objdump01
 	install -d $(LIBDIR)
-	install -m 755 ld09 $(LIBDIR)
-	install -m 755 objdump09 $(LIBDIR)
-	ln -f $(LIBDIR)/objdump09 $(LIBDIR)/nm09
-	ln -f $(LIBDIR)/objdump09 $(LIBDIR)/size09
-	install -m 755 objcopy09 $(LIBDIR)
+	install -m 755 ld01 $(LIBDIR)
+	install -m 755 objdump01 $(LIBDIR)
+	ln -f $(LIBDIR)/objdump01 $(LIBDIR)/nm01
+	ln -f $(LIBDIR)/objdump01 $(LIBDIR)/size01
+	install -m 755 objcopy01 $(LIBDIR)
 
 clean realclean clobber:
-	rm -f *.o ld09 objchop catimage objdump09 objcopy09
+	rm -f *.o ld01 objchop catimage objdump01 objcopy01
 
 $(OBJS): align.h bindef.h byteord.h config.h const.h globvar.h obj.h \
 	 syshead.h type.h x86_aout.h
