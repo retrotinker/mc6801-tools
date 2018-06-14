@@ -1,4 +1,6 @@
 *.o
+ar/ar01
+ar/rel_aout.h
 as/as01
 ld/ld01
 ld/objcopy01

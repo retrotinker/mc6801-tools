@@ -1,6 +1,6 @@
 PREFIX=/usr/local/m6801-tools
 
-DIRS=as ld
+DIRS=as ld ar
 
 all: $(DIRS)
 	for i in $^ ;\
