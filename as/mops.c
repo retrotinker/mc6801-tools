@@ -29,7 +29,6 @@ FORWARD void segadj P((void));
 
 PRIVATE opcode_t rrindex[] =	/* register and index bits for indexed adr */
 {
-	0x60 | INDEXBIT,	/* S */
 	0x00 | INDEXBIT,	/* X */
 };
 

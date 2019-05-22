@@ -45,7 +45,6 @@ enum
 
 
 /* Index regs must be first, then PC. */
-    SREG,
     XREG,
 #define MAXINDREG	XREG
 

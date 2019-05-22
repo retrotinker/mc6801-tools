@@ -17,7 +17,6 @@ PUBLIC char regs[] = {
 	1, 'A', AREG, 0,
 	1, 'B', BREG, 0,
 	1, 'D', DREG, 0,
-	1, 'S', SREG, 0,
 	1, 'X', XREG, 0,
 	0			/* end of register list */
 };
