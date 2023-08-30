@@ -29,10 +29,9 @@ FORWARD void segadj P((void));
 
 PRIVATE opcode_t rrindex[] =	/* register and index bits for indexed adr */
 {
-	0x00 | INDEXBIT,	/* X */
+	0x00,		/* X */
 };
 
-FORWARD void checkpostinc P((void));
 FORWARD void doaltind P((void));
 FORWARD void do1altind P((void));
 FORWARD void fixupind P((void));
@@ -41,40 +40,9 @@ FORWARD void inderror P((char *err_str));
 FORWARD reg_pt indreg P((reg_pt maxindex));
 FORWARD void predec1 P((void));
 
-PRIVATE void checkpostinc()
-{
-	if (sym == ADDOP) {
-		if (postb & INDIRECTBIT)
-			inderror(ILLMOD);	/* single-inc indirect illegal */
-		else {
-			lastexp.offset &= 0xFF00;	/* for printing if postbyte is 0: ,X+ */
-			getsym();
-		}
-	} else if (sym == POSTINCOP) {
-		postb |= 0x1;
-		getsym();
-	} else
-		postb |= 0x4;
-	fixupind();
-}
-
 /* common code for all-mode ops, alterable-mode ops, indexed ops */
 
 PRIVATE void doaltind()
-{
-	mcount += 0x2;
-	if (sym == LBRACKET) {
-		postb = INDIRECTBIT;
-		getsym();
-		do1altind();
-		if (sym != RBRACKET)
-			error(RBEXP);
-		getsym();
-	} else
-		do1altind();
-}
-
-PRIVATE void do1altind()
 {
 	bool_t byteflag;	/* set if direct or short indexed adr forced */
 	char *oldlineptr;
@@ -82,29 +50,9 @@ PRIVATE void do1altind()
 	reg_pt reg;
 	bool_t wordflag;	/* set if extended or long indexed adr forced */
 
-	if ((reg = regchk()) != NOREG) {
-		switch (reg) {
-		case AREG:
-			postb |= 0x86;
-			break;
-		case BREG:
-			postb |= 0x85;
-			break;
-		case DREG:
-			postb |= 0x8B;
-			break;
-		default:
-			if (indreg(MAXINDREG) != NOREG)
-				checkpostinc();
-			return;
-		}
-		getsym();
-		if (sym != COMMA)
-			inderror(COMEXP);
-		else
-			getindexnopost();
-		return;
-	} else if (sym == SUBOP) {	/* could be -R or - in expression */
+	mcount += 0x2;
+
+	if (sym == SUBOP) {	/* could be -R or - in expression */
 		oldlineptr = lineptr;	/* save state */
 		oldsymname = symname;
 		getsym();
@@ -117,14 +65,10 @@ PRIVATE void do1altind()
 		}
 		sym = SUBOP;
 	} else if (sym == COMMA) {
-		postb |= INDEXBIT;
+		lastexp.offset = 0;	/* hack to simulate "0,x" */
 		getsym();
-		if (sym == SUBOP) {
-			predec1();
-			return;
-		} else if (sym != PREDECOP) {
-			if (indreg(MAXINDREG) != NOREG)
-				checkpostinc();
+		if (indreg(MAXINDREG) != NOREG) {
+			fixupind();
 			return;
 		}
 	}
@@ -149,23 +93,10 @@ PRIVATE void do1altind()
 	expres();
 	if (sym == COMMA) {	/* offset from register */
 		getsym();
-		postb |= 0x8;	/* default 8 bit offset */
-		if (byteflag) {
-			if (!(lastexp.data & (RELBIT | UNDBIT)) &&
-			    !is8bitsignedoffset(lastexp.offset))
-				error(ABOUNDS);	/* forced short form is impossible */
-			++mcount;
-		} else if (wordflag || lastexp.data & (FORBIT | RELBIT | UNDBIT) || !is8bitsignedoffset(lastexp.offset)) {	/* 16 bit offset */
-			postb |= 0x1;
-			mcount += 0x2;
-		} else if ((offset_t) (lastexp.offset + 0x10) < 0x20 && !(postb & INDIRECTBIT && lastexp.offset != 0x0)) {	/* 5 bit offset */
-			postb &= RRBITS | INDIRECTBIT;
-			if (lastexp.offset == 0x0)
-				postb |= 0x84;	/* index with zero offset */
-			else
-				postb |= (lastexp.offset & 0x1F);
-		} else		/* 8 bit offset */
-			++mcount;
+		if ((reg = indreg(AREG)) == NOREG)
+			return;
+		if (wordflag || !is8bitadr(lastexp.offset))
+			inderror(ILLMOD);	/* 8 bit unsigned offset only */
 		fixupind();
 	} else if (postb & INDIRECTBIT) {	/* extended indirect */
 		postb = 0x9F;
@@ -259,14 +190,6 @@ PUBLIC void malter()
 	doaltind();
 }
 
-/* indexed mode ops */
-
-PUBLIC void mindex()
-{
-	postb = INDEXBIT;	/* indexed but not yet indirect */
-	doaltind();
-}
-
 /* immediate ops */
 
 PUBLIC void mimmed()
@@ -287,26 +210,6 @@ PUBLIC void mimmed()
 		}
 	}
 }
-
-/* long branches */
-
-PUBLIC void mlong()
-{
-	mcount += 0x3;		/* may be 0x0 or 0x1 here */
-	expres();
-	segadj();
-	if (pass2) {
-		reldata();
-		if (!(lastexp.data & (RELBIT | UNDBIT))) {
-			lastexp.offset = lastexp.offset - lc - lcjump;
-			if (last_pass < 2 && !(lastexp.data & IMPBIT) &&
-			    lastexp.offset + 0x81 < 0x101)
-				warning(SHORTB);	/* -0x81 to 0x7F, warning */
-		}
-	}
-}
-
-/* PSHU and PULU */
 
 PRIVATE void predec1()
 {
