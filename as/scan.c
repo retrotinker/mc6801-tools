@@ -118,6 +118,8 @@ advance:
 	case CHARCONST:
 		if ((number = *reglineptr) < ' ')
 			number = ' ';
+		if (symofchar[(unsigned char)*(reglineptr+1)] == CHARCONST)
+			++reglineptr;
 		if (*reglineptr != EOL)
 			++reglineptr;
 		sym = INTCONST;
