@@ -1,3 +1,5 @@
+.PHONY: all clean
+
 PREFIX=/usr/local/m6801-tools
 
 DIRS=as ld ar
