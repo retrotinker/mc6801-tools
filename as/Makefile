@@ -1,8 +1,8 @@
 
 CFLAGS=-O
 LDFLAGS=-s
-LIBDIR=$(PREFIX)/bin
-BINDIR=$(PREFIX)/bin
+LIBDIR=$(PREFIX)
+BINDIR=$(PREFIX)
 AS=as01
 
 OBJS		=as.o assemble.o errors.o express.o \
@@ -16,8 +16,8 @@ as01: $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS) -o $@
 
 install: all
-	install -d $(LIBDIR)
-	install -m 755 as01 $(LIBDIR)
+	install -d $(DESTDIR)$(LIBDIR)
+	install -m 755 as01 $(DESTDIR)$(LIBDIR)
 	-@rm -f tmp
 
 clean realclean clobber:

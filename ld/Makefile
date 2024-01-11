@@ -1,5 +1,5 @@
 
-LIBDIR	=$(PREFIX)/bin
+LIBDIR	=$(PREFIX)
 CFLAGS	=-O -DDATASEGS
 LDFLAGS	=
 
@@ -32,12 +32,12 @@ objcopy01: objcopy.c
 	$(CC) $(LDFLAGS) $< -o $@
 
 install: ld01 objdump01
-	install -d $(LIBDIR)
-	install -m 755 ld01 $(LIBDIR)
-	install -m 755 objdump01 $(LIBDIR)
-	ln -f $(LIBDIR)/objdump01 $(LIBDIR)/nm01
-	ln -f $(LIBDIR)/objdump01 $(LIBDIR)/size01
-	install -m 755 objcopy01 $(LIBDIR)
+	install -d $(DESTDIR)$(LIBDIR)
+	install -m 755 ld01 $(DESTDIR)$(LIBDIR)
+	install -m 755 objdump01 $(DESTDIR)$(LIBDIR)
+	ln -f $(DESTDIR)$(LIBDIR)/objdump01 $(DESTDIR)$(LIBDIR)/nm01
+	ln -f $(DESTDIR)$(LIBDIR)/objdump01 $(DESTDIR)$(LIBDIR)/size01
+	install -m 755 objcopy01 $(DESTDIR)$(LIBDIR)
 
 clean realclean clobber:
 	rm -f *.o ld01 objchop catimage objdump01 objcopy01

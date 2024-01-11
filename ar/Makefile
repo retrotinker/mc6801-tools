@@ -2,7 +2,7 @@
 # This file is part of the Linux-8086 Development environment and is
 # distributed under the GNU General Public License.
 
-LIBDIR	=$(PREFIX)/bin
+LIBDIR	=$(PREFIX)
 CFLAGS	=-O
 LDFLAGS	=
 DEFS	=
@@ -14,8 +14,8 @@ ar01: $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS) -o $@
 
 install: ar01
-	install -d $(LIBDIR)
-	install -m 755 ar01 $(LIBDIR)
+	install -d $(DESTDIR)$(LIBDIR)
+	install -m 755 ar01 $(DESTDIR)$(LIBDIR)
 
 clean realclean clobber:
 	rm -f *.o ar01 rel_aout.h

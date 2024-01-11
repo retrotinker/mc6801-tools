@@ -7,5 +7,5 @@ DIRS=$(shell find * -type d -prune)
 all clean install: $(DIRS)
 	for i in $^ ;\
 	do \
-		$(MAKE) -C $$i PREFIX=$(PREFIX) $@;\
+		$(MAKE) -C $$i DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) $@;\
 	done
