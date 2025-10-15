@@ -11,6 +11,7 @@
 #endif
 
 #include "ar.h"
+void fatalerror(const char *message);
 
 static struct ar_hdr arbuf;
 

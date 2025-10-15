@@ -62,6 +62,7 @@ char *fn;
 	return NUL_PTR;
 }
 
+void ld86r(int argc, char **argv);
 PUBLIC int main(argc, argv)
 int argc;
 char **argv;
