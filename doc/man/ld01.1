@@ -1,0 +1,247 @@
+.TH LD01 1 "October 2026" "mc6801-tools" "mc6801-tools Manual"
+.SH NAME
+ld01 \- linker for MC6801 object files
+.SH SYNOPSIS
+.B ld01
+.RB [ \-dimMrsty ]
+.RB [ \-o
+.IR outfile ]
+.RB [ \-T
+.IR textaddr ]
+.RB [ \-D
+.IR dataaddr ]
+.RB [ \-H
+.IR heapsize ]
+.RB [ \-C \fIcrt\fP]
+.RB [ \-L \fIlibdir\fP]
+.RB [ \-l \fIlib\fP]
+.RB [ \-O \fIlibfile\fP]
+.I file
+\&...
+.SH DESCRIPTION
+.B ld01
+combines object files produced by
+.BR as01 (1)
+and modules from archives made with
+.BR ar01 (1)
+into an executable.
+It resolves references between modules and relocates code and data to
+their final addresses.
+.PP
+Each
+.I file
+is an object file or an archive.
+All named object files are linked.
+An archive member is linked only if it defines a symbol that is
+referenced by something already being linked.
+Archives may appear anywhere on the command line.
+.PP
+The program starts at the first symbol declared with the assembler\(aqs
+.B ENTRY
+directive.
+Linking fails with \(lqno start symbol\(rq if there is none.
+.PP
+By default the output is an a.out executable with a 32\-byte header,
+followed by the text segment, the data segment and a symbol table.
+Use
+.B \-d
+for a plain memory image instead.
+.BR objcopy01 (1)
+converts a.out files to S\-record, Intel hex, cassette and other formats.
+.SH OPTIONS
+Single\-letter flags may be turned off again by appending
+.BR \- ,
+for example
+.BR \-s\- .
+.TP
+.BI \-o " outfile"
+Write the output to
+.I outfile
+instead of
+.BR a.out .
+.TP
+.BI \-T " textaddr"
+Set the address of the text segment.
+The value is always read as hexadecimal, with or without a
+.B 0x
+prefix:
+.B \-T1000
+and
+.B \-T0x1000
+both mean $1000.
+The default is 0.
+.TP
+.BI \-D " dataaddr"
+Set the address of the data segment, also in hexadecimal.
+Unless
+.B \-d
+is given, this implies
+.BR \-i .
+By default the data segment directly follows the text segment.
+.TP
+.BI \-H " heapsize"
+Set the symbol
+.B __heap_top
+to the end of the program plus
+.I heapsize
+(hexadecimal).
+.TP
+.BI \-C crt
+Link
+.BI crt crt .o
+as a start\-up module, for example
+.B \-Cstart
+for
+.BR crtstart.o .
+.TP
+.BI \-l lib
+Search the archive
+.BI lib lib .a\fR.\fP
+.TP
+.BI \-L libdir
+Add
+.I libdir
+to the directories searched for
+.BR \-C ,
+.B \-l
+and
+.B \-O
+files.
+.TP
+.BI \-O libfile
+Link
+.IR libfile ,
+looking for it in the search directories.
+.TP
+.B \-d
+Write a headerless memory image: the text segment followed by the data
+segment, with no header or symbols.
+Implies
+.BR \-s .
+.TP
+.B \-i
+Mark the executable as having separate instruction and data spaces.
+.TP
+.B \-m
+List the modules linked on standard output.
+Each line shows the module name and its source file.
+.B +
+marks a linked module and
+.B \-
+an archive member that was not needed.
+.TP
+.B \-M
+List all symbols linked, with module, value and type, on standard
+output.
+.TP
+.B \-r
+Instead of linking, write the input objects to
+.I outfile
+as an
+.BR ar01 (1)
+archive.
+.TP
+.B \-s
+Do not include a symbol table in the output.
+.TP
+.B \-t
+Trace the modules as they are read.
+Must come before the input files.
+.TP
+.B \-y
+Write an extended symbol table.
+.TP
+.B \-v
+Print a version message and exit.
+.SH LIBRARY SEARCH
+Files named by
+.BR \-C ,
+.B \-l
+and
+.B \-O
+are searched for first in the
+.B \-L
+directories, most recently added first, and then in
+.BR /usr/local/lib/m09/ .
+If the file is not found in any of them, the name is opened as given,
+relative to the current directory.
+.SH SYMBOLS
+The linker defines these symbols, which programs may import:
+.TP
+.BR __btext ", " __etext
+Start and end of the text segment.
+.TP
+.BR __bdata ", " __edata
+Start and end of the data segment.
+.TP
+.B __end
+End of all data, including uninitialized data and common blocks.
+.TP
+.B __heap_top
+End of the program plus the
+.B \-H
+value.
+.SH SEGMENTS
+The assembler has 16 location counters.
+Counters 0 and 1 are linked into the text segment, and counters 2
+through 15 into the data segment.
+If counter 2 would cross a 256\-byte page boundary, it is moved to
+the start of the next page.
+.B .TEXT
+selects counter 0, and
+.B .DATA
+and
+.B .BSS
+select counter 3.
+.SH EXAMPLES
+Link a start\-up module, two objects and a library, loading at $434C:
+.PP
+.RS
+.B ld01 \-Cstart \-lnum \-T0x434c \-o main.aout main.o screen.o
+.RE
+.PP
+Produce a raw memory image for an EPROM at $E000:
+.PP
+.RS
+.B ld01 \-d \-TE000 \-o rom.bin start.o prog.o
+.RE
+.SH DIAGNOSTICS
+Undefined symbols are reported as
+\(lqundefined symbol:
+.IR name \(rq.
+The exit status is 0 on success and non\-zero on error.
+.SH SEE ALSO
+.BR as01 (1),
+.BR ar01 (1),
+.BR objdump01 (1),
+.BR objcopy01 (1)
+.PP
+The mc6801\-tools User\(aqs Manual
+.RI ( mc6801\-tools\-manual.pdf ).
+.SH BUGS
+The default library directory
+.B /usr/local/lib/m09/
+comes from the 6809 version of the linker and is not where
+.B make install
+puts anything.
+Use
+.B \-L
+or put libraries in the current directory.
+.PP
+Symbol names in the a.out symbol table are cut to 8 characters.
+.PP
+The usage message lists the flags
+.BR \-0 ,
+.BR \-3 ,
+.B \-N
+and
+.BR \-z ,
+which are not accepted.
+.B \-v
+prints the original
+.B ld86
+version string.
+.SH HISTORY
+Derived from
+.B ld86
+in Bruce Evans\(aq C compiler, as maintained in the dev86 package.
