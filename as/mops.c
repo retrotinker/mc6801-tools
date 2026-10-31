@@ -38,7 +38,6 @@ FORWARD void fixupind P((void));
 FORWARD void getindexnopost P((void));
 FORWARD void inderror P((char *err_str));
 FORWARD reg_pt indreg P((reg_pt maxindex));
-FORWARD void predec1 P((void));
 
 /* common code for all-mode ops, alterable-mode ops, indexed ops */
 
@@ -60,7 +59,8 @@ PRIVATE void doaltind()
 		lineptr = oldlineptr;
 		symname = oldsymname;
 		if (reg != NOREG) {
-			predec1();	/* it's -R */
+			error(ILLMOD);	/* it's -R, no auto-decrement on 6801 */
+			getindexnopost();
 			return;
 		}
 		sym = SUBOP;
@@ -73,7 +73,7 @@ PRIVATE void doaltind()
 		}
 	}
 	if (sym == PREDECOP) {
-		postb |= 0x83;
+		error(ILLMOD);	/* --R, no auto-decrement on 6801 */
 		getindexnopost();
 		return;
 	}
@@ -93,7 +93,7 @@ PRIVATE void doaltind()
 	expres();
 	if (sym == COMMA) {	/* offset from register */
 		getsym();
-		if ((reg = indreg(AREG)) == NOREG)
+		if ((reg = indreg(MAXINDREG)) == NOREG)
 			return;
 		if (wordflag || !is8bitadr(lastexp.offset))
 			inderror(ILLMOD);	/* 8 bit unsigned offset only */
@@ -105,6 +105,13 @@ PRIVATE void doaltind()
 	} else if (postb & INDEXBIT)
 		inderror(ILLMOD);	/* e.g. LEAX     $10 */
 	else {
+		/* 6801 memory ops (NEG..CLR, JMP) have no direct mode */
+		if (opcode < 0x80) {
+			if (byteflag)
+				error(ILLMOD);	/* forced direct is impossible */
+			byteflag = FALSE;
+			wordflag = TRUE;
+		}
 		if (byteflag || (!wordflag && !(lastexp.data & (FORBIT | RELBIT)) && (lastexp.offset >> 0x8) == dirpag)) {	/* direct addressing */
 			if (opcode >= 0x80)
 				opcode |= 0x10;
@@ -208,16 +215,6 @@ PUBLIC void mimmed()
 			chkabs();
 			checkdatabounds();
 		}
-	}
-}
-
-PRIVATE void predec1()
-{
-	if (postb & INDIRECTBIT)
-		inderror(ILLMOD);	/* single-dec indirect illegal */
-	else {
-		postb |= 0x82;
-		getindexnopost();
 	}
 }
 
