@@ -1,0 +1,418 @@
+'\" t
+.TH AS01 1 "October 2026" "mc6801-tools" "mc6801-tools Manual"
+.SH NAME
+as01 \- assembler for the Motorola MC6801/MC6803
+.SH SYNOPSIS
+.B as01
+.RB [ \-gkuw ]
+.RB [ \-b
+.IR binfile ]
+.RB [ \-l
+.RI [ listfile ]]
+.RB [ \-m
+.RI [ listfile ]]
+.RB [ \-n
+.IR name ]
+.RB [ \-o
+.IR objfile ]
+.RB [ \-s
+.IR symfile ]
+.RB [ \-t
+.IR n ]
+.RI [ srcfile ]
+.SH DESCRIPTION
+.B as01
+assembles one MC6801 source file.
+It writes a relocatable object file in Introl linkable binary format
+for
+.BR ld01 (1),
+an absolute binary image, or both.
+It can also write a listing and a symbol table.
+.PP
+The assembler makes two passes over the source.
+If
+.I srcfile
+is omitted, it reads standard input.
+Options and the source file may appear in any order.
+Each option must be a separate argument, and each output file may be
+given only once.
+.PP
+If there are errors, the object and binary files are deleted
+(unless
+.B \-k
+is given) and the exit status is 1.
+.SH OPTIONS
+.TP
+.BI \-b " binfile"
+Write an absolute binary image to
+.IR binfile .
+Use
+.B ORG
+to set the load address.
+If
+.B \-s
+is also given, the image starts at the lowest address assembled.
+Otherwise it starts at address 0 and is zero\-filled up to the first
+byte of code.
+.BR IMPORT ,
+.B .GLOBL
+and other external references are not allowed in this mode.
+.TP
+.B \-g
+Put only global (exported and imported) symbols in the object file.
+.TP
+.B \-k
+Keep the object and binary files even if there are errors.
+.TP
+.BR \-l " [\fIlistfile\fP]"
+Write a listing to
+.IR listfile ,
+or to standard output if no file name follows.
+.TP
+.BR \-m " [\fIlistfile\fP]"
+List every line of each macro expansion, including directives and
+lines skipped by conditionals.
+On its own,
+.B \-m
+lists only the macro expansions; use
+.B \-l \-m
+.I listfile
+to get the full listing as well.
+.TP
+.BI \-n " name"
+Use
+.I name
+to derive the module name stored in the object file.
+By default the source file name is used.
+Any directory part and the last suffix are removed.
+.TP
+.BI \-o " objfile"
+Write a relocatable object file to
+.IR objfile .
+.TP
+.BI \-s " symfile"
+Write a symbol table to
+.IR symfile .
+.TP
+.BI \-t " n"
+Assemble
+.B .TEXT
+sections into location counter
+.IR n +3
+instead of location counter 0.
+.TP
+.B \-u
+Treat undefined symbols as imported, as if each had been named in an
+.B IMPORT
+directive.
+.TP
+.B \-w
+Disable warnings.
+This is the default; use
+.B \-w\-
+to enable them.
+.PP
+The flags
+.BR \-g ,
+.B \-u
+and
+.B \-w
+are turned off by appending
+.BR \- ,
+for example
+.BR \-w\- .
+.SH SOURCE FORMAT
+Each line has the form
+.PP
+.RS
+.RI [ label [ \fB:\fP ]]
+.RI [ operation
+.RI [ operands ]]
+.RB [ ;\c
+.IR comment ]
+.RE
+.PP
+A label without a colon must start in column 1.
+A label followed by a colon may be indented.
+An operation must be preceded by white space unless it follows a label.
+A line whose first character is
+.BR * ,
+.B ;
+or
+.B !
+is a comment.
+A
+.B ;
+or
+.B !
+starts a comment anywhere else on the line.
+.PP
+Symbols may contain letters, digits,
+.B _
+and
+.BR . ,
+and must not start with a digit.
+They are case sensitive.
+Mnemonics, directives and register names are recognized in all upper
+case or all lower case.
+.SS Constants
+.TS
+l l.
+\fB123\fP	decimal
+\fB$7F\fP, \fB0x7F\fP	hexadecimal
+\fB0177\fP	octal (leading zero)
+\fB%1010\fP	binary
+\fB\(aqA\fP or \fB\(aqA\(aq\fP	character
+.TE
+.SS Expressions
+From lowest to highest precedence:
+.TS
+l l.
+\fB=  <  >\fP	comparison (true is \-1, false is 0)
+\fB+  \-  |\fP	add, subtract, bitwise or
+\fB*  /  &  <<  >>\fP	multiply, divide, and, shifts
+\fB\-  +  ~\fP	unary minus, plus, complement
+.TE
+.PP
+Parentheses group subexpressions.
+A
+.B *
+in operand position is the current location counter.
+.SS Addressing modes
+.TS
+l l l.
+Inherent	\fBinx\fP
+Immediate	\fBldaa #$10\fP	\fB#\fP prefix
+Direct	\fBldaa $80\fP	address in $00\-$FF, chosen automatically
+Extended	\fBldaa $1234\fP
+Indexed	\fBldaa 5,x\fP	unsigned 8\-bit offset; \fB,x\fP means \fB0,x\fP
+Relative	\fBbne loop\fP	branches only
+.TE
+.PP
+A
+.B <
+before an operand forces direct addressing and a
+.B >
+forces extended.
+Direct addressing is chosen only when the address is known in pass 1,
+so forward references use extended addressing.
+The read\-modify\-write instructions
+.RB ( NEG ,
+.BR COM ,
+.BR LSR ,
+.BR ROR ,
+.BR ASR ,
+.BR ASL / LSL ,
+.BR ROL ,
+.BR DEC ,
+.BR INC ,
+.BR TST ,
+.BR CLR )
+and
+.B JMP
+have no direct mode on the MC6801 and always use extended
+for non\-indexed operands.
+.SH DIRECTIVES
+Alternative spellings are separated by
+.BR / .
+.SS Data
+.TP
+.BR FCB / .BYTE / DB / .DATA1 " \fIexpr\fP[\fB,\fP\fIexpr\fP...]"
+Define bytes.
+.TP
+.BR FDB / .WORD / DW / .SHORT / .DATA2 " \fIexpr\fP[\fB,\fP\fIexpr\fP...]"
+Define 16\-bit words (big\-endian).
+.TP
+.BR FCC / .ASCII " \fIdelim text delim\fP"
+Define a string.
+The first character is the delimiter.
+C escape sequences such as
+.B \en
+and
+.B \e0
+are recognized.
+.TP
+.BI .ASCIZ " delim text delim"
+Like
+.BR FCC ,
+followed by a zero byte.
+.TP
+.BR RMB / .BLKB / .SPACE " \fIcount\fP[\fB,\fP\fIfill\fP]"
+Reserve
+.I count
+bytes, filled with
+.I fill
+if it is given.
+.TP
+.BR .BLKW / .ZEROW " \fIcount\fP"
+Reserve
+.I count
+words.
+.SS Symbols
+.TP
+.IB label " EQU " expr \fRor\fP " label " = " expr"
+Define a constant.
+.TP
+.IB label " SET " expr
+Define a symbol that may be redefined.
+.TP
+.BR EXPORT / PUBLIC / .DEFINE " \fIsym\fP[\fB,\fP\fIsym\fP...]"
+Make symbols defined in this module visible to other modules.
+.TP
+.BI ENTRY " sym"
+Like
+.BR EXPORT ,
+and also mark
+.I sym
+as an entry point.
+The linker uses the first entry point as the program's start address.
+.TP
+.BR IMPORT / EXTERN / .EXTERN / EXTRN " \fIsym\fP[\fB,\fP\fIsym\fP...]"
+Declare symbols defined in another module.
+.TP
+.BR .GLOBL / .GLOBAL " \fIsym\fP[\fB,\fP\fIsym\fP...]"
+Export the symbols if they are defined in this module, otherwise import
+them.
+.TP
+.IB label " COMM " size \fRor\fP " label " LCOMM " size"
+Define a common block of
+.I size
+bytes.
+.B LCOMM
+makes it local to the module.
+.TP
+.BR .COMM / .LCOMM " \fIname\fP\fB,\fP\fIsize\fP"
+The same, in Unix assembler syntax.
+.SS Location
+.TP
+.BI LOC " n"
+Switch to location counter
+.I n
+(0 to 15).
+The linker places counters 0 and 1 in the text segment and the others in
+the data segment.
+.TP
+.BR .TEXT ", " .DATA ", " .ROM ", " .BSS
+Switch to location counter 0
+.RB ( .TEXT )
+or 3 (the others).
+.TP
+.BR .SECT " \fIname\fP"
+Switch to the named section
+.RB ( .text ,
+.B .data
+or
+.BR .bss ).
+.TP
+.BI ORG " expr"
+Set the location counter.
+.TP
+.BI BLOCK " expr \fRand\fP " ENDB
+Assemble the lines in between at
+.IR expr ,
+then restore the previous location counter.
+.TP
+.BI .ALIGN " n"
+Advance the location counter to a multiple of
+.IR n .
+.TP
+.B .EVEN
+Advance the location counter to an even address.
+.SS Conditional assembly
+.TP
+.BI IF " expr \fR/\fP " ELSEIF " expr \fR/\fP " ELSE " \fR/\fP " ENDIF
+Assemble lines selectively; a non\-zero expression is true.
+.TP
+.BI IFC " (str1,str2) \fR/\fP " ELSEIFC " (str1,str2)"
+True if the two strings are identical.
+.SS Macros
+.TP
+.BI MACRO " name \fR...\fP " MEND
+Define a macro.
+In the body,
+.BR ?1 ,
+.BR ?2 ,
+\&...
+are replaced by the comma\-separated arguments of the invocation.
+Invoke it as
+.I name
+.IR arg1 , arg2 ...
+.SS Other
+.TP
+.BR INCLUDE / GET " \fIfile\fP"
+Assemble the contents of
+.IR file .
+.TP
+.B END
+End of source; the rest of the file is ignored.
+.TP
+.B FAIL
+Report an error.
+.TP
+.BR .LIST ", " .MACLIST " [\fIn\fP]"
+Adjust the listing and macro\-listing counters.
+They only have an effect when listing is enabled with
+.B \-l
+or
+.BR \-m .
+.SH FILES
+.TP
+.I objfile
+Introl linkable binary object (magic bytes
+.BR S1 ).
+.SH EXAMPLES
+Assemble a module and produce a listing on standard output:
+.PP
+.RS
+.B as01 \-o screen.o \-l screen.s
+.RE
+.PP
+Assemble an absolute image with no linking step:
+.PP
+.RS
+.B as01 \-b prog.bin \-s prog.sym prog.s
+.RE
+.SH DIAGNOSTICS
+Errors and warnings are shown in the listing under the offending line,
+with a caret marking the position.
+A summary of the error and warning counts is printed at the end.
+If no listing file was requested, the offending lines and the summary are
+printed on standard output.
+.SH SEE ALSO
+.BR ld01 (1),
+.BR ar01 (1),
+.BR objdump01 (1),
+.BR objcopy01 (1)
+.PP
+The mc6801\-tools User\(aqs Manual
+.RI ( mc6801\-tools\-manual.pdf ).
+.SH BUGS
+The
+.B .WARN
+directive works, but the line it is on also reports a spurious
+\(lqjunk after operands\(rq error.
+Use
+.B \-w\-
+to enable warnings instead.
+.PP
+Without
+.BR \-s ,
+the
+.B \-b
+image starts at address 0 rather than at the first address used.
+.PP
+The \(lqshort branch would do\(rq warning for
+.B JSR
+and
+.B JMP
+compares the absolute target address rather than the branch distance.
+.PP
+The
+.B \-v
+option prints the original
+.B as86
+version string.
+.SH HISTORY
+Derived from the MC6809 configuration of
+.B as09
+in Bruce Evans\(aq C compiler, as maintained in the dev86 package.

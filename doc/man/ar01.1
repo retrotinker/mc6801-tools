@@ -1,0 +1,135 @@
+.TH AR01 1 "October 2026" "mc6801-tools" "mc6801-tools Manual"
+.SH NAME
+ar01 \- create and maintain libraries of MC6801 object files
+.SH SYNOPSIS
+.B ar01
+.RB [ \- ]\fIkey\fP
+.RI [ posname ]
+.I archive
+.RI [ file \&...]
+.SH DESCRIPTION
+.B ar01
+maintains archives (libraries) of object files produced by
+.BR as01 (1).
+.BR ld01 (1)
+searches archives with its
+.B \-l
+option and links only the members that are needed.
+The archive format is the standard Unix
+.B !<arch>
+format.
+.PP
+.I key
+is one operation letter, optionally combined with modifier letters.
+The leading
+.B \-
+is optional.
+.SH OPERATIONS
+.TP
+.B r
+Replace the named files in the archive, or add them at the end if they
+are not already there.
+Creates the archive if it does not exist.
+.TP
+.B q
+Quick append: add the named files at the end without checking for
+existing members.
+.TP
+.B d
+Delete the named members.
+.TP
+.B m
+Move the named members, by default to the end of the archive.
+.TP
+.B t
+List the members, or only the named ones.
+.TP
+.B x
+Extract the named members into the current directory, or all members if
+none are named.
+.TP
+.B p
+Write the contents of the named members (or all members) to standard
+output.
+.SH MODIFIERS
+.TP
+.B a
+With
+.B r
+or
+.BR m ,
+place the files after member
+.IR posname .
+.TP
+.BR b ", " i
+With
+.B r
+or
+.BR m ,
+place the files before member
+.IR posname .
+.TP
+.B c
+Do not report when a new archive is created.
+.TP
+.B o
+On extraction, give files the modification time recorded in the
+archive.
+.TP
+.B u
+With
+.BR r ,
+replace only members older than the named files.
+.TP
+.B v
+Verbose: report each file added, replaced or extracted, and give a long
+listing with
+.BR t .
+.TP
+.B l
+Accepted and ignored.
+.TP
+.B s
+Add a
+.B __.SYMDEF
+symbol\-index member.
+See BUGS; this is not useful with MC6801 objects.
+.SH EXAMPLES
+Create a library from three modules:
+.PP
+.RS
+.B ar01 rc libnum.a one.o two.o three.o
+.RE
+.PP
+List its contents in detail:
+.PP
+.RS
+.B ar01 tv libnum.a
+.RE
+.PP
+Link against it:
+.PP
+.RS
+.B ld01 \-Cstart \-lnum \-T0x434c \-o main.aout main.o
+.RE
+.SH SEE ALSO
+.BR as01 (1),
+.BR ld01 (1),
+.BR objdump01 (1)
+.PP
+The mc6801\-tools User\(aqs Manual
+.RI ( mc6801\-tools\-manual.pdf ).
+.SH BUGS
+The
+.B s
+modifier does not understand MC6801 object files.
+It reports \(lqbad format (not an object file)\(rq for every member
+and writes an empty
+.B __.SYMDEF
+member.
+.BR ld01 (1)
+does not need a symbol index, and ignores this member.
+.SH HISTORY
+Derived from the GNU
+.B ar
+used in the dev86 package.

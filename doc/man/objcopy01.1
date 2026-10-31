@@ -1,0 +1,176 @@
+.TH OBJCOPY01 1 "October 2026" "mc6801-tools" "mc6801-tools Manual"
+.SH NAME
+objcopy01 \- convert MC6801 executables to loadable formats
+.SH SYNOPSIS
+.B objcopy01
+.RB [ \-O
+.IR format ]
+.RB [ \-T
+.IR textaddr ]
+.RB [ \-D
+.IR dataaddr ]
+.RB [ \-n
+.IR name ]
+.RB [ \-p ]
+.RB [ \-d
+.IR datasize ]
+.RB [ \-v
+.IR version ]
+.RB [ \-r ]
+.I infile outfile
+.SH DESCRIPTION
+.B objcopy01
+reads an a.out executable produced by
+.BR ld01 (1)
+and writes its text and data segments to
+.I outfile
+in one of several formats for loaders, EPROM programmers and cassette
+interfaces.
+The input must have an a.out header, so do not link it with
+.BR "ld01 \-d" .
+.PP
+The program\(aqs entry point is taken from the a.out header.
+The load address should always be given with
+.BR \-T ;
+see BUGS.
+.SH OPTIONS
+.TP
+.BI \-O " format"
+Output format (default
+.BR binary ).
+See FORMATS.
+.TP
+.BI \-T " textaddr"
+Load address of the text segment.
+The value is read as a C number: decimal unless it has a
+.B 0x
+(hexadecimal) or
+.B 0
+(octal) prefix.
+Note that this differs from
+.BR "ld01 \-T" ,
+which is always hexadecimal.
+.TP
+.BI \-D " dataaddr"
+Load address of the data segment, for formats that can place it
+separately.
+If it is not given, the data segment follows the text segment.
+.TP
+.BI \-n " name"
+Name to store in the output.
+This is the S0 header record name for
+.BR srec ,
+the cassette file name for
+.B cas
+and
+.B wav
+(up to 8 characters, padded with spaces), and the module name for
+.BR os9 .
+The default is the output file name in upper case, including any
+directory and suffix, so it is usually best to give
+.B \-n
+explicitly.
+.TP
+.B \-p
+With
+.BR binary ,
+pad the gap between the text and data segments so that the data
+appears at its correct offset.
+.TP
+.BI \-d " datasize"
+.B os9
+only: data area size to reserve.
+.TP
+.BI \-v " version"
+.B os9
+only: module version (0 to 127).
+.TP
+.B \-r
+.B os9
+only: mark the module re\-entrant.
+.SH FORMATS
+The format name may be abbreviated to its first three letters
+.RB ( decb
+and
+.B ddos
+need four).
+.TP
+.B binary
+Raw memory image: the text segment followed by the data segment.
+.TP
+.B srec
+Motorola S\-records: an S0 header containing the name, S1 data records
+of 16 bytes, an S5 record count and an S9 record with the entry point.
+.TP
+.B ihex
+Intel hex: 16\-byte data records and an end record holding the entry
+point.
+.TP
+.B wav
+Cassette audio as an 8\-bit mono WAV file at 43200 Hz, in the
+Color BASIC tape format.
+This format is also used by the Tandy MC\-10, which loads it with
+.BR CLOADM .
+Text and data must be contiguous.
+.TP
+.B cas
+The same cassette data as
+.BR wav ,
+as a byte stream
+.RB ( .cas
+file) for emulators.
+.TP
+.B decb
+Disk Extended Color BASIC
+.B LOADM
+binary (TRS\-80 Color Computer).
+.TP
+.B ddos
+Dragon DOS binary.
+Text and data must be contiguous.
+.TP
+.B os9
+OS\-9 program module.
+This is a 6809 format, inherited from the 6809 version of these tools.
+.SH EXAMPLES
+Make an MC\-10 cassette image loading at $434C:
+.PP
+.RS
+.B objcopy01 \-O wav \-T 0x434c \-n MAIN main.aout main.wav
+.RE
+.PP
+Make an S\-record file for an EPROM programmer:
+.PP
+.RS
+.B objcopy01 \-O srec \-T 0xe000 \-n ROM rom.aout rom.s19
+.RE
+.SH DIAGNOSTICS
+\(lq\fIformat\fP load address is zero\(rq means the load address was
+not known; give
+.BR \-T .
+The matching \(lqdata load address is zero\(rq warning is harmless if the
+program has no data segment.
+.SH SEE ALSO
+.BR ld01 (1),
+.BR objdump01 (1),
+.BR as01 (1)
+.PP
+The mc6801\-tools User\(aqs Manual
+.RI ( mc6801\-tools\-manual.pdf ).
+.SH BUGS
+.B objcopy01
+looks for the load addresses in the symbols
+.BR __btext ,
+.B __etext
+and
+.BR __bdata ,
+but
+.BR ld01 (1)
+does not write these to the a.out symbol table.
+So without
+.BR \-T ,
+the load address is taken to be 0 and the output is wrong for every
+format except
+.BR binary .
+.SH AUTHOR
+John W. Linville.

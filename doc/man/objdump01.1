@@ -1,0 +1,121 @@
+'\" t
+.TH OBJDUMP01 1 "October 2026" "mc6801-tools" "mc6801-tools Manual"
+.SH NAME
+objdump01, nm01, size01 \- display information about MC6801 executables
+.SH SYNOPSIS
+.B objdump01
+.RB [ \-n | \-s ]
+.RB [ \-o ]
+.I file
+\&...
+.br
+.B nm01
+.RB [ \-o ]
+.I file
+\&...
+.br
+.B size01
+.I file
+\&...
+.SH DESCRIPTION
+.B objdump01
+displays the contents of a.out executables produced by
+.BR ld01 (1).
+.B make install
+also installs it as
+.B nm01
+and
+.BR size01 ,
+which behave as if
+.B \-n
+or
+.B \-s
+had been given.
+The mode is chosen from the first letter of the program name.
+.PP
+By default
+.B objdump01
+prints for each file:
+.IP \(bu 2
+the header: header length, CPU (m6801), flags, entry point
+.RB ( a_entry ),
+total memory size
+.RB ( a_total )
+and symbol table size;
+.IP \(bu
+the segment sizes;
+.IP \(bu
+the symbol table;
+.IP \(bu
+a hex and ASCII dump of the text and data segments.
+.SH OPTIONS
+.TP
+.B \-n
+Print only the symbol table, like
+.BR nm (1).
+Each line gives the value, a type letter and the name.
+.TP
+.B \-s
+Print only the text, data and bss sizes, in decimal, followed by the total
+in decimal and hexadecimal, like
+.BR size (1).
+If several files are given, a total line is added.
+.TP
+.B \-o
+In
+.B \-n
+mode, prefix each line with the file name instead of printing a
+heading for each file.
+.SH SYMBOL TYPES
+.TS
+l l.
+\fBT\fP, \fBt\fP	text segment symbol (global, local)
+\fBD\fP, \fBd\fP	data segment symbol (global, local)
+\fBC\fP, \fBb\fP	bss or common symbol (global, local)
+\fBa\fP	absolute symbol
+\fBU\fP	undefined
+\fB?\fP	other
+.TE
+.SH EXAMPLES
+.nf
+.B $ size01 main.aout
+text	data	bss	dec	hex	filename
+108	0	0	108	6c	main.aout
+.sp
+.B $ nm01 main.aout
+0000434c t msg_one
+00004351 T one
+00004380 T __start
+00004000 a SCREEN
+\&...
+.fi
+.SH SEE ALSO
+.BR ld01 (1),
+.BR objcopy01 (1),
+.BR as01 (1)
+.PP
+The mc6801\-tools User\(aqs Manual
+.RI ( mc6801\-tools\-manual.pdf ).
+.SH BUGS
+.B objdump01
+cannot read object files made by
+.BR as01 (1)
+and reports \(lqBad magic number\(rq for them.
+It still expects the original 8086 object format.
+Use the
+.B \-l
+and
+.B \-s
+listing options of
+.BR as01 (1)
+to inspect assembled modules.
+.PP
+The text and data segments are shown as hex dumps, not disassembled.
+.PP
+Symbol names are cut to 8 characters.
+.PP
+Unknown options are silently ignored.
+.SH HISTORY
+Derived from
+.B objdump86
+in the dev86 package, by Greg Haerr and others.
