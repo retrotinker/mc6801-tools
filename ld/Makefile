@@ -31,7 +31,7 @@ objdump01: objdump86.c
 objcopy01: objcopy.c
 	$(CC) $(LDFLAGS) $< -o $@
 
-install: ld01 objdump01
+install: ld01 objdump01 objcopy01
 	install -d $(DESTDIR)$(LIBDIR)
 	install -m 755 ld01 $(DESTDIR)$(LIBDIR)
 	install -m 755 objdump01 $(DESTDIR)$(LIBDIR)

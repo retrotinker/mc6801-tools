@@ -1,11 +1,12 @@
-.PHONY: all clean
+.PHONY: all clean install
 
 PREFIX=/usr/local/m6801-tools
 
-DIRS=$(shell find * -type d -prune)
+# demo is not listed: it needs the tools installed and in PATH
+DIRS=ar as ld
 
 all clean install: $(DIRS)
 	for i in $^ ;\
 	do \
-		$(MAKE) -C $$i DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) $@;\
+		$(MAKE) -C $$i DESTDIR=$(DESTDIR) PREFIX=$(PREFIX) $@ || exit 1;\
 	done
