@@ -114,6 +114,7 @@ PUBLIC void assemble()
 PRIVATE void asline()
 {
 	register struct sym_s *symptr;
+	bool_t indented;	/* set if line starts with blank or tab */
 
 	postb = popflags = pcrflag = immcount = lastexp.data = lcjump = 0;
 #if SIZEOF_OFFSET_T > 2
@@ -122,6 +123,7 @@ PRIVATE void asline()
 	    fdflag = fcflag = FALSE;
 	cpuwarn();
 	readline();
+	indented = (*lineptr == ' ' || *lineptr == '\t');
 	getsym();
 	if (sym != IDENT) {	/* expect label, mnemonic or macro */
 		/* Warn if not a comment marker or a hash (for /lib/cpp) */
@@ -145,6 +147,10 @@ PRIVATE void asline()
 		if ((nocolonlabel = (*lineptr - ':')) == 0) {	/* exported label? */
 			sym = COLON;
 			++lineptr;
+		} else if (indented) {
+			/* labels without ':' start in column 1, so unknown op */
+			error(OPEXP);
+			return;
 		}
 		if (symptr->type & (LABIT | VARBIT)) {
 			if (symptr->type & REDBIT)
@@ -174,8 +180,9 @@ PRIVATE void asline()
 			if (sym == EQOP) {
 				getsym();
 				pequ();
-			}
-			return;	/* anything but ident is comment */
+			} else if (sym != EOLSYM)
+				error(OPEXP);	/* e.g. unknown op in column 1 */
+			return;
 		}
 		symptr = gsymptr;
 	}
