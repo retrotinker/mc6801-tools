@@ -74,6 +74,7 @@ FORWARD void symres P((char *name));
 FORWARD void setseg P((fastin_pt newseg));
 FORWARD void skip P((unsigned countsize));
 FORWARD void writeheader P((void));
+FORWARD void writelinksym P((char *name, bin_off_t value, int sclass));
 FORWARD void writenulls P((bin_off_t count));
 
 EXTERN bool_t reloc_output;
@@ -454,6 +455,14 @@ bool_pt argxsym;
 #endif
 					}
 			}
+		/* linker-defined symbols are only written above if a module
+		   uses them; always write the segment boundaries, so that
+		   objcopy can find the load addresses */
+		writelinksym("__btext", btextoffset, C_EXT | N_TEXT);
+		writelinksym("__etext", etextoffset, C_EXT | N_TEXT);
+		writelinksym("__bdata", bdataoffset, C_EXT | N_DATA);
+		writelinksym("__edata", edataoffset, C_EXT | N_DATA);
+		writelinksym("__end", endoffset, C_EXT | N_DATA);
 		seekout((unsigned long)offsetof(struct exec, a_syms));
 		u4cn(buf4, (u4_t) nsym * sizeof extsym,
 		     memsizeof(struct exec, a_syms));
@@ -604,6 +613,28 @@ bin_off_t value;
 
 	if ((symptr = findsym(name)) != NUL_PTR)
 		symptr->value = value;
+}
+
+/* write a linker-defined symbol, unless a loaded module already did */
+
+PRIVATE void writelinksym(name, value, sclass)
+char *name;
+bin_off_t value;
+int sclass;
+{
+	struct nlist extsym;
+	struct symstruct *symptr;
+
+	symptr = findsym(name);
+	if (symptr != NUL_PTR && symptr->modptr != NUL_PTR
+	    && symptr->modptr->loadflag)
+		return;
+	memset((void *)&extsym, 0, sizeof extsym);
+	strncpy((char *)extsym.n_name, name, sizeof extsym.n_name);
+	u4cn((char *)&extsym.n_value, (u4_t) value, sizeof extsym.n_value);
+	extsym.n_sclass = sclass;
+	writeout((char *)&extsym, sizeof extsym);
+	++nsym;
 }
 
 PRIVATE void symres(name)

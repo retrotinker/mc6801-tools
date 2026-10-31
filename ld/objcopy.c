@@ -221,7 +221,7 @@ void decb_output(FILE *ifd, FILE *ofd, struct exec header)
 	if (!textaddr)
 		textaddr = textstart;
 	if (!textaddr)
-		warning("BIN load address is zero");
+		warning("BIN load address is zero (use -T)");
 
 	binsize = header.a_text;
 	if (!(header.a_flags & A_SEP) ||
@@ -247,7 +247,7 @@ void decb_output(FILE *ifd, FILE *ofd, struct exec header)
 		if (!dataaddr)
 			dataaddr = datastart;
 		if (!dataaddr)
-			warning("BIN data load address is zero");
+			warning("BIN data load address is zero (use -D)");
 
 		binsize = header.a_data;
 
@@ -283,7 +283,7 @@ void ddos_output(FILE *ifd, FILE *ofd, struct exec header)
 	if (!textaddr)
 		textaddr = textstart;
 	if (!textaddr)
-		warning("BIN load address is zero");
+		warning("BIN load address is zero (use -T)");
 
 	if ((header.a_flags & A_SEP) &&
 	    (dataaddr || datastart != textend))
@@ -433,11 +433,13 @@ void srec_output(FILE *ifd, FILE *ofd, struct exec header)
 	if (!textaddr)
 		textaddr = textstart;
 	if (!textaddr)
-		warning("SREC load address is zero");
+		warning("SREC load address is zero (use -T)");
 	if (!dataaddr)
 		dataaddr = datastart;
-	if (!dataaddr)
-		warning("SREC data load address is zero");
+	if (!dataaddr && !(header.a_flags & A_SEP))
+		dataaddr = textaddr + header.a_text;
+	if (!dataaddr && header.a_data)
+		warning("SREC data load address is zero (use -D)");
 
 	csum = len = strlen(objname);
 	fprintf(ofd, "S0%02X0000", len+3);
@@ -505,11 +507,13 @@ void ihex_output(FILE *ifd, FILE *ofd, struct exec header)
 	if (!textaddr)
 		textaddr = textstart;
 	if (!textaddr)
-		warning("IHEX load address is zero");
+		warning("IHEX load address is zero (use -T)");
 	if (!dataaddr)
 		dataaddr = datastart;
-	if (!dataaddr)
-		warning("IHEX data load address is zero");
+	if (!dataaddr && !(header.a_flags & A_SEP))
+		dataaddr = textaddr + header.a_text;
+	if (!dataaddr && header.a_data)
+		warning("IHEX data load address is zero (use -D)");
 
 	if (fseek(ifd, A_TEXTPOS(header), 0) < 0)
 		fatal("Cannot seek to start of text");
@@ -563,7 +567,7 @@ void cas_output(FILE *ifd, FILE *ofd, struct exec header)
 	if (!textaddr)
 		textaddr = textstart;
 	if (!textaddr)
-		warning("Color BASIC executable load address is zero");
+		warning("Color BASIC executable load address is zero (use -T)");
 
 	if ((header.a_flags & A_SEP) &&
 	    (dataaddr || datastart != textend))
@@ -712,7 +716,7 @@ void wav_output(FILE *ifd, FILE *ofd, struct exec header)
 	if (!textaddr)
 		textaddr = textstart;
 	if (!textaddr)
-		warning("Color BASIC executable load address is zero");
+		warning("Color BASIC executable load address is zero (use -T)");
 
 	if ((header.a_flags & A_SEP) &&
 	    (dataaddr || datastart != textend))
