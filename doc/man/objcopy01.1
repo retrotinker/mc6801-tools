@@ -30,9 +30,22 @@ The input must have an a.out header, so do not link it with
 .BR "ld01 \-d" .
 .PP
 The program\(aqs entry point is taken from the a.out header.
-The load address should always be given with
-.BR \-T ;
-see BUGS.
+The load addresses are taken from the
+.B __btext
+and
+.B __bdata
+symbols that
+.BR ld01 (1)
+writes to the symbol table.
+.B \-T
+and
+.B \-D
+override them.
+An executable linked with
+.B "ld01 \-s"
+has no symbols, so give
+.B \-T
+for it.
 .SH OPTIONS
 .TP
 .BI \-O " format"
@@ -42,11 +55,16 @@ See FORMATS.
 .TP
 .BI \-T " textaddr"
 Load address of the text segment.
+The default is the value of
+.BR __btext .
 The value is read as a C number: decimal unless it has a
 .B 0x
 (hexadecimal) or
 .B 0
 (octal) prefix.
+Trailing characters are ignored, so
+.B 434c
+is read as decimal 434.
 Note that this differs from
 .BR "ld01 \-T" ,
 which is always hexadecimal.
@@ -54,7 +72,9 @@ which is always hexadecimal.
 .BI \-D " dataaddr"
 Load address of the data segment, for formats that can place it
 separately.
-If it is not given, the data segment follows the text segment.
+The default is the value of
+.BR __bdata ;
+if there are no symbols, the data segment follows the text segment.
 .TP
 .BI \-n " name"
 Name to store in the output.
@@ -133,23 +153,25 @@ Text and data must be contiguous.
 OS\-9 program module.
 This is a 6809 format, inherited from the 6809 version of these tools.
 .SH EXAMPLES
-Make an MC\-10 cassette image loading at $434C:
+Make an MC\-10 cassette image:
 .PP
 .RS
-.B objcopy01 \-O wav \-T 0x434c \-n MAIN main.aout main.wav
+.B objcopy01 \-O wav \-n MAIN main.aout main.wav
 .RE
 .PP
-Make an S\-record file for an EPROM programmer:
+Make an S\-record file from an executable linked with
+.BR "ld01 \-s \-TE000" ,
+which has no symbols to give the load address:
 .PP
 .RS
 .B objcopy01 \-O srec \-T 0xe000 \-n ROM rom.aout rom.s19
 .RE
 .SH DIAGNOSTICS
-\(lq\fIformat\fP load address is zero\(rq means the load address was
-not known; give
+\(lq\fIformat\fP load address is zero (use \-T)\(rq means the input
+has no symbol table (or was linked at address 0); give
 .BR \-T .
-The matching \(lqdata load address is zero\(rq warning is harmless if the
-program has no data segment.
+\(lq\fIformat\fP data load address is zero (use \-D)\(rq is the same
+for a separate data segment.
 .SH SEE ALSO
 .BR ld01 (1),
 .BR objdump01 (1),
@@ -157,20 +179,5 @@ program has no data segment.
 .PP
 The mc6801\-tools User\(aqs Manual
 .RI ( mc6801\-tools\-manual.pdf ).
-.SH BUGS
-.B objcopy01
-looks for the load addresses in the symbols
-.BR __btext ,
-.B __etext
-and
-.BR __bdata ,
-but
-.BR ld01 (1)
-does not write these to the a.out symbol table.
-So without
-.BR \-T ,
-the load address is taken to be 0 and the output is wrong for every
-format except
-.BR binary .
 .SH AUTHOR
 John W. Linville.

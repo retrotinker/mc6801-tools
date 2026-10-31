@@ -175,12 +175,12 @@ sets the start address and is always read as hexadecimal:
 $ ld01 -T434c -o hello.aout hello.o
 ```
 
-**Convert** the result into a cassette audio file. `objcopy01` needs
-the load address too; it reads numbers like C does, so write it with
-`0x`:
+**Convert** the result into a cassette audio file. `objcopy01` finds
+the load address in the executable, and `-n` sets the name that the
+MC-10 shows when it loads the file:
 
 ```
-$ objcopy01 -O wav -T 0x434c -n HELLO hello.aout hello.wav
+$ objcopy01 -O wav -n HELLO hello.aout hello.wav
 ```
 
 Play `hello.wav` into the MC-10's cassette input (or load it into an
@@ -677,6 +677,10 @@ The linker defines these symbols, which a program can `IMPORT`:
 For example, a start-up module can clear uninitialized data between
 `__edata` and `__end`.
 
+`__btext`, `__etext`, `__bdata`, `__edata` and `__end` are always
+written to the executable's symbol table (unless `-s` is used), where
+`objcopy01` finds the load addresses.
+
 ## Link maps
 
 `-m` prints a line for each module: `+` if it was linked, `-` if it is
@@ -743,7 +747,7 @@ CPU  m6801 BIG_ENDIAN
 FLAGS: A_EXEC
 a_entry  = 0x00004380
 a_total  = 0x0000006c
-a_syms   = 0x000000e0
+a_syms   = 0x00000130
 
 text    data    bss     dec     hex     filename
 108     0       0       108     6c      main.aout
@@ -800,19 +804,22 @@ objcopy01 [-O format] [-T textaddr] [-D dataaddr] [-n name] [-p]
 | `ddos` | Dragon DOS binary |
 | `os9` | OS-9 module (a 6809 format, inherited from the 6809 tools) |
 
-**Always give the load address with `-T`.** `objcopy01` tries to find
-it in the executable's symbol table, but the linker doesn't store it
-there, so without `-T` the address is taken to be 0. Unlike `ld01`,
-`objcopy01` reads numbers the way C does: `0x434c` is hexadecimal, but
-`434c` is an error and `1000` is decimal.
+The load addresses come from the `__btext` and `__bdata` symbols that
+the linker writes to the executable, so you don't normally need to
+give them. Use `-T` and `-D` to override them, or when the executable
+was linked with `ld01 -s` and has no symbol table. Unlike `ld01`,
+`objcopy01` reads numbers the way C does: `0x434c` is hexadecimal and
+`1000` is decimal. Trailing characters are ignored, so `434c` would be
+read as decimal 434.
 
 The entry point is taken from the executable header. `-n` sets the name
 stored in S-record headers and cassette files (up to 8 characters for
 cassettes); without it, the output file name in upper case is used.
 
 ```
-$ objcopy01 -O srec -T 0xe000 -n ROM rom.aout rom.s19
-$ objcopy01 -O wav -T 0x434c -n GAME game.aout game.wav
+$ objcopy01 -O srec -n ROM rom.aout rom.s19
+$ objcopy01 -O wav -n GAME game.aout game.wav
+$ objcopy01 -O srec -T 0xe000 -n ROM stripped.aout rom.s19
 ```
 
 The cassette formats and `ddos` require the data segment to follow the
@@ -954,9 +961,6 @@ The linker pulls in `crtstart.o` because of `-Cstart`, and `one.o`,
 
 # Known Limitations
 
-* **`objcopy01` needs `-T`.** The linker does not write the `__btext`,
-  `__etext` and `__bdata` symbols to the executable, so `objcopy01`
-  cannot find the load address by itself.
 * **`as01 -b` without `-s`** produces an image starting at address 0.
 * **`objdump01` cannot read object files**, only linked executables.
 * **`ar01 s`** cannot index MC6801 objects; don't use it.

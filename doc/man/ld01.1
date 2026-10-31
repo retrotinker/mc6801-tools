@@ -181,6 +181,18 @@ End of all data, including uninitialized data and common blocks.
 End of the program plus the
 .B \-H
 value.
+.PP
+.BR __btext ,
+.BR __etext ,
+.BR __bdata ,
+.B __edata
+and
+.B __end
+are always written to the executable\(aqs symbol table, unless
+.B \-s
+is given.
+.BR objcopy01 (1)
+uses them to find the load addresses.
 .SH SEGMENTS
 The assembler has 16 location counters.
 Counters 0 and 1 are linked into the text segment, and counters 2
