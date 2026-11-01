@@ -610,10 +610,11 @@ PUBLIC void version_msg()
 	stderr_out();
 #ifdef VERSION
 	putstr("ld01 version: ");
-	errexit(VERSION);
+	putstrn(VERSION);
 #else
-	errexit("ld01 version unknown");
+	putstrn("ld01 version unknown");
 #endif
+	exit(0);
 }
 
 PUBLIC void use_error(message)

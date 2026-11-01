@@ -190,7 +190,7 @@ char **argv;
 #else
 				writesn("as01 version unknown");
 #endif
-				exit(1);
+				exit(0);
 			case 'b':
 				if (!isnextarg || binfil != 0)
 					usage();
