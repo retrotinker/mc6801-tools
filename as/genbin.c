@@ -38,21 +38,23 @@ PUBLIC void binheader()
 #endif
 	}
 #else
-	if ((outfd = symfil) && binmbuf_set && binmax >= binmin) {
-		int sft;
-		writec('+');
-		writec(' ');
-		for (sft = SIZEOF_OFFSET_T * 8 - 4; sft >= 0; sft -= 4)
-			writec(hexdigit[(binmin >> sft) & 0xF]);
-		writesn(" ----- $start");
-
-		writec('+');
-		writec(' ');
-		for (sft = SIZEOF_OFFSET_T * 8 - 4; sft >= 0; sft -= 4)
-			writec(hexdigit[(binmax >> sft) & 0xF]);
-		writesn(" ----- $end");
-
+	if (binmbuf_set && binmax >= binmin) {
+		/* the image starts at the lowest address, with or without -s */
 		binfbuf = binmin;	/* program start */
+		if ((outfd = symfil)) {
+			int sft;
+			writec('+');
+			writec(' ');
+			for (sft = SIZEOF_OFFSET_T * 8 - 4; sft >= 0; sft -= 4)
+				writec(hexdigit[(binmin >> sft) & 0xF]);
+			writesn(" ----- $start");
+
+			writec('+');
+			writec(' ');
+			for (sft = SIZEOF_OFFSET_T * 8 - 4; sft >= 0; sft -= 4)
+				writec(hexdigit[(binmax >> sft) & 0xF]);
+			writesn(" ----- $end");
+		}
 	}
 #endif
 }
