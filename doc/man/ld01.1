@@ -62,17 +62,29 @@ instead of
 .TP
 .BI \-T " textaddr"
 Set the address of the text segment.
-The value is always read as hexadecimal, with or without a
+The value is read like a C number: hexadecimal with a
 .B 0x
-prefix:
-.B \-T1000
+or
+.B $
+prefix, octal with a leading
+.BR 0 ,
+and decimal otherwise, so
+.BR \-T0x1000 ,
+.B \-T\(aq$1000\(aq
 and
-.B \-T0x1000
-both mean $1000.
+.B \-T4096
+all mean $1000.
+(Quote
+.B $
+from the shell.)
+Anything else, such as
+.BR 1000x ,
+or a value above $FFFF, is an error.
 The default is 0.
 .TP
 .BI \-D " dataaddr"
-Set the address of the data segment, also in hexadecimal.
+Set the address of the data segment, written as for
+.BR \-T .
 Unless
 .B \-d
 is given, this implies
@@ -84,7 +96,8 @@ Set the symbol
 .B __heap_top
 to the end of the program plus
 .I heapsize
-(hexadecimal).
+(written as for
+.BR \-T ).
 .TP
 .BI \-C crt
 Link
@@ -215,7 +228,7 @@ Link a start\-up module, two objects and a library, loading at $434C:
 Produce a raw memory image for an EPROM at $E000:
 .PP
 .RS
-.B ld01 \-d \-TE000 \-o rom.bin start.o prog.o
+.B ld01 \-d \-T0xe000 \-o rom.bin start.o prog.o
 .RE
 .SH DIAGNOSTICS
 Undefined symbols are reported as
