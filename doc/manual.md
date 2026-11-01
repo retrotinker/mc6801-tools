@@ -91,12 +91,14 @@ $ sudo make install
 
 All the programs are installed into a single directory, by default
 `/usr/local/m6801-tools`. `nm01` and `size01` are created there as
-links to `objdump01`. To choose another directory, set `PREFIX`; to
-stage the files for packaging, set `DESTDIR` as well:
+links to `objdump01`. The manual pages are installed into
+`/usr/local/share/man/man1`. To choose other directories, set `PREFIX`
+for the programs and `MANDIR` for the manual pages; to stage the files
+for packaging, set `DESTDIR` as well:
 
 ```
 $ make install PREFIX=/opt/m6801
-$ make install DESTDIR=/tmp/pkgroot PREFIX=/usr/bin
+$ make install DESTDIR=/tmp/pkgroot PREFIX=/usr/bin MANDIR=/usr/share/man
 ```
 
 Add the installation directory to your `PATH`:
@@ -107,11 +109,12 @@ $ export PATH=$PATH:/usr/local/m6801-tools
 
 ## Manual pages
 
-Each tool has a manual page in `doc/man`. `make install` does not
-install them; to do so, copy them into a manual directory:
+Each tool has a manual page in `doc/man`. `make install` installs them
+(see above), with `nm01` and `size01` as links to the `objdump01`
+page. To install only the manual pages, use:
 
 ```
-$ sudo cp doc/man/*.1 /usr/local/share/man/man1/
+$ sudo make install-man
 $ man as01
 ```
 
