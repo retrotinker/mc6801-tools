@@ -1,7 +1,7 @@
 '\" t
 .TH OBJDUMP01 1 "October 2026" "mc6801-tools" "mc6801-tools Manual"
 .SH NAME
-objdump01, nm01, size01 \- display information about MC6801 executables
+objdump01, nm01, size01 \- display information about MC6801 object files and executables
 .SH SYNOPSIS
 .B objdump01
 .RB [ \-n | \-s ]
@@ -19,7 +19,11 @@ objdump01, nm01, size01 \- display information about MC6801 executables
 \&...
 .SH DESCRIPTION
 .B objdump01
-displays the contents of a.out executables produced by
+displays the contents of object files produced by
+.BR as01 (1),
+archives of them made by
+.BR ar01 (1),
+and a.out executables produced by
 .BR ld01 (1).
 .B make install
 also installs it as
@@ -35,7 +39,7 @@ The mode is chosen from the first letter of the program name.
 .PP
 By default
 .B objdump01
-prints for each file:
+prints for each executable:
 .IP \(bu 2
 the header: header length, CPU (m6801), flags, entry point
 .RB ( a_entry ),
@@ -48,6 +52,36 @@ the segment sizes;
 the symbol table;
 .IP \(bu
 a hex and ASCII dump of the text and data segments.
+.PP
+For each object file, or each object file in an archive, it prints:
+.IP \(bu 2
+the module name and the size of each location counter
+.RB ( SEG0 ,
+.BR SEG3 ,
+\&...);
+.IP \(bu
+the symbol table, with flags for exported
+.RB ( E ),
+imported
+.RB ( I ),
+entry point
+.RB ( N )
+and common
+.RB ( C )
+symbols;
+.IP \(bu
+the text, data and bss sizes;
+.IP \(bu
+the module\(aqs code, with the relocation records that
+.BR ld01 (1)
+uses to fill in addresses, such as
+.B "DW clrscn"
+for a 2\-byte reference to the symbol
+.BR clrscn .
+.PP
+In object files, location counters 0 and 1 count as text and the
+others as data, as they are linked by
+.BR ld01 (1).
 .SH OPTIONS
 .TP
 .B \-n
@@ -88,6 +122,12 @@ text	data	bss	dec	hex	filename
 00004380 T __start
 00004000 a SCREEN
 \&...
+.sp
+.B $ nm01 main.o
+00000000 T main
+         U three
+         U one
+\&...
 .fi
 .SH SEE ALSO
 .BR ld01 (1),
@@ -97,22 +137,9 @@ text	data	bss	dec	hex	filename
 The mc6801\-tools User\(aqs Manual
 .RI ( mc6801\-tools\-manual.pdf ).
 .SH BUGS
-.B objdump01
-cannot read object files made by
-.BR as01 (1)
-and reports \(lqBad magic number\(rq for them.
-It still expects the original 8086 object format.
-Use the
-.B \-l
-and
-.B \-s
-listing options of
-.BR as01 (1)
-to inspect assembled modules.
-.PP
 The text and data segments are shown as hex dumps, not disassembled.
 .PP
-Symbol names are cut to 8 characters.
+Symbol names in executables are cut to 8 characters.
 .PP
 Unknown options are silently ignored.
 .SH HISTORY

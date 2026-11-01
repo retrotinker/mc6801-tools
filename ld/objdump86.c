@@ -55,6 +55,7 @@ void fetch_aout_hdr _((void));
 void dump_aout _((void));
 void size_aout _((void));
 void nm_aout _((void));
+int m6801_symletter _((unsigned int symtype, long offset));
 
 int obj_ver;
 int sections;
@@ -78,6 +79,7 @@ struct {
 int display_mode = 0;
 int multiple_files = 0;
 int byte_order = 0;
+int m6801 = 0;			/* object file is from as01, not as86 */
 
 int opt_o;
 
@@ -145,7 +147,7 @@ char **argv;
 void do_file(fname)
 char *fname;
 {
-	unsigned int magic;
+	int c0, c1;
 	long filelength;
 	char archentry[sizeof(struct ar_hdr)];	/* sizeof ar_hdr.ar_name */
 	char filemagic[SARMAG];
@@ -163,11 +165,13 @@ char *fname;
 		filepos = SARMAG;
 		while ((filelength = read_arheader(archentry)) > 0) {
 			filepos += sizeof(struct ar_hdr);
-			magic = get_word();
-			if (magic == 0x86A3) {	/* OMAGIC */
+			c0 = getc(ifd);
+			c1 = getc(ifd);
+			if ((c0 == 0xA3 && c1 == 0x86)	/* as86 OMAGIC */
+			    || (c0 == 'S' && c1 == '1')) {	/* as01 OMAGIC */
 				fseek(ifd, filepos, 0);
 				do_module(archentry, fname);
-			} else if (magic == 0x3C21)	/* "!<" */
+			} else if (c0 == '!' && c1 == '<')
 				filelength = SARMAG;
 			filepos += ld_roundup(filelength, 2, long);
 			fseek(ifd, filepos, 0);
@@ -221,9 +225,10 @@ char *archive;
 			if (read_sectheader() < 0)
 				break;
 
-			/* segments 0, 4-E are text, 1-3 are data */
+			/* as86: segments 0, 4-E are text, 1-3 are data */
+			/* as01: segments 0-1 are text, 2-F are data */
 			for (i = 0; i < 16; i++) {
-				if (i < 1 || i > 4)
+				if (m6801 ? i < 2 : (i < 1 || i > 4))
 					size_text += segsizes[i];
 				else
 					size_data += segsizes[i];
@@ -318,7 +323,13 @@ int read_objheader()
 	if (fread(buf, 1, 5, ifd) != 5)
 		return error("Cannot read object header");
 
-	if (buf[0] != 0xA3 || buf[1] != 0x86) {
+	if (buf[0] == 'S' && buf[1] == '1') {
+		/* as01 object file: same layout, but big-endian */
+		m6801 = 1;
+		byte_order = 3;
+	} else if (buf[0] == 0xA3 && buf[1] == 0x86) {
+		m6801 = 0;
+	} else {
 		if (buf[0] == 1 && buf[1] == 3) {
 			sections = 1;
 			return 1;
@@ -329,14 +340,17 @@ int read_objheader()
 	if ((unsigned char)(buf[0] + buf[1] + buf[2] + buf[3]) != buf[4])
 		return error("Bad header checksum");
 
-	sections = buf[2] + 256 * buf[3];
+	if (m6801)
+		sections = 256 * buf[2] + buf[3];
+	else
+		sections = buf[2] + 256 * buf[3];
 
 	return 0;
 }
 
 int read_sectheader()
 {
-	long ssenc;
+	unsigned char ssdesc[4];
 	int i;
 
 	textoff = get_long();	/* Offset of bytecode in file */
@@ -345,12 +359,12 @@ int read_sectheader()
 	obj_ver = get_word();	/* 0.0 */
 
 	(void)get_long();	/* Ignore fives */
-	ssenc = get_long();	/* Sixteen segment size sizes */
+	for (i = 0; i < 4; i++)	/* Sixteen segment size sizes */
+		ssdesc[i] = get_byte();
 
 	for (i = 0; i < 16; i++) {
 		int ss;
-		ss = (i ^ 3);
-		ss = ((ssenc >> (2 * (15 - ss))) & 3);
+		ss = 3 & (ssdesc[(15 - i) / 4] >> (2 * (i % 4)));
 		segsizes[i] = get_sized(ss);
 	}
 
@@ -407,7 +421,12 @@ int read_syms()
 		}
 		symtab[i].offset = get_sized((symtab[i].symtype >> 14) & 3);
 
-		if (symtype == 0x43 || symtype == 0x2003)
+		if (m6801) {
+			/* common (imported with a size) or local common */
+			if ((symtype & 0x40 && symtab[i].offset)
+			    || symtype & 0x2000)
+				size_bss += symtab[i].offset;
+		} else if (symtype == 0x43 || symtype == 0x2003)
 			size_bss += symtab[i].offset;
 	}
 
@@ -449,7 +468,17 @@ int disp_syms()
 				printf(" %04x", symtype);
 			printf(" %s\n", symnames[i]);
 		}
-		if (display_mode == 2) {
+		if (display_mode == 2 && m6801) {
+			int letter = m6801_symletter(symtype, offset);
+
+			if (opt_o)
+				printf("%s: ", ifname);
+			if (letter == 'U')
+				printf("         ");
+			else
+				printf("%08lx ", offset);
+			printf("%c %s\n", letter, symnames[i]);
+		} else if (display_mode == 2) {
 			if (opt_o)
 				printf("%s: ", ifname);
 			if (symtype == 0x004f || symtype == 0x0040)
@@ -508,6 +537,29 @@ int disp_syms()
 		printf("\n");
 
 	return 0;
+}
+
+/* nm symbol letter for an as01 object file symbol, in the same style as
+   for executables: upper case for exported symbols */
+int m6801_symletter(symtype, offset)
+unsigned int symtype;
+long offset;
+{
+	int letter;
+
+	if (symtype & 0x40)	/* imported: common if it has a size */
+		return offset ? 'C' : 'U';
+	if (symtype & 0x2000)	/* local common */
+		letter = 'b';
+	else if (symtype & 0x10)	/* absolute */
+		letter = 'a';
+	else if ((symtype & 0xF) < 2)	/* segments 0-1 are text */
+		letter = 't';
+	else
+		letter = 'd';
+	if (symtype & 0x80)	/* exported */
+		letter -= 'a' - 'A';
+	return letter;
 }
 
 void read_databytes()

@@ -745,7 +745,7 @@ member's symbols itself, but it does no harm.
 Put each routine that may be needed separately in its own module, so
 that the linker includes only what a program uses.
 
-# Inspecting Executables
+# Inspecting Object Files and Executables
 
 `objdump01` shows the header, segment sizes, symbol table and a hex dump
 of an a.out executable:
@@ -789,10 +789,40 @@ $ nm01 main.aout
 
 In the symbol list, `T`/`t` are text symbols, `D`/`d` data symbols,
 `C`/`b` bss or common symbols and `a` absolute symbols. Upper case means
-global, lower case local. Symbol names are cut to 8 characters.
+global, lower case local, and `U` marks a symbol that is used but not
+defined. Symbol names in executables are cut to 8 characters.
 
-`objdump01` cannot read the object files made by `as01`. To inspect a
-module, use the assembler's listing (`-l`) and symbol file (`-s`).
+The same tools work on object files made by `as01`, and on libraries
+made by `ar01`, which shows each module in turn. For an object file,
+`objdump01` shows the module's symbols, its size, and its code with the
+relocation records that `ld01` uses to fill in addresses:
+
+```
+$ objdump01 main.o
+OBJECTFILE 'main.o'
+MODULE  'main'
+...
+SYMS 6
+SYM 0    00000000 ..E.T main
+SYM 1    00000000 ...IT three
+...
+BYTECODE
+SEG 0
+: bd                                                .
+RELSZ 2
+DW clrscn
+...
+$ nm01 main.o
+00000000 T main
+         U three
+         U one
+...
+```
+
+Here `DW clrscn` means that the two bytes after the `jsr` opcode
+(`bd`) are filled in with the address of `clrscn`. In object files,
+location counters 0 and 1 count as text and the others as data, as
+they are linked by `ld01`.
 
 # Converting Executables {#converting-executables}
 
@@ -968,7 +998,6 @@ The linker pulls in `crtstart.o` because of `-Cstart`, and `one.o`,
 
 # Known Limitations
 
-* **`objdump01` cannot read object files**, only linked executables.
 * **Symbol names are cut to 8 characters** in executables.
 * **The default library directory**, `/usr/local/lib/m09/`, is left
   over from the 6809 tools.
