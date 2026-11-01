@@ -26,9 +26,6 @@
 
 enum output_formats {
 	BINARY,		/* raw binary (no header) */
-	DECB_BIN,	/* Disk Extend Color BASIC BIN file */
-	DDOS_BIN,	/* Dragon DOS BIN file */
-	OS9_MODULE,	/* OS-9/6809 program module file */
 	SREC,		/* Motorola S-record file */
 	IHEX,		/* Intel Hex file */
 	CAS,		/* Color BASIC CAS file (for both CoCo and Dragon) */
@@ -37,13 +34,8 @@ enum output_formats {
 
 unsigned int textaddr;
 unsigned int dataaddr;
-unsigned int datasize;
-unsigned int objversion;
-unsigned int reentrant;
 unsigned int padoutput;
 char *objname;
-
-uint8_t os9crc[3] = { 0xff, 0xff, 0xff };
 
 uint32_t textstart;
 uint32_t textend;
@@ -74,8 +66,7 @@ void usage(void)
 {
 	fprintf(stderr,
 		"Usage: %s [-O <output type>] [-n <object name>]\n"
-		"\t\t[-T <text address>] [-D <data address>]\n"
-		"\t\t[-v <object version>] [-d <data size>] [-rp]\n"
+		"\t\t[-T <text address>] [-D <data address>] [-p]\n"
 		"\t\tinfile outfile\n", progname);
 	exit(EXIT_FAILURE);
 }
@@ -115,38 +106,6 @@ void match_syms(FILE *ifd, struct exec header)
 	}
 }
 
-void os9_crc_adjust(uint8_t *buffer, int ssize)
-{
-	int i;
-	uint8_t datum;
-
-	for (i = 0; i < ssize; i++) {
-		datum = *buffer++;
-
-		/*
-		 * Not sure I grok the original
-		 * CRC algorithm...  The algorithm
-		 * below is based upon assembly code
-		 * in the NitrOS-9 repository...
-		 */
-		datum ^= os9crc[0];
-		os9crc[0]  = os9crc[1];
-		os9crc[1]  = os9crc[2];
-		os9crc[1] ^= (datum >> 7);
-		os9crc[2]  = (datum << 1);
-		os9crc[1] ^= (datum >> 2);
-		os9crc[2] ^= (datum << 6);
-		datum ^= (datum << 1);
-		datum ^= (datum << 2);
-		datum ^= (datum << 4);
-
-		if (datum & 0x80) {
-			os9crc[0] ^= 0x80;
-			os9crc[2] ^= 0x21;
-		}
-	}
-}
-
 void write_file(FILE *ifd, FILE *ofd, unsigned int bsize)
 {
 	unsigned char buffer[1024];
@@ -161,28 +120,8 @@ void write_file(FILE *ifd, FILE *ofd, unsigned int bsize)
 		if ((ssize = fread(buffer, 1, ssize, ifd)) <= 0)
 			fatal("Error reading segment from executable");
 
-		os9_crc_adjust(buffer, ssize);
 		if (fwrite(buffer, 1, ssize, ofd) != ssize)
 			fatal("Error writing output file");
-		bsize -= ssize;
-	}
-}
-
-void write_zeroes(FILE *ofd, unsigned int bsize)
-{
-	unsigned char buffer[1024];
-	unsigned int ssize;
-
-	memset(buffer, 0, sizeof(buffer));
-	while (bsize > 0) {
-		if (bsize > sizeof(buffer))
-			ssize = sizeof(buffer);
-		else
-			ssize = bsize;
-
-		os9_crc_adjust(buffer, ssize);
-		if (fwrite(buffer, 1, ssize, ofd) != ssize)
-			fatal("Error writing zeroes to output file");
 		bsize -= ssize;
 	}
 }
@@ -211,186 +150,6 @@ void raw_output(FILE *ifd, FILE *ofd, struct exec header)
 		fatal("Cannot seek to start of data in outfile");
 
 	write_file(ifd, ofd, header.a_data);
-}
-
-void decb_output(FILE *ifd, FILE *ofd, struct exec header)
-{
-	uint8_t binhead[5], binfoot[5];
-	int binsize;
-
-	if (!textaddr)
-		textaddr = textstart;
-	if (!textaddr)
-		warning("BIN load address is zero (use -T)");
-
-	binsize = header.a_text;
-	if (!(header.a_flags & A_SEP) ||
-	    (!dataaddr && datastart == textend))
-		binsize += header.a_data;
-
-	binhead[0] = 0;
-	binhead[1] = (binsize & 0xff00) >> 8;
-	binhead[2] =  binsize & 0x00ff;
-	binhead[3] = (textaddr & 0xff00) >> 8;
-	binhead[4] =  textaddr & 0x00ff;
-
-	if (fwrite(binhead, 1, sizeof(binhead), ofd) != sizeof(binhead))
-		fatal("Error writing DECB BIN header to outfile");
-
-	if (fseek(ifd, A_TEXTPOS(header), 0) < 0)
-		fatal("Cannot seek to start of text");
-
-	write_file(ifd, ofd, header.a_text);
-
-	if ((header.a_flags & A_SEP) &&
-	    (dataaddr || datastart != textend)) {
-		if (!dataaddr)
-			dataaddr = datastart;
-		if (!dataaddr)
-			warning("BIN data load address is zero (use -D)");
-
-		binsize = header.a_data;
-
-		binhead[0] = 0;
-		binhead[1] = (binsize & 0xff00) >> 8;
-		binhead[2] =  binsize & 0x00ff;
-		binhead[3] = (dataaddr & 0xff00) >> 8;
-		binhead[4] =  dataaddr & 0x00ff;
-
-		if (fwrite(binhead, 1, sizeof(binhead), ofd) != sizeof(binhead))
-			fatal("Error writing DECB BIN data header to outfile");
-	}
-
-	if (fseek(ifd, A_DATAPOS(header), 0) < 0)
-		fatal("Cannot seek to start of data");
-
-	write_file(ifd, ofd, header.a_data);
-
-	binfoot[0] = 0xff;
-	binfoot[1] = binfoot[2] = 0;
-	binfoot[3] = (header.a_entry & 0xff00) >> 8;
-	binfoot[4] =  header.a_entry & 0x00ff;
-
-	if (fwrite(binfoot, 1, sizeof(binfoot), ofd) != sizeof(binfoot))
-		fatal("Error writing DECB BIN footer to outfile");
-}
-
-void ddos_output(FILE *ifd, FILE *ofd, struct exec header)
-{
-	uint8_t binhead[9];
-	int binsize;
-
-	if (!textaddr)
-		textaddr = textstart;
-	if (!textaddr)
-		warning("BIN load address is zero (use -T)");
-
-	if ((header.a_flags & A_SEP) &&
-	    (dataaddr || datastart != textend))
-		fatal("Dragon DOS does not support split text/data");
-
-	binsize = header.a_text + header.a_data;
-
-	binhead[0] = 0x55;
-	binhead[1] = 0x02;
-	binhead[2] = (textaddr & 0xff00) >> 8;
-	binhead[3] =  textaddr & 0x00ff;
-	binhead[4] = (binsize & 0xff00) >> 8;
-	binhead[5] =  binsize & 0x00ff;
-	binhead[6] = (header.a_entry & 0xff00) >> 8;
-	binhead[7] =  header.a_entry & 0x00ff;
-	binhead[8] = 0xAA;
-
-	if (fwrite(binhead, 1, sizeof(binhead), ofd) != sizeof(binhead))
-		fatal("Error writing Dragon DOS BIN header to outfile");
-
-	if (fseek(ifd, A_TEXTPOS(header), 0) < 0)
-		fatal("Cannot seek to start of text");
-
-	write_file(ifd, ofd, header.a_text);
-
-	if (fseek(ifd, A_DATAPOS(header), 0) < 0)
-		fatal("Cannot seek to start of data");
-
-	write_file(ifd, ofd, header.a_data);
-}
-
-void os9_output(FILE *ifd, FILE *ofd, struct exec header)
-{
-	uint8_t os9hdr[13] = {
-		0x87, 0xcd,
-	};
-	unsigned short modsize, heapsize;
-	unsigned int i, namelen, nameoffset;
-	unsigned char hdrchk = 0;
-
-	namelen = strlen(objname);
-
-	heapsize = header.a_total - header.a_text -
-			header.a_data - header.a_bss;
-	if (datasize < heapsize)
-		datasize = heapsize;
-	if (!datasize)
-		fatal("OS-9 module data size is zero");
-
-	/* can claim reentrant if no r/w static data allocations */
-	if (!reentrant)
-		reentrant = !(header.a_data + header.a_bss);
-
-	nameoffset = sizeof(os9hdr) + header.a_text +
-			header.a_data + header.a_bss;
-	modsize = nameoffset + namelen + sizeof(os9crc);
-
-	*((unsigned short *)&os9hdr[2]) = htobe16(modsize);
-	*((unsigned short *)&os9hdr[4]) = htobe16(nameoffset);
-
-	os9hdr[6] = 0x11; /* 6809 executable */
-
-	if (objversion > 0x7f)
-		fatal("OS-9 module version is too large");
-	os9hdr[7] = objversion;
-	if (reentrant)
-		os9hdr[7] |= 0x80;
-
-	for (i = 0; i < 8; i++)
-		hdrchk ^= os9hdr[i];
-	os9hdr[8] = hdrchk ^ 0xff;
-
-	*((unsigned short *)&os9hdr[9]) =
-		htobe16(sizeof(os9hdr) + header.a_entry);
-
-	/* Request stack + parameter storage */
-	*((unsigned short *)&os9hdr[11]) = htobe16(datasize);
-
-	os9_crc_adjust(os9hdr, sizeof(os9hdr));
-	if (fwrite(os9hdr, 1, sizeof(os9hdr), ofd) != sizeof(os9hdr))
-		fatal("Error writing OS-9 module header to outfile");
-
-	if (fseek(ifd, A_TEXTPOS(header), 0) < 0)
-		fatal("Cannot seek to start of text");
-
-	write_file(ifd, ofd, header.a_text);
-
-	if (fseek(ifd, A_DATAPOS(header), 0) < 0)
-		fatal("Cannot seek to start of data");
-
-	write_file(ifd, ofd, header.a_data);
-
-	write_zeroes(ofd, header.a_bss);
-
-	/* End of string needs MSB set... */
-	objname[namelen - 1] |= 0x80;
-
-	os9_crc_adjust((uint8_t *)objname, namelen);
-	if (fwrite(objname, 1, namelen, ofd) != namelen)
-		fatal("Error writing OS-9 module name to outfile");
-
-	os9crc[0] ^= 0xff;
-	os9crc[1] ^= 0xff;
-	os9crc[2] ^= 0xff;
-
-	if (fwrite(os9crc, 1, sizeof(os9crc), ofd) != sizeof(os9crc))
-		fatal("Error writing OS-9 module CRC to outfile");
 }
 
 unsigned int write_s1(FILE *ifd, FILE *ofd, unsigned bsize, unsigned address)
@@ -814,17 +573,11 @@ int main(int argc, char *argv[])
 	enum output_formats outform = BINARY;
 
 	progname = argv[0];
-	while ((opt = getopt(argc, argv, "O:T:D:d:n:v:rp")) != -1) {
+	while ((opt = getopt(argc, argv, "O:T:D:n:p")) != -1) {
 		switch(opt) {
 		case 'O':
 			if (!strncmp(optarg, "binary", 3))
 				outform = BINARY;
-			else if(!strncmp(optarg, "decb", 4))
-				outform = DECB_BIN;
-			else if(!strncmp(optarg, "ddos", 4))
-				outform = DDOS_BIN;
-			else if (!strncmp(optarg, "os9", 3))
-				outform = OS9_MODULE;
 			else if (!strncmp(optarg, "srec", 3))
 				outform = SREC;
 			else if (!strncmp(optarg, "ihex", 3))
@@ -848,23 +601,8 @@ int main(int argc, char *argv[])
 			if (errno)
 				fatal("Bad data address value");
 			break;
-		case 'd':
-			errno = 0;
-			datasize = strtol(optarg, NULL, 0);
-			if (errno)
-				fatal("Bad data size value");
-			break;
 		case 'n':
 			objname = optarg;
-			break;
-		case 'v':
-			errno = 0;
-			objversion = strtol(optarg, NULL, 0);
-			if (errno)
-				fatal("Bad version value");
-			break;
-		case 'r':
-			reentrant = 1;
 			break;
 		case 'p':
 			padoutput = 1;
@@ -907,15 +645,6 @@ int main(int argc, char *argv[])
 	switch(outform) {
 	case BINARY:
 		raw_output(ifd, ofd, header);
-		break;
-	case DECB_BIN:
-		decb_output(ifd, ofd, header);
-		break;
-	case DDOS_BIN:
-		ddos_output(ifd, ofd, header);
-		break;
-	case OS9_MODULE:
-		os9_output(ifd, ofd, header);
 		break;
 	case SREC:
 		srec_output(ifd, ofd, header);

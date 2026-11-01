@@ -800,9 +800,6 @@ objcopy01 [-O format] [-T textaddr] [-D dataaddr] [-n name] [-p]
 | `ihex` | Intel hex, with the entry point in the end record |
 | `wav` | Cassette audio: 8-bit mono WAV at 43200 Hz, Color BASIC/MC-10 format |
 | `cas` | The same cassette data as a byte stream, for emulators |
-| `decb` | Color Computer Disk Extended Color BASIC `LOADM` file |
-| `ddos` | Dragon DOS binary |
-| `os9` | OS-9 module (a 6809 format, inherited from the 6809 tools) |
 
 The load addresses come from the `__btext` and `__bdata` symbols that
 the linker writes to the executable, so you don't normally need to
@@ -822,8 +819,8 @@ $ objcopy01 -O wav -n GAME game.aout game.wav
 $ objcopy01 -O srec -T 0xe000 -n ROM stripped.aout rom.s19
 ```
 
-The cassette formats and `ddos` require the data segment to follow the
-text segment directly (no `-D`).
+The cassette formats require the data segment to follow the text
+segment directly (no `-D`).
 
 # A Worked Example
 
