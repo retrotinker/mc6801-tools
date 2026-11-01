@@ -12,11 +12,6 @@ objcopy01 \- convert MC6801 executables to loadable formats
 .RB [ \-n
 .IR name ]
 .RB [ \-p ]
-.RB [ \-d
-.IR datasize ]
-.RB [ \-v
-.IR version ]
-.RB [ \-r ]
 .I infile outfile
 .SH DESCRIPTION
 .B objcopy01
@@ -84,8 +79,7 @@ the cassette file name for
 .B cas
 and
 .B wav
-(up to 8 characters, padded with spaces), and the module name for
-.BR os9 .
+(up to 8 characters, padded with spaces).
 The default is the output file name in upper case, including any
 directory and suffix, so it is usually best to give
 .B \-n
@@ -96,24 +90,8 @@ With
 .BR binary ,
 pad the gap between the text and data segments so that the data
 appears at its correct offset.
-.TP
-.BI \-d " datasize"
-.B os9
-only: data area size to reserve.
-.TP
-.BI \-v " version"
-.B os9
-only: module version (0 to 127).
-.TP
-.B \-r
-.B os9
-only: mark the module re\-entrant.
 .SH FORMATS
-The format name may be abbreviated to its first three letters
-.RB ( decb
-and
-.B ddos
-need four).
+The format name may be abbreviated to its first three letters.
 .TP
 .B binary
 Raw memory image: the text segment followed by the data segment.
@@ -139,19 +117,6 @@ The same cassette data as
 as a byte stream
 .RB ( .cas
 file) for emulators.
-.TP
-.B decb
-Disk Extended Color BASIC
-.B LOADM
-binary (TRS\-80 Color Computer).
-.TP
-.B ddos
-Dragon DOS binary.
-Text and data must be contiguous.
-.TP
-.B os9
-OS\-9 program module.
-This is a 6809 format, inherited from the 6809 version of these tools.
 .SH EXAMPLES
 Make an MC\-10 cassette image:
 .PP
