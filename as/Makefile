@@ -1,7 +1,8 @@
 
 CFLAGS=-O
+LDFLAGS=
 VERSION:=$(shell cat ../VERSION)
-LDFLAGS=-s
+DEFS=-DVERSION=\"$(VERSION)\"
 LIBDIR=$(PREFIX)
 BINDIR=$(PREFIX)
 AS=as01
@@ -14,7 +15,7 @@ OBJS		=as.o assemble.o errors.o express.o \
 all: as01
 
 as01: $(OBJS)
-	$(CC) $(LDFLAGS) $(OBJS) -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $@
 
 install: all
 	install -d $(DESTDIR)$(LIBDIR)
@@ -25,7 +26,7 @@ clean realclean clobber:
 	rm -f *.o as01
 
 .c.o:
-	$(CC) $(CFLAGS) -DVERSION=\"$(VERSION)\" -c $<
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(DEFS) -c $<
 
 $(OBJS): const.h errors.h
 

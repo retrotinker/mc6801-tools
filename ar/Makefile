@@ -11,7 +11,7 @@ OBJS= ar.o alloca.o
 all: ar01
 
 ar01: $(OBJS)
-	$(CC) $(LDFLAGS) $(OBJS) -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $@
 
 install: ar01
 	install -d $(DESTDIR)$(LIBDIR)
@@ -28,4 +28,4 @@ rel_aout.h:
 	ln ../ld/rel_aout.h .
 
 .c.o:
-	$(CC) $(CFLAGS) $(DEFS) -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(DEFS) -c $< -o $@

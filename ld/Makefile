@@ -1,6 +1,6 @@
 
 LIBDIR	=$(PREFIX)
-CFLAGS	=-O -DDATASEGS
+CFLAGS	=-O
 LDFLAGS	=
 
 # Will need some of these if you want native executables on non-Linux/i386
@@ -12,7 +12,7 @@ LDFLAGS	=
 # -DREL_OUTPUT -DBUGCOMPAT	# -r Produces weird *.o files.
 #
 VERSION	:=$(shell cat ../VERSION)
-DEFS	=-DREL_OUTPUT -DVERSION=\"$(VERSION)\"
+DEFS	=-DDATASEGS -DREL_OUTPUT -DVERSION=\"$(VERSION)\"
 
 # An alternative file for a non-standard a.out.h (eg i386 linux on an Alpha)
 #
@@ -24,13 +24,13 @@ OBJS= dumps.o io.o ld.o readobj.o table.o typeconv.o linksyms.o mkar.o \
 all: ld01 objdump01 objcopy01
 
 ld01: $(OBJS)
-	$(CC) $(LDFLAGS) $(OBJS) -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $@
 
 objdump01: objdump86.c
-	$(CC) $(LDFLAGS) $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $< -o $@
 
 objcopy01: objcopy.c
-	$(CC) $(LDFLAGS) $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $< -o $@
 
 install: ld01 objdump01 objcopy01
 	install -d $(DESTDIR)$(LIBDIR)
@@ -49,4 +49,4 @@ $(OBJS): align.h bindef.h byteord.h config.h const.h globvar.h obj.h \
 	 syshead.h type.h x86_aout.h
 
 .c.o:
-	$(CC) $(CFLAGS) $(DEFS) -c $< -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(DEFS) -c $< -o $@
