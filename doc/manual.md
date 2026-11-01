@@ -542,7 +542,7 @@ common messages:
 | `register used as identifier` | `A`, `B`, `D` or `X` used as a label |
 | `absolute expression required` | A relocatable value where a constant is needed |
 | `no imports with binary file output` | `IMPORT` used together with `-b` |
-| `short branch would do` | (warning) a `JSR`/`JMP` could be a `BSR`/`BRA` |
+| `short branch would do` | (warning) a `JSR`/`JMP` target is close enough for a `BSR`/`BRA` |
 
 # Modules and Linking
 
@@ -1001,8 +1001,6 @@ The linker pulls in `crtstart.o` because of `-Cstart`, and `one.o`,
 
 * **Symbol names are cut to 8 characters** in executables.
 * **Warnings are off by default**; use `as01 -w-` or `.WARN 1`.
-* **The `JSR`/`JMP` "short branch would do" warning** compares the
-  absolute target address rather than the distance.
 * **Version messages** (`-v`) still name the original `as86` and `ld86`.
 
 \appendix
