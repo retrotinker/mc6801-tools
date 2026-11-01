@@ -1001,7 +1001,6 @@ The linker pulls in `crtstart.o` because of `-Cstart`, and `one.o`,
 
 * **Symbol names are cut to 8 characters** in executables.
 * **Warnings are off by default**; use `as01 -w-` or `.WARN 1`.
-* **Version messages** (`-v`) still name the original `as86` and `ld86`.
 
 \appendix
 
