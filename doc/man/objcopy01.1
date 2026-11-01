@@ -85,7 +85,7 @@ Name to store in the output.
 This is the S0 header record name for
 .BR srec ,
 the cassette file name for
-.B cas
+.BR cas / c10
 and
 .B wav
 (up to 8 characters, padded with spaces).
@@ -120,12 +120,14 @@ This format is also used by the Tandy MC\-10, which loads it with
 .BR CLOADM .
 Text and data must be contiguous.
 .TP
-.B cas
+.BR cas ", " c10
 The same cassette data as
 .BR wav ,
-as a byte stream
-.RB ( .cas
-file) for emulators.
+as a byte stream for emulators.
+.B c10
+is another name for the same format, matching the
+.B .c10
+files used by MC\-10 emulators.
 .SH EXAMPLES
 Make an MC\-10 cassette image:
 .PP
