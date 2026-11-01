@@ -845,7 +845,7 @@ objcopy01 [-O format] [-T textaddr] [-D dataaddr] [-n name] [-p]
 | `srec` | Motorola S-records (S0 name, S1 data, S5 count, S9 entry point) |
 | `ihex` | Intel hex, with the entry point in the end record |
 | `wav` | Cassette audio: 8-bit mono WAV at 43200 Hz, Color BASIC/MC-10 format |
-| `cas` | The same cassette data as a byte stream, for emulators |
+| `cas`, `c10` | The same cassette data as a byte stream, for emulators (`c10` matches the name used by MC-10 emulators) |
 
 The load addresses come from the `__btext` and `__bdata` symbols that
 the linker writes to the executable, so you don't normally need to

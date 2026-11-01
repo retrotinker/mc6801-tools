@@ -603,7 +603,8 @@ int main(int argc, char *argv[])
 				outform = SREC;
 			else if (!strncmp(optarg, "ihex", 3))
 				outform = IHEX;
-			else if (!strncmp(optarg, "cas", 3))
+			else if (!strncmp(optarg, "cas", 3)
+				 || !strncmp(optarg, "c10", 3))	/* MC-10 name */
 				outform = CAS;
 			else if (!strncmp(optarg, "wav", 3))
 				outform = WAV;
