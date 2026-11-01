@@ -250,13 +250,11 @@ extern char *concat(const char *s1, const char *s2, const char *s3);
 extern char *make_tempname(char *name);
 extern char *xmalloc(unsigned int size);
 extern char *xrealloc(char *ptr, unsigned int size);
-extern int filter_symbols(struct nlist *syms, unsigned int symcount);
 extern int insert_in_map(char *name, struct mapelt *map, struct mapelt *after);
 extern int main(int argc, char **argv);
 extern int move_in_map(char *name, struct mapelt *map, struct mapelt *after);
-extern int read_header_info(struct mapelt *mapelt, int desc, long int offset,
-			    long int *syms_offset, unsigned int *syms_size,
-			    long int *strs_offset, unsigned int *strs_size);
+extern int read_object_symbols(struct mapelt *mapelt, unsigned char *data,
+			       unsigned int size);
 extern struct mapelt *find_mapelt(struct mapelt *map, char *name);
 extern struct mapelt *find_mapelt_noerror(struct mapelt *map,
 					  register char *name);
@@ -1539,7 +1537,7 @@ int archive_indesc;
 	struct mapelt *mapelt;
 	char *data;
 	int val;
-	int symdefs_size;
+	unsigned long int symdefs_size;	/* same size as write_symdef_member's */
 
 	mapelt = find_mapelt_noerror(map, "__.SYMDEF");
 	if (!mapelt)
@@ -1575,54 +1573,126 @@ int archive_indesc;
 #endif
 }
 
-/* Read various information from the header of an object file.
-   Return 0 for failure or 1 for success.  */
+/* Introl object files, as written by as01.  All fields are big-endian.  */
 
-int
-read_header_info(mapelt, desc, offset, syms_offset, syms_size, strs_offset,
-		 strs_size)
-struct mapelt *mapelt;
-int desc;
-long int offset;
-long int *syms_offset;
-unsigned int *syms_size;
-long int *strs_offset;
-unsigned int *strs_size;
+#define OBJ_MAGIC	0x5331	/* "S1" */
+#define OBJ_E_MASK	0x0080	/* symbol is exported */
+#define OBJ_I_MASK	0x0040	/* imported, or common if the value is nonzero */
+#define OBJ_SZ_SHIFT	14	/* top 2 flag bits give the size of the value */
+#define OBJ_NSEG	16
+
+static unsigned int obj_sizes[4] = { 0, 1, 2, 4 };
+
+static unsigned long obj_number(p, n)
+unsigned char *p;
+unsigned int n;
 {
-	struct exec hdr;
-	int len;
+	unsigned long value = 0;
 
-	lseek(desc, offset, 0);
-#ifdef HEADER_SEEK_FD
-	HEADER_SEEK_FD(desc);
-#endif
+	while (n-- != 0)
+		value = (value << 8) | *p++;
+	return value;
+}
 
-	len = read(desc, (char *)&hdr, sizeof hdr);
-#ifdef HOST_TARGET_ENDIANESS_DIFFERS
-	md_chars_to_hdr((unsigned char *)&hdr, &hdr);
-#endif
-	if (len == sizeof hdr && !N_BADMAG(hdr)) {
-		*syms_offset = N_SYMOFF(hdr);
-		*syms_size = hdr.a_syms;
-		*strs_offset = N_STROFF(hdr);
-		lseek(desc, N_STROFF(hdr) + offset, 0);
-		if (read(desc, (char *)strs_size, sizeof *strs_size) !=
-		    sizeof *strs_size) {
-			error_with_file("failure reading string table size in ",
-					mapelt);
-			return 0;
+/* Record in MAPELT the symbols that the Introl object file in DATA makes
+   available to other modules: exported symbols and commons.  The names
+   point into DATA.  Return 0 if DATA is not an object file.  */
+
+int read_object_symbols(mapelt, data, size)
+struct mapelt *mapelt;
+unsigned char *data;
+unsigned int size;
+{
+	unsigned char *p = data;
+	unsigned char *end = data + size;
+	unsigned char *sizedesc;
+	unsigned char *nul;
+	unsigned int nmodules, nsyms, i, n;
+	unsigned int *flags = 0;
+	unsigned long *values = 0;
+	struct symdef *symdefs = 0;
+	unsigned int count = 0, room = 0, string_size = 0;
+
+#define NEED(n) if ((unsigned int)(end - p) < (n)) goto bad
+
+	/* file header: magic, number of modules, checksum */
+	NEED(5);
+	if (obj_number(p, 2) != OBJ_MAGIC
+	    || (unsigned char)(p[0] + p[1] + p[2] + p[3]) != p[4])
+		goto bad;
+	nmodules = obj_number(p + 2, 2);
+	p += 5;
+
+	while (nmodules-- != 0) {
+		/* module header: text offset and size, strings size, class,
+		   revision, then segment max sizes and size descriptors */
+		NEED(20);
+		sizedesc = p + 16;
+		p += 20;
+		for (i = 0; i < OBJ_NSEG; ++i) {
+			n = obj_sizes[3 & (sizedesc[(OBJ_NSEG - 1 - i) / 4]
+					   >> (2 * (i % 4)))];
+			NEED(n);
+			p += n;
 		}
-#ifdef HOST_TARGET_ENDIANESS_DIFFERS
-		*strs_size = md_chars_to_number((unsigned char *)strs_size,
-						sizeof *strs_size);
-#endif
-		return 1;
-	}
 
+		/* symbol table: string offset, flags and value of each */
+		NEED(2);
+		nsyms = obj_number(p, 2);
+		p += 2;
+		flags = (unsigned int *)xmalloc(nsyms * sizeof *flags + 1);
+		values = (unsigned long *)xmalloc(nsyms * sizeof *values + 1);
+		for (i = 0; i < nsyms; ++i) {
+			NEED(4);
+			flags[i] = obj_number(p + 2, 2);
+			p += 4;
+			n = obj_sizes[(flags[i] >> OBJ_SZ_SHIFT) & 3];
+			NEED(n);
+			values[i] = obj_number(p, n);
+			p += n;
+		}
+
+		/* the module name, then the symbol names in order */
+		if ((nul = memchr(p, 0, end - p)) == 0)
+			goto bad;
+		p = nul + 1;
+		for (i = 0; i < nsyms; ++i) {
+			if ((nul = memchr(p, 0, end - p)) == 0)
+				goto bad;
+			if ((flags[i] & OBJ_E_MASK && !(flags[i] & OBJ_I_MASK))
+			    || (flags[i] & OBJ_I_MASK && values[i] != 0)) {
+				if (count == room) {
+					room = room ? 2 * room : 16;
+					symdefs = (struct symdef *)
+					    (symdefs ? xrealloc((char *)symdefs,
+							room * sizeof *symdefs)
+					     : xmalloc(room * sizeof *symdefs));
+				}
+				symdefs[count++].s.name = (char *)p;
+				string_size += nul - p + 1;
+			}
+			p = nul + 1;
+		}
+		free(flags);
+		free(values);
+		flags = 0;
+		values = 0;
+	}
+#undef NEED
+
+	mapelt->info.symdefs = symdefs;
+	mapelt->info.nsymdefs = count;
+	mapelt->info.string_size = string_size;
+	return 1;
+
+bad:
+	free(flags);
+	free(values);
+	free(symdefs);
 	error_with_file("bad format (not an object file) in ", mapelt);
 	return 0;
 }
-
+
 /* Create the info.symdefs for a new member
    by reading the file it is coming from.  */
 
@@ -1631,124 +1701,51 @@ struct mapelt *mapelt;
 int archive_indesc;
 {
 	int indesc;
-	char *name = mapelt->info.name;
-	long int syms_offset, strs_offset;
-	unsigned int syms_size, strs_size;
-	struct nlist *symbols;
-	int symcount;
-	char *strings;
-	register unsigned int i;
+	unsigned int size;
 	unsigned long int offset;
+	char *data;
+	struct stat st;
 
-	if (name == 0)
+	if (mapelt->info.name == 0)
 		/* Deleted member.  */
 		abort();
 
 	if (mapelt->info.offset != 0) {
 		indesc = archive_indesc;
-		lseek(indesc, mapelt->info.data_offset, 0);
 		offset = mapelt->info.data_offset;
+		size = mapelt->info.size;
 	} else {
 		indesc = open(mapelt->info.name, 0, 0);
 		if (indesc < 0) {
 			perror_with_name(mapelt->info.name);
 			return;
 		}
-		offset = 0;
-	}
-
-	if (!read_header_info
-	    (mapelt, indesc, offset, &syms_offset, &syms_size, &strs_offset,
-	     &strs_size)) {
-		if (mapelt->info.offset == 0)
+		if (fstat(indesc, &st) < 0) {
+			perror_with_name(mapelt->info.name);
 			close(indesc);
-		return;
+			return;
+		}
+		offset = 0;
+		size = st.st_size;
 	}
 
-	/* Number of symbol entries in the file.  */
-	symcount = syms_size / sizeof(struct nlist);
-	/* Allocate temporary space for the symbol entries.  */
-	symbols = (struct nlist *)alloca(syms_size);
-	/* Read in the symbols.  */
-	lseek(indesc, syms_offset + offset, 0);
-	if (read(indesc, (char *)symbols, syms_size) != syms_size) {
-		error_with_file("premature end of file in symbols of ", mapelt);
-		if (mapelt->info.offset == 0)
-			(void)close(indesc);
-		return;
-	}
-#ifdef HOST_TARGET_ENDIANESS_DIFFERS
-	md_chars_to_nlist((unsigned char *)symbols, symbols, symcount);
-#endif
-
-	/* The string table size includes the size word.  */
-	if (strs_size < sizeof(strs_size)) {
-		error_with_file("bad string table size in ", mapelt);
-		if (mapelt->info.offset == 0)
-			(void)close(indesc);
-		return;
-	}
-	strs_size -= sizeof(strs_size);
-
-	/* Allocate permanent space for the string table.  */
-	strings = (char *)xmalloc(strs_size);
-
-	/* Read in the strings.  */
-	lseek(indesc, offset + strs_offset + sizeof strs_size, 0);
-	if (read(indesc, strings, strs_size) != strs_size) {
-		error_with_file("premature end of file in strings of ", mapelt);
-		if (mapelt->info.offset == 0)
-			(void)close(indesc);
-		return;
+	/* Read the whole member; the symbol names are kept in it.  */
+	data = xmalloc(size + 1);
+	lseek(indesc, offset, 0);
+	if (read(indesc, data, size) != size) {
+		error_with_file("premature end of file in ", mapelt);
+		free(data);
+		data = 0;
 	}
 
 	if (indesc != archive_indesc)
 		(void)close(indesc);
 
-	/* Discard the symbols we don't want to mention; compact the rest down.  */
-	symcount = filter_symbols(symbols, symcount);
-
-	mapelt->info.symdefs = (struct symdef *)
-	    xmalloc(symcount * sizeof(struct symdef));
-	mapelt->info.nsymdefs = symcount;
-	mapelt->info.string_size = 0;
-
-	for (i = 0; i < symcount; ++i) {
-		unsigned long int stroff =
-		    symbols[i].n_un.n_strx - sizeof(strs_size);
-		char *symname = strings + stroff;
-		if (stroff > strs_size) {
-			char buf[100];
-			sprintf(buf,
-				"ridiculous string offset %lu in symbol %u of ",
-				stroff + sizeof(strs_size), i);
-			error_with_file(buf, mapelt);
-			return;
-		}
-		mapelt->info.symdefs[i].s.name = symname;
-		mapelt->info.string_size += strlen(symname) + 1;
-	}
+	if (data != 0 && !read_object_symbols(mapelt, (unsigned char *)data,
+					      size))
+		free(data);
 }
-
-/* Choose which symbol entries to mention in __.SYMDEF;
-   compact them downward to get rid of the rest.
-   Return the number of symbols left.  */
 
-int filter_symbols(syms, symcount)
-struct nlist *syms;
-unsigned int symcount;
-{
-	struct nlist *from, *to;
-	struct nlist *end = syms + symcount;
-
-	for (to = from = syms; from < end; ++from)
-		if ((from->n_type & N_EXT)
-		    && (from->n_type != N_EXT || from->n_value != 0))
-			*to++ = *from;
-
-	return to - syms;
-}
-
 /* Update the __.SYMDEF data before writing a new archive.  */
 
 void update_symdefs(map, archive_indesc)

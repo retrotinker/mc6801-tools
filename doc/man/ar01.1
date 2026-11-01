@@ -90,10 +90,16 @@ listing with
 Accepted and ignored.
 .TP
 .B s
-Add a
+Add or update a
 .B __.SYMDEF
-symbol\-index member.
-See BUGS; this is not useful with MC6801 objects.
+member, an index of the symbols that each member exports, including
+common blocks.
+Once an archive has an index, later changes to the archive keep it up
+to date.
+.BR ld01 (1)
+does not need the index; it reads every member\(aqs symbols directly.
+Members that are not object files are reported and left out of the
+index.
 .SH EXAMPLES
 Create a library from three modules:
 .PP
@@ -119,16 +125,6 @@ Link against it:
 .PP
 The mc6801\-tools User\(aqs Manual
 .RI ( mc6801\-tools\-manual.pdf ).
-.SH BUGS
-The
-.B s
-modifier does not understand MC6801 object files.
-It reports \(lqbad format (not an object file)\(rq for every member
-and writes an empty
-.B __.SYMDEF
-member.
-.BR ld01 (1)
-does not need a symbol index, and ignores this member.
 .SH HISTORY
 Derived from the GNU
 .B ar

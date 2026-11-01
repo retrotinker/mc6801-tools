@@ -738,8 +738,9 @@ $ ar01 x libnum.a one.o                       # extract a member
 
 Modifiers: `c` (create silently), `v` (verbose), `u` (replace only
 newer files), `o` (keep dates on extraction), `a`/`b`/`i` *posname*
-(position). Do not use the `s` modifier: it does not understand MC6801
-objects, and the linker does not need a symbol index.
+(position), and `s`, which adds a `__.SYMDEF` index of the symbols each
+member exports. The linker doesn't need the index, since it reads every
+member's symbols itself, but it does no harm.
 
 Put each routine that may be needed separately in its own module, so
 that the linker includes only what a program uses.
@@ -968,7 +969,6 @@ The linker pulls in `crtstart.o` because of `-Cstart`, and `one.o`,
 # Known Limitations
 
 * **`objdump01` cannot read object files**, only linked executables.
-* **`ar01 s`** cannot index MC6801 objects; don't use it.
 * **Symbol names are cut to 8 characters** in executables.
 * **The default library directory**, `/usr/local/lib/m09/`, is left
   over from the 6809 tools.
