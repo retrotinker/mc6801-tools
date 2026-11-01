@@ -1,5 +1,6 @@
 
 CFLAGS=-O
+VERSION:=$(shell cat ../VERSION)
 LDFLAGS=-s
 LIBDIR=$(PREFIX)
 BINDIR=$(PREFIX)
@@ -24,11 +25,11 @@ clean realclean clobber:
 	rm -f *.o as01
 
 .c.o:
-	$(CC) $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) -DVERSION=\"$(VERSION)\" -c $<
 
 $(OBJS): const.h errors.h
 
-as.o: const.h type.h byteord.h macro.h file.h flag.h globvar.h
+as.o: const.h type.h byteord.h macro.h file.h flag.h globvar.h ../VERSION
 assemble.o: const.h type.h address.h globvar.h opcode.h scan.h
 error.o: const.h type.h
 express.o: const.h type.h address.h globvar.h scan.h source.h

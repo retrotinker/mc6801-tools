@@ -83,6 +83,9 @@ $ make
 This builds `ar/ar01`, `as/as01`, `ld/ld01`, `ld/objdump01` and
 `ld/objcopy01`. The build stops at the first error.
 
+The version number, which `as01 -v` and `ld01 -v` print, is taken from
+the `VERSION` file at the top of the source tree.
+
 ## Installing
 
 ```
