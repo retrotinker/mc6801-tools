@@ -1,5 +1,5 @@
 Name:           mc6801-tools
-Version:        1.1.2
+Version:        1.1.3
 Release:        1%{?dist}
 Summary:        Assembler, linker and binary utilities for the Motorola MC6801
 
@@ -66,5 +66,8 @@ test -s demo-check/main.wav
 %{_mandir}/man1/size01.1*
 
 %changelog
+* Sun Nov 01 2026 John W. Linville <linville@tuxdriver.com> - 1.1.3-1
+- Update to 1.1.3: objcopy01 accepts c10 as another name for the cas format
+
 * Sun Nov 01 2026 John W. Linville <linville@tuxdriver.com> - 1.1.2-1
 - Initial package
