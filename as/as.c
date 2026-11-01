@@ -184,11 +184,11 @@ char **argv;
 			switch (arg[1]) {
 			case 'v':
 				outfd = STDOUT;
-				writes("as86 version: ");
 #ifdef VERSION
+				writes("as01 version: ");
 				writesn(VERSION);
 #else
-				writesn("Unknown!");
+				writesn("as01 version unknown");
 #endif
 				exit(1);
 			case 'b':

@@ -609,10 +609,10 @@ PUBLIC void version_msg()
 {
 	stderr_out();
 #ifdef VERSION
-	putstr("ld86 version: ");
+	putstr("ld01 version: ");
 	errexit(VERSION);
 #else
-	errexit("ld86 version unknown");
+	errexit("ld01 version unknown");
 #endif
 }
 
