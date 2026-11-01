@@ -30,6 +30,11 @@ linker is the "INTROL LINKABLE BINARY FILE FORMAT", documented in
 
 	http://www.swtpc.com/mholley/Introl/LOAD.pdf
 
+Documentation for the tools is in the doc directory:
+
+	doc/mc6801-tools-manual.pdf   User's manual for all of the tools
+	doc/man/                      Manual pages (installed by "make install")
+
 ********************************************************************************
 
 # [Expanded Tool Demo] (https://mc6801-tools.blogspot.com/2024/01/expanded-tool-demo.html)
