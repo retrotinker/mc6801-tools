@@ -122,11 +122,14 @@ PRIVATE void doaltind()
 			else
 				opcode |= 0x30;
 			++mcount;
+			/* JSR or JMP could be done with BSR or BRA: the target
+			   is known, in the same section as this instruction, and
+			   within reach of a 2-byte branch from here */
 			if (pass2
 			    && (opcode == JSR_OPCODE || opcode == JMP_OPCODE)
-			    && !(lastexp.data & IMPBIT)
-			    && lastexp.offset + (0x81 - 0x3) < 0x101)
-				/* JSR or JMP could be done with BSR or BRA */
+			    && !(lastexp.data & (IMPBIT | UNDBIT))
+			    && !((lastexp.data ^ lcdata) & (RELBIT | SEGM))
+			    && is8bitsignedoffset(lastexp.offset - (lc + 0x2)))
 				warning(SHORTB);
 		}
 	}
