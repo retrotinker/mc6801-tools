@@ -669,9 +669,9 @@ being linked uses. See Chapter \ref{libraries-chapter} for how to build
 libraries.
 
 Files named with `-C`, `-l` and `-O` are searched for in the `-L`
-directories, most recent first, and then in `/usr/local/lib/m09/`.
-If they are not found, the name is tried as given, in the current
-directory.
+directories (up to five), most recent first. There is no default
+library directory. If they are not found, the name is tried as given,
+in the current directory.
 
 ## Linker symbols
 
@@ -999,8 +999,6 @@ The linker pulls in `crtstart.o` because of `-Cstart`, and `one.o`,
 # Known Limitations
 
 * **Symbol names are cut to 8 characters** in executables.
-* **The default library directory**, `/usr/local/lib/m09/`, is left
-  over from the 6809 tools.
 * **Warnings are off by default**; use `as01 -w-`. The `.WARN`
   directive also reports a spurious error.
 * **The `JSR`/`JMP` "short branch would do" warning** compares the

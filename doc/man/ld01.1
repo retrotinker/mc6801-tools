@@ -172,12 +172,15 @@ Files named by
 .B \-l
 and
 .B \-O
-are searched for first in the
+are searched for in the
 .B \-L
-directories, most recently added first, and then in
-.BR /usr/local/lib/m09/ .
+directories, most recently added first.
+There is no default library directory.
 If the file is not found in any of them, the name is opened as given,
 relative to the current directory.
+Up to five
+.B \-L
+directories may be given.
 .SH SYMBOLS
 The linker defines these symbols, which programs may import:
 .TP
@@ -244,15 +247,6 @@ The exit status is 0 on success and non\-zero on error.
 The mc6801\-tools User\(aqs Manual
 .RI ( mc6801\-tools\-manual.pdf ).
 .SH BUGS
-The default library directory
-.B /usr/local/lib/m09/
-comes from the 6809 version of the linker and is not where
-.B make install
-puts anything.
-Use
-.B \-L
-or put libraries in the current directory.
-.PP
 Symbol names in the a.out symbol table are cut to 8 characters.
 .PP
 The usage message lists the flags

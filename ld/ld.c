@@ -8,8 +8,7 @@
 #include "type.h"
 #include "globvar.h"
 
-#define MAX_LIBS	(NR_STDLIBS + 5)
-#define NR_STDLIBS	1
+#define MAX_LIBS	5	/* maximum number of -L directories */
 
 PUBLIC bin_off_t text_base_value = 0;	/* XXX */
 PUBLIC bin_off_t data_base_value = 0;	/* XXX */
@@ -18,12 +17,9 @@ PUBLIC int headerless = 0;
 PUBLIC char hexdigit[] = "0123456789abcdef";
 
 PRIVATE bool_t flag[128];
-PRIVATE char *libs[MAX_LIBS] = {
-	"/usr/local/lib/m09/",
-	0
-};
+PRIVATE char *libs[MAX_LIBS];	/* -L directories; there is no default */
 
-PRIVATE int lastlib = NR_STDLIBS;
+PRIVATE int lastlib = 0;
 
 FORWARD char *buildname P((char *pre, char *mid, char *suf));
 FORWARD char *expandlib P((char *fn));
