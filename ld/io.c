@@ -607,7 +607,8 @@ PUBLIC void usage()
 
 PUBLIC void version_msg()
 {
-	stderr_out();
+	flusherr();
+	errfil = STDOUT_FILENO;	/* the version goes to stdout, like as01's */
 #ifdef VERSION
 	putstr("ld01 version: ");
 	putstrn(VERSION);
