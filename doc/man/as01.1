@@ -49,11 +49,10 @@ Write an absolute binary image to
 Use
 .B ORG
 to set the load address.
-If
-.B \-s
-is also given, the image starts at the lowest address assembled.
-Otherwise it starts at address 0 and is zero\-filled up to the first
-byte of code.
+The image starts at the lowest address assembled and ends at the
+highest; any gaps between
+.B ORG
+areas are filled with zeros.
 .BR IMPORT ,
 .B .GLOBL
 and other external references are not allowed in this mode.
@@ -370,7 +369,7 @@ Assemble a module and produce a listing on standard output:
 Assemble an absolute image with no linking step:
 .PP
 .RS
-.B as01 \-b prog.bin \-s prog.sym prog.s
+.B as01 \-b prog.bin prog.s
 .RE
 .SH DIAGNOSTICS
 Errors and warnings are shown in the listing under the offending line,
@@ -394,12 +393,6 @@ directive works, but the line it is on also reports a spurious
 Use
 .B \-w\-
 to enable warnings instead.
-.PP
-Without
-.BR \-s ,
-the
-.B \-b
-image starts at address 0 rather than at the first address used.
 .PP
 The \(lqshort branch would do\(rq warning for
 .B JSR

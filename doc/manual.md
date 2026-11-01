@@ -514,13 +514,13 @@ reset   lds     #$00ff
 ```
 
 ```
-$ as01 -b rom.bin -s rom.sym rom.s
+$ as01 -b rom.bin rom.s
 ```
 
-Give `-s` together with `-b`. With `-s`, the image starts at the lowest
-address assembled; without it, the image starts at address 0, so the
-example above would produce a 64 KB file. `IMPORT` and other external
-references are not allowed with `-b`.
+The image starts at the lowest address assembled and ends at the
+highest, so this example produces an 8 KB file covering `$E000` to
+`$FFFF`. Gaps between `ORG` areas are filled with zeros. `IMPORT` and
+other external references are not allowed with `-b`.
 
 ## Error messages
 
@@ -967,7 +967,6 @@ The linker pulls in `crtstart.o` because of `-Cstart`, and `one.o`,
 
 # Known Limitations
 
-* **`as01 -b` without `-s`** produces an image starting at address 0.
 * **`objdump01` cannot read object files**, only linked executables.
 * **`ar01 s`** cannot index MC6801 objects; don't use it.
 * **Symbol names are cut to 8 characters** in executables.
