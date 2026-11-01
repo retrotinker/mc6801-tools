@@ -11,7 +11,8 @@ LDFLAGS	=
 #
 # -DREL_OUTPUT -DBUGCOMPAT	# -r Produces weird *.o files.
 #
-DEFS	=-DREL_OUTPUT
+VERSION	:=$(shell cat ../VERSION)
+DEFS	=-DREL_OUTPUT -DVERSION=\"$(VERSION)\"
 
 # An alternative file for a non-standard a.out.h (eg i386 linux on an Alpha)
 #
@@ -41,6 +42,8 @@ install: ld01 objdump01 objcopy01
 
 clean realclean clobber:
 	rm -f *.o ld01 objchop catimage objdump01 objcopy01
+
+io.o: ../VERSION
 
 $(OBJS): align.h bindef.h byteord.h config.h const.h globvar.h obj.h \
 	 syshead.h type.h x86_aout.h
