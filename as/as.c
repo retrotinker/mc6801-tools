@@ -1,7 +1,8 @@
 /* as.c - assembler */
 
 /*
-  usage: as01 source [-b [bin]] [-lm [list]] [-n name] [-o obj] [-s sym] [-guw]
+  usage: as01 [-gkuvw] [-b binfile] [-l [listfile]] [-m [listfile]]
+              [-n name] [-o objfile] [-s symfile] [-t n] [srcfile]
   in any order (but no repeated file options)
 */
 
@@ -315,5 +316,6 @@ unsigned num;
 PRIVATE void usage()
 {
 	as_abort
-	    ("usage: as01 [-guw] [-b [bin]] [-lm [list]] [-n name] [-o obj] [-s sym] src");
+	    ("usage: as01 [-gkuvw] [-b binfile] [-l [listfile]] [-m [listfile]]\n"
+	     "                  [-n name] [-o objfile] [-s symfile] [-t n] [srcfile]");
 }

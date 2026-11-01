@@ -218,8 +218,8 @@ from the start of the module, and becomes `$435E` once linked at
 ## Invoking as01
 
 ```
-as01 [-gkuw] [-b binfile] [-l [listfile]] [-m [listfile]] [-n name]
-     [-o objfile] [-s symfile] [-t n] [srcfile]
+as01 [-gkuvw] [-b binfile] [-l [listfile]] [-m [listfile]]
+     [-n name] [-o objfile] [-s symfile] [-t n] [srcfile]
 ```
 
 | Option | Meaning |
@@ -235,6 +235,7 @@ as01 [-gkuw] [-b binfile] [-l [listfile]] [-m [listfile]] [-n name]
 | `-w-` | Enable warnings (they are off by default) |
 | `-k` | Keep output files even if there are errors |
 | `-t n` | Put `.TEXT` sections in location counter *n*+3 |
+| `-v` | Print the version and exit |
 
 Each option must be a separate argument (write `-g -u`, not `-gu`).
 Only one source file may be given; if there is none, the source is read
