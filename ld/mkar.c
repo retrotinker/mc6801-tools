@@ -15,6 +15,18 @@ void fatalerror(const char *message);
 
 static struct ar_hdr arbuf;
 
+/* Store a number in a space-padded archive header field.  The fields
+   are not NUL-terminated, so sprintf() can't write them directly.  */
+static void setfield(char *field, size_t size, const char *format, long value)
+{
+	char tmp[32];
+	int len = snprintf(tmp, sizeof tmp, format, value);
+
+	if (len < 0 || (size_t)len > size)
+		fatalerror("archive header field overflow");
+	memcpy(field, tmp, len);
+}
+
 #ifdef __STDC__
 void ld86r(int argc, char **argv)
 #else
@@ -63,13 +75,16 @@ char **argv;
 			strcat(buf, "/                 ");
 			strncpy(arbuf.ar_name, buf, sizeof(arbuf.ar_name));
 
-			sprintf(arbuf.ar_date, "%-12ld", (long)st.st_mtime);
-			sprintf(arbuf.ar_uid, "%-6d",
-				(int)(st.st_uid % 1000000L));
-			sprintf(arbuf.ar_gid, "%-6d",
-				(int)(st.st_gid % 1000000L));
-			sprintf(arbuf.ar_mode, "%-8lo", (long)st.st_mode);
-			sprintf(arbuf.ar_size, "%-10ld", (long)st.st_size);
+			setfield(arbuf.ar_date, sizeof arbuf.ar_date, "%-12ld",
+				 (long)st.st_mtime);
+			setfield(arbuf.ar_uid, sizeof arbuf.ar_uid, "%-6ld",
+				 (long)(st.st_uid % 1000000L));
+			setfield(arbuf.ar_gid, sizeof arbuf.ar_gid, "%-6ld",
+				 (long)(st.st_gid % 1000000L));
+			setfield(arbuf.ar_mode, sizeof arbuf.ar_mode, "%-8lo",
+				 (long)st.st_mode);
+			setfield(arbuf.ar_size, sizeof arbuf.ar_size, "%-10ld",
+				 (long)st.st_size);
 			memcpy(arbuf.ar_fmag, ARFMAG, sizeof(arbuf.ar_fmag));
 
 			if (fwrite(&arbuf, 1, sizeof(arbuf), fd) !=
