@@ -475,6 +475,7 @@ argument is empty.
 | `END` | End of the source; anything after it is ignored |
 | `FAIL` | Report an error (useful in conditionals) |
 | `.LIST`, `.MACLIST` [*n*] | Turn listing or macro listing on and off (only when `-l` or `-m` is used) |
+| `.WARN` [*n*] | Turn warnings on (`.WARN 1`) and off again (`.WARN`) |
 
 ## Listings and symbol files {#listings-and-symbol-files}
 
@@ -999,8 +1000,7 @@ The linker pulls in `crtstart.o` because of `-Cstart`, and `one.o`,
 # Known Limitations
 
 * **Symbol names are cut to 8 characters** in executables.
-* **Warnings are off by default**; use `as01 -w-`. The `.WARN`
-  directive also reports a spurious error.
+* **Warnings are off by default**; use `as01 -w-` or `.WARN 1`.
 * **The `JSR`/`JMP` "short branch would do" warning** compares the
   absolute target address rather than the distance.
 * **Version messages** (`-v`) still name the original `as86` and `ld86`.

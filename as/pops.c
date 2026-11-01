@@ -31,16 +31,17 @@ int defval;
 {
 	int newcount;
 
+	/* read the count on every pass, so it isn't left as junk */
+	if (sym == EOLSYM)
+		lastexp.offset = defval;
+	else {
+		absexpres();
+		if (lastexp.data & UNDBIT)
+			return;
+	}
 	if (flagptr->global &&pass == last_pass) {
 		/* bump semaphore count by an expression (default 1), */
 		/* then set currentflag iff semaphore count is plus */
-		if (sym == EOLSYM)
-			lastexp.offset = defval;
-		else {
-			absexpres();
-			if (lastexp.data & UNDBIT)
-				return;
-		}
 		newcount = (int)lastexp.offset;
 		newcount += flagptr->semaphore;
 		if ((int)lastexp.offset >= 0) {
