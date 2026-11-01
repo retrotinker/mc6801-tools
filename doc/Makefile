@@ -6,6 +6,7 @@
 PANDOC	= pandoc
 PYTHON	= python3
 AS01	= ../as/as01
+MANDIR	= /usr/local/share/man
 
 MANPAGES = man/as01.1 man/ld01.1 man/ar01.1 man/objdump01.1 man/objcopy01.1
 REFS	= $(MANPAGES:man/%.1=build/%.md)
@@ -29,7 +30,13 @@ build/%.md: man/%.1
 $(AS01):
 	$(MAKE) -C ../as
 
+install-man: $(MANPAGES)
+	install -d $(DESTDIR)$(MANDIR)/man1
+	install -m 644 $(MANPAGES) $(DESTDIR)$(MANDIR)/man1
+	ln -sf objdump01.1 $(DESTDIR)$(MANDIR)/man1/nm01.1
+	ln -sf objdump01.1 $(DESTDIR)$(MANDIR)/man1/size01.1
+
 clean:
 	rm -rf build
 
-.PHONY: all clean
+.PHONY: all clean install-man
