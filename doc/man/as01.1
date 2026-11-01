@@ -354,6 +354,19 @@ They only have an effect when listing is enabled with
 .B \-l
 or
 .BR \-m .
+.TP
+.BR .WARN " [\fIn\fP]"
+Add
+.I n
+(default \-1) to the warning counter.
+Warnings are shown while the counter is 0 or more.
+It starts at \-1, or at 0 with
+.BR \-w\- ,
+so
+.B .WARN 1
+turns warnings on and
+.B .WARN
+turns them off again.
 .SH FILES
 .TP
 .I objfile
@@ -386,14 +399,6 @@ printed on standard output.
 The mc6801\-tools User\(aqs Manual
 .RI ( mc6801\-tools\-manual.pdf ).
 .SH BUGS
-The
-.B .WARN
-directive works, but the line it is on also reports a spurious
-\(lqjunk after operands\(rq error.
-Use
-.B \-w\-
-to enable warnings instead.
-.PP
 The \(lqshort branch would do\(rq warning for
 .B JSR
 and
