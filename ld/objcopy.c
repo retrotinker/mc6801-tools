@@ -82,6 +82,27 @@ void warning(char *str)
 	fprintf(stderr, "%s: %s\n", progname, str);
 }
 
+/*
+ * Parse an address like C: 0x (or $) for hex, leading 0 for octal,
+ * otherwise decimal.  Anything else, or more than 16 bits, is an error.
+ */
+unsigned int parse_addr(char *str, char *message)
+{
+	char *end;
+	unsigned long value;
+	int base = 0;
+
+	if (*str == '$') {
+		str++;
+		base = 16;
+	}
+	errno = 0;
+	value = strtoul(str, &end, base);
+	if (errno || end == str || *end != '\0' || value > 0xffff)
+		fatal(message);
+	return value;
+}
+
 void match_syms(FILE *ifd, struct exec header)
 {
 	struct nlist symbol;
@@ -590,16 +611,10 @@ int main(int argc, char *argv[])
 				fatal("Unknown output format!\n");
 			break;
 		case 'T':
-			errno = 0;
-			textaddr = strtol(optarg, NULL, 0);
-			if (errno)
-				fatal("Bad text address value");
+			textaddr = parse_addr(optarg, "Bad text address value");
 			break;
 		case 'D':
-			errno = 0;
-			dataaddr = strtol(optarg, NULL, 0);
-			if (errno)
-				fatal("Bad data address value");
+			dataaddr = parse_addr(optarg, "Bad data address value");
 			break;
 		case 'n':
 			objname = optarg;

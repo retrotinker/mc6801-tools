@@ -52,17 +52,26 @@ See FORMATS.
 Load address of the text segment.
 The default is the value of
 .BR __btext .
-The value is read as a C number: decimal unless it has a
+The value is read like a C number: hexadecimal with a
 .B 0x
-(hexadecimal) or
-.B 0
-(octal) prefix.
-Trailing characters are ignored, so
-.B 434c
-is read as decimal 434.
-Note that this differs from
-.BR "ld01 \-T" ,
-which is always hexadecimal.
+or
+.B $
+prefix, octal with a leading
+.BR 0 ,
+and decimal otherwise, so
+.BR \-T0x1000 ,
+.B \-T\(aq$1000\(aq
+and
+.B \-T4096
+all mean $1000.
+(Quote
+.B $
+from the shell.)
+Anything else, such as
+.BR 1000x ,
+or a value above $FFFF, is an error.
+This is the same as
+.BR "ld01 \-T" .
 .TP
 .BI \-D " dataaddr"
 Load address of the data segment, for formats that can place it
@@ -125,7 +134,7 @@ Make an MC\-10 cassette image:
 .RE
 .PP
 Make an S\-record file from an executable linked with
-.BR "ld01 \-s \-TE000" ,
+.BR "ld01 \-s \-T0xe000" ,
 which has no symbols to give the load address:
 .PP
 .RS

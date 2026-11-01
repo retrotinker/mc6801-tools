@@ -27,6 +27,7 @@ PRIVATE int lastlib = NR_STDLIBS;
 
 FORWARD char *buildname P((char *pre, char *mid, char *suf));
 FORWARD char *expandlib P((char *fn));
+FORWARD bin_off_t getaddr P((char *str, char *message));
 
 PRIVATE char *buildname(pre, mid, suf)
 char *pre;
@@ -40,6 +41,28 @@ char *suf;
 	strcat(name, mid);
 	strcat(name, suf);
 	return name;
+}
+
+/* parse an address like C: 0x (or $) for hex, leading 0 for octal,
+   otherwise decimal; anything else, or more than 16 bits, is an error */
+
+PRIVATE bin_off_t getaddr(str, message)
+char *str;
+char *message;
+{
+	char *end;
+	unsigned long value;
+	int base = 0;
+
+	if (*str == '$') {
+		++str;
+		base = 16;
+	}
+	errno = 0;
+	value = strtoul(str, &end, base);
+	if (errno != 0 || end == str || *end != 0 || value > 0xFFFF)
+		use_error(message);
+	return (bin_off_t) value;
 }
 
 PRIVATE char *expandlib(fn)
@@ -133,41 +156,20 @@ char **argv;
 			case 'T':	/* text base address */
 				if (arg[2] == 0 && ++argn >= argc)
 					usage();
-				errno = 0;
-				if (arg[2] == 0)
-					text_base_value =
-					    strtoul(argv[argn], (char **)0, 16);
-				else
-					text_base_value =
-					    strtoul(arg + 2, (char **)0, 16);
-				if (errno != 0)
-					use_error("invalid text address");
+				text_base_value = getaddr(arg[2] == 0 ? argv[argn] : arg + 2,
+						"invalid text address");
 				break;
 			case 'D':	/* data base address */
 				if (arg[2] == 0 && ++argn >= argc)
 					usage();
-				errno = 0;
-				if (arg[2] == 0)
-					data_base_value =
-					    strtoul(argv[argn], (char **)0, 16);
-				else
-					data_base_value =
-					    strtoul(arg + 2, (char **)0, 16);
-				if (errno != 0)
-					use_error("invalid data address");
+				data_base_value = getaddr(arg[2] == 0 ? argv[argn] : arg + 2,
+						"invalid data address");
 				break;
 			case 'H':	/* heap top address */
 				if (arg[2] == 0 && ++argn >= argc)
 					usage();
-				errno = 0;
-				if (arg[2] == 0)
-					heap_top_value =
-					    strtoul(argv[argn], (char **)0, 16);
-				else
-					heap_top_value =
-					    strtoul(arg + 2, (char **)0, 16);
-				if (errno != 0)
-					use_error("invalid heap size");
+				heap_top_value = getaddr(arg[2] == 0 ? argv[argn] : arg + 2,
+						"invalid heap size");
 				break;
 			case 'l':	/* library name */
 				tfn = buildname(libprefix, arg + 2, libsuffix);

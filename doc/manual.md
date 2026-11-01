@@ -172,10 +172,11 @@ $ as01 -o hello.o hello.s
 
 **Link** it. MC-10 machine language programs are commonly loaded at
 `$434C`, just above the BASIC program area. The linker's `-T` option
-sets the start address and is always read as hexadecimal:
+sets the start address. Like all addresses given to the tools, it is
+read like a C number, so write hexadecimal with `0x`:
 
 ```
-$ ld01 -T434c -o hello.aout hello.o
+$ ld01 -T0x434c -o hello.aout hello.o
 ```
 
 **Convert** the result into a cassette audio file. `objcopy01` finds
@@ -601,9 +602,9 @@ ld01 [-dimMrsty] [-o outfile] [-T textaddr] [-D dataaddr] [-H heapsize]
 | Option | Meaning |
 |:-------|:--------|
 | `-o outfile` | Output file name (default `a.out`) |
-| `-T addr` | Text segment address, **hexadecimal** (`-T1000` = `$1000`) |
-| `-D addr` | Data segment address, hexadecimal |
-| `-H size` | Add *size* (hexadecimal) to the end of the program for `__heap_top` |
+| `-T addr` | Text segment address |
+| `-D addr` | Data segment address |
+| `-H size` | Add *size* to the end of the program for `__heap_top` |
 | `-Cname` | Link the start-up module `crtname.o` |
 | `-lname` | Search the library `libname.a` |
 | `-Ldir` | Add a library directory |
@@ -619,6 +620,12 @@ ld01 [-dimMrsty] [-o outfile] [-T textaddr] [-D dataaddr] [-H heapsize]
 The order of objects and libraries on the command line does not matter:
 the linker reads them all before resolving symbols.
 
+Addresses and sizes are read like C numbers: hexadecimal with a `0x`
+or `$` prefix, octal with a leading `0`, and decimal otherwise. So
+`-T0x1000`, `-T'$1000'` and `-T4096` all mean `$1000` (quote `$` from
+the shell). Anything else, such as `-TE000`, or a value above `$FFFF`,
+is an error. `objcopy01` reads its `-T` and `-D` options the same way.
+
 ## Output
 
 The linker normally writes an a.out file: a 32-byte header
@@ -630,7 +637,7 @@ With `-d`, the output is a raw memory image containing just the text
 segment followed by the data segment, ready to be burned into an EPROM:
 
 ```
-$ ld01 -d -TE000 -o rom.bin start.o main.o
+$ ld01 -d -T0xe000 -o rom.bin start.o main.o
 ```
 
 ## Start-up modules
@@ -651,7 +658,7 @@ __start lds     #$00ff
 
 ```
 $ as01 -o crtstart.o crtstart.s
-$ ld01 -Cstart -T434c -o prog.aout main.o
+$ ld01 -Cstart -T0x434c -o prog.aout main.o
 ```
 
 ## Libraries
@@ -691,7 +698,7 @@ an archive member that was not needed. `-M` prints every symbol with
 the module that defines it, its value and its type:
 
 ```
-$ ld01 -lnum -Cstart -T434c -m -M -o main.aout main.o screen.o
+$ ld01 -lnum -Cstart -T0x434c -m -M -o main.aout main.o screen.o
 one             +libnum.a(one.o)
 crtstart        +crtstart.o
 main            +main.o
@@ -807,10 +814,9 @@ objcopy01 [-O format] [-T textaddr] [-D dataaddr] [-n name] [-p]
 The load addresses come from the `__btext` and `__bdata` symbols that
 the linker writes to the executable, so you don't normally need to
 give them. Use `-T` and `-D` to override them, or when the executable
-was linked with `ld01 -s` and has no symbol table. Unlike `ld01`,
-`objcopy01` reads numbers the way C does: `0x434c` is hexadecimal and
-`1000` is decimal. Trailing characters are ignored, so `434c` would be
-read as decimal 434.
+was linked with `ld01 -s` and has no symbol table. Addresses are
+written the same way as for `ld01`: `0x434c` or `'$434c'` for
+hexadecimal, plain digits for decimal.
 
 The entry point is taken from the executable header. `-n` sets the name
 stored in S-record headers and cassette files (up to 8 characters for
