@@ -1,7 +1,7 @@
 /* as.c - assembler */
 
 /*
-  usage: as source [-b [bin]] [-lm [list]] [-n name] [-o obj] [-s sym] [-guw]
+  usage: as01 source [-b [bin]] [-lm [list]] [-n name] [-o obj] [-s sym] [-guw]
   in any order (but no repeated file options)
 */
 
@@ -64,7 +64,7 @@ char **argv;
 PUBLIC void as_abort(message)
 char *message;
 {
-	write(STDOUT, "as: ", 4);
+	write(STDOUT, "as01: ", 6);
 	write(STDOUT, message, strlen(message));
 	write(STDOUT, "\n", 1);
 	exit(1);
@@ -315,5 +315,5 @@ unsigned num;
 PRIVATE void usage()
 {
 	as_abort
-	    ("usage: as [-guw] [-b [bin]] [-lm [list]] [-n name] [-o obj] [-s sym] src");
+	    ("usage: as01 [-guw] [-b [bin]] [-lm [list]] [-n name] [-o obj] [-s sym] src");
 }
