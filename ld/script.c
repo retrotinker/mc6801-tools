@@ -19,10 +19,12 @@
 #include "type.h"
 #include "globvar.h"
 #include "script.h"
+#include "srec.h"
 
 #define MAXPASSES	10
 
 PUBLIC int script_binary;
+PUBLIC int script_records;
 PUBLIC int script_orphan_error;
 PUBLIC int text_base_given;
 
@@ -886,9 +888,15 @@ PRIVATE void commands(void)
 		} else if (accept("OUTPUT_FORMAT")) {
 			expect("(");
 			word = name();
-			if (strcmp(word, "binary") == 0)
-				script_binary = 1;
-			else if (strcmp(word, "aout") != 0)
+			script_binary = 1;
+			script_records = 0;
+			if (strcmp(word, "srec") == 0)
+				script_records = RECORDS_SREC;
+			else if (strcmp(word, "ihex") == 0)
+				script_records = RECORDS_IHEX;
+			else if (strcmp(word, "aout") == 0)
+				script_binary = 0;
+			else if (strcmp(word, "binary") != 0)
 				script_error(line, "unknown output format %s", word);
 			expect(")");
 		} else if (accept("SECTIONS")) {
@@ -2112,6 +2120,64 @@ PUBLIC void script_roots(link)
 void (*link) P((struct modstruct * modptr));
 {
 	stmtroots(top, link);
+}
+
+/* OUTPUT_FORMAT(srec) or (ihex): the output was written as a binary
+   image; rewrite it as records, one run for each loadable section in load
+   address order, leaving out the gaps between them */
+PUBLIC void script_convert(outfilename, entry)
+char *outfilename;
+bin_off_t entry;
+{
+	FILE *f;
+	unsigned char *image;
+	struct osect *sect, *next;
+	long size, off, len, done = -1;
+	unsigned records = 0;
+
+	if ((f = fopen(outfilename, "rb")) == NULL)
+		script_error(0, "can't read the output file back");
+	fseek(f, 0, SEEK_END);
+	size = ftell(f);
+	rewind(f);
+	image = xalloc(size + 1);
+	if (size < 0 || fread(image, 1, size, f) != (size_t)size)
+		script_error(0, "can't read the output file back");
+	fclose(f);
+	if ((f = fopen(outfilename, "w")) == NULL)
+		script_error(0, "can't rewrite the output file");
+	if (script_records == RECORDS_SREC)
+		srec_header(f, basename(outfilename));
+	for (;;) {
+		/* the loadable section with the next load address */
+		next = NULL;
+		for (sect = sects; sect != NULL; sect = sect->next)
+			if (sect->size != 0 && !sect->noload && sect->lma > done
+			    && (next == NULL || sect->lma < next->lma))
+				next = sect;
+		if (next == NULL)
+			break;
+		done = next->lma;
+		off = fileoff(next, next->vma);
+		len = next->size;
+		if (off >= size)
+			continue;
+		if (off + len > size)
+			len = size - off;	/* common blocks at the end */
+		if (script_records == RECORDS_SREC)
+			records += srec_data(f, image + off, (unsigned)len,
+					     (unsigned)next->lma);
+		else
+			ihex_data(f, image + off, (unsigned)len,
+				  (unsigned)next->lma);
+	}
+	if (script_records == RECORDS_SREC)
+		srec_end(f, records, (unsigned)entry);
+	else
+		ihex_end(f, (unsigned)entry);
+	if (fclose(f) != 0)
+		script_error(0, "can't write the output file");
+	free(image);
 }
 
 /* the value of a symbol the script assigns, even if it isn't defined

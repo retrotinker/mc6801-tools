@@ -301,6 +301,8 @@ bool_pt argxsym;
 		writeout(buf4, memsizeof(struct exec, a_syms));
 	}
 	closeout();
+	if (script_records)
+		script_convert(outfilename, entryfirst->elsymptr->value);
 	executable();
 }
 

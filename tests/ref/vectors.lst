@@ -1,0 +1,12 @@
+00001                   ; vectors.s - the vector table for the design document's ROM example,
+00002                   ; in location counter 2 as the example expects
+00003 0000              	LOC	0
+00004                   	IMPORT	reset
+00005 0000              	LOC	2
+00006 0000        0000> 	fdb	reset,reset,reset,reset,reset,reset,reset,reset
+
+Symbols:
+reset                       0 0000 R I 
+
+00000 errors
+00000 warnings

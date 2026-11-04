@@ -93,6 +93,9 @@ link err-onepage -S err-onepage.ld page.o
 # ROM layout: MEMORY, AT>, NOLOAD, KEEP, FILL, BYTE, WORD, ASSERT,
 # INCLUDE, and the __name_load symbols
 link rom	-m -M -S rom.ld romcrt.o romvec.o segs.o helper.o
+link rom-srec	-S rom-srec.ld romcrt.o romvec.o segs.o helper.o
+link rom-ihex	-S rom-ihex.ld romcrt.o romvec.o segs.o helper.o
+link design-rom	-m -M -S design-rom.ld crt0.o vectors.o
 link bss	-m -M -S bss.ld segs.o helper.o
 link err-assert	-S rom-nokeep.ld romcrt.o romvec.o segs.o helper.o
 for f in at-aout region noregion lmaoverlap; do
