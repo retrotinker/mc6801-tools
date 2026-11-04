@@ -84,6 +84,7 @@ link custom-A	-m -M -S custom.ld -A __heap_top=0x6000 -A extra=7 \
 		usesym.o segs.o helper.o
 link orphan	-m -M -S orphan.ld segs.o helper.o
 link orphan-Z	-Z -S orphan.ld segs.o helper.o
+link orphan2	-m -M -S orphan2.ld segs.o helper.o
 for f in syntax undef overlap range both settle entry unknown; do
 	link err-$f -S err-$f.ld segs.o helper.o
 done
