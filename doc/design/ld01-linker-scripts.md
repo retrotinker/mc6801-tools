@@ -387,7 +387,7 @@ be written as an a.out file, which has just a text and a data part. So
 |:-------|:---------|
 | `aout` | Today's a.out: a text part followed by a data part (see below). |
 | `binary` | A memory image from the lowest LMA to the highest, with gaps filled with the `FILL` byte. Today's `-d` produces this format. As today, the file ends with the last byte written, so common blocks at the end of the image aren't included. |
-| `srec` | Motorola S-records, one run of records per loadable section, at its LMA, with the entry point in the S9 record. |
+| `srec` | Motorola S-records, one run of records per loadable section, at its LMA, in LMA order, with the entry point in the S9 record. The S0 header holds the output file's name. |
 | `ihex` | Intel hex, likewise. |
 
 For `aout`, the output sections up to the first one that can take input
@@ -406,6 +406,11 @@ absolute.
 
 The S-record and Intel hex writers move from `objcopy01` into a small
 shared source file used by both programs, so their output is identical.
+`ld01` lays the output out as a binary image by LMA, as for `binary`,
+then rewrites it as records. Moving the writers fixed two bugs in
+`objcopy01`: the S0 record's checksum left out the address and name
+bytes, and the Intel hex end record ended with LF while the data records
+ended with CR LF.
 `objcopy01` keeps working on a.out files as today.
 
 # Command line
@@ -778,7 +783,7 @@ directory with a `make check` target:
 | 1 | Per-module placement; tests and reference outputs | No change in behavior, except a fix for `-T`/`-D` addresses that aren't a multiple of 4. **Done.** |
 | 2 | Parser, default script, `SECTIONS`, `ONEPAGE`, symbols including `PROVIDE` and `HIDDEN`, `ENTRY`, orphans, `-S`, `-A`, `-P`, `-Z`, `-M` layout | Scripts for single-region programs. **Done.** |
 | 3 | `MEMORY`, regions, `AT`, `NOLOAD`, `KEEP`, `FILL`, `ASSERT`, `INCLUDE`, `BYTE`, `WORD`, `__name_load` symbols | ROM/RAM layouts. **Done.** |
-| 4 | `binary`, `srec` and `ihex` output; shared writers with `objcopy01` | Multi-region output |
+| 4 | `binary`, `srec` and `ihex` output; shared writers with `objcopy01` | Multi-region output. **Done.** |
 | 5 | Man page, manual chapter, examples | Documented |
 
 Each phase can be merged and released on its own.

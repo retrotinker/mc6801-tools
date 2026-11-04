@@ -41,6 +41,13 @@ An executable linked with
 has no symbols, so give
 .B \-T
 for it.
+.PP
+.BR ld01 (1)
+can also write S\-records, Intel hex and binary images directly, with
+.B OUTPUT_FORMAT
+in a linker script.
+That handles programs spread over several areas of memory and
+separate load addresses, which a.out files can\(aqt hold.
 .SH OPTIONS
 .TP
 .BI \-O " format"
