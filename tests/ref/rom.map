@@ -1,0 +1,45 @@
+romcrt          +romcrt.o
+romvec          +romvec.o
+segs            +segs.o
+helper          +helper.o
+Memory region   Origin   Length   Used
+ROM             0000e000 00001ff0 0000006a
+VEC             0000fff0 00000010 00000010
+RAM             00000080 00000080 00000040
+
+Section         Address  Size     Load
+.vectors        0000fff0 00000010
+    0000fff0 00000010 romvec.o(LOC0)
+.text           0000e000 00000042
+    0000e000 00000011 romcrt.o(LOC0)
+    0000e011 00000020 segs.o(LOC0)
+    0000e031 00000003 segs.o(LOC1)
+    0000e034 00000006 helper.o(LOC0)
+.data           00000080 00000028 0000e042
+    00000080 00000003 romcrt.o(LOC3)
+    00000083 00000010 segs.o(LOC3)
+    00000093 00000003 segs.o(LOC5)
+    00000096 00000005 segs.o(LOC15)
+    0000009b 00000007 helper.o(LOC3)
+.bss            000000a8 00000018 (NOLOAD)
+    000000a8 00000004 helper.o(COMMON0)
+    000000ac 00000014 helper.o(COMMON3)
+
+              romcrt          __data_start  3  00000080  R
+              romcrt           __data_load  3  0000e042  R
+              romcrt           __stack_top  3  000000ff  R
+              romcrt                 reset  0  0000e000  R N
+              romcrt            __data_end  3  000000a8  R
+              romcrt                  vars  3  00000080  r
+                segs                  far5  5  00000093  r
+                segs               message  3  00000083  r
+                segs                 local  0  0000e02f  r
+                segs                 start  0  0000e011  R N
+                segs                  last  f  00000096  r
+                segs                  fast  1  0000e031  r
+              helper                 help2  0  0000e039  r
+              helper                helper  0  0000e034  R
+              helper                 table  3  0000009b  R
+              helper               codecom  0  000000a8  R C
+              helper                   buf  3  000000ac  R C
+              helper               counter  3  000000bc  R C

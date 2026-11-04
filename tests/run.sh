@@ -89,6 +89,15 @@ for f in syntax undef overlap range both settle entry unknown; do
 done
 link err-onepage -S err-onepage.ld page.o
 
+# ROM layout: MEMORY, AT>, NOLOAD, KEEP, FILL, BYTE, WORD, ASSERT,
+# INCLUDE, and the __name_load symbols
+link rom	-m -M -S rom.ld romcrt.o romvec.o segs.o helper.o
+link bss	-m -M -S bss.ld segs.o helper.o
+link err-assert	-S rom-nokeep.ld romcrt.o romvec.o segs.o helper.o
+for f in at-aout region noregion lmaoverlap; do
+	link err-$f -S err-$f.ld segs.o helper.o
+done
+
 # the default script, as printed by -P, and linking with it: the output
 # must be the same as without a script, with or without the options
 "$LD" -P > default.ld 2> default.err

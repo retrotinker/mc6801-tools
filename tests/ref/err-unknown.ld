@@ -1,1 +1,1 @@
-MEMORY { }
+BOGUS(1)

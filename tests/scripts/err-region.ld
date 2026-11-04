@@ -1,0 +1,5 @@
+MEMORY { SMALL : ORIGIN = 0x1000, LENGTH = 16 }
+SECTIONS
+{
+    .text : { *(LOC*) *(COMMON) } > SMALL
+}

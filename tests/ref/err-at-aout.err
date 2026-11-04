@@ -1,0 +1,1 @@
+ld01: err-at-aout.ld:4: section .data has a separate load address, which needs OUTPUT_FORMAT(binary)

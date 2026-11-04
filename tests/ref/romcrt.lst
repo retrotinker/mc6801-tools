@@ -1,0 +1,25 @@
+00001                   ; romcrt.s - start-up code for the ROM layout test: copies the
+00002                   ; initialized data from ROM to RAM, using symbols from the linker script
+00003 0000              	LOC	3
+00004                   	IMPORT	__data_start, __data_end
+00005 0000              	LOC	0
+00006                   	ENTRY	reset
+00007                   	IMPORT	__data_load, __stack_top, start
+00008 0000   8E   0000> reset	lds	#__stack_top
+00009 0003   CE   0000> 	ldx	#__data_load
+00010 0006   CC   0000> 	ldd	#__data_start
+00011 0009   CC   0000> 	ldd	#__data_end
+00012 000C   BD   0000> 	jsr	start
+00013 000F   20     FE  	bra	*
+00014                   
+00015 0000              	LOC	3
+00016 0000          11  vars	fcb	$11,$22,$33
+
+Symbols:
+__data_end                  3 0000 R I __data_load                 0 0000 R I 
+__data_start                3 0000 R I __stack_top                 0 0000 R I 
+reset                       0 0000 R N start                       0 0000 R I 
+vars                        3 0000 R   
+
+00000 errors
+00000 warnings
