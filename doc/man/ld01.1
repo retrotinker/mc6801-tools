@@ -300,11 +300,19 @@ in the object files.
 .TP
 .BI OUTPUT_FORMAT( format )
 .B aout
-(the default) or
+(the default);
 .BR binary ,
 a memory image as with
 .BR \-d ,
-covering the load addresses from the lowest to the highest used.
+covering the load addresses from the lowest to the highest used;
+.BR srec ,
+Motorola S\-records; or
+.BR ihex ,
+Intel hex.
+S\-records and Intel hex have one run of records for each section
+written to the output, at its load address, without the gaps between
+sections, and the entry point in the end record.
+The S\-record header holds the output file\(aqs name.
 .TP
 .BI MEMORY " { " "name " [( attributes )] " : ORIGIN = " "expr" ", LENGTH = " "expr ... " }
 Define memory regions, such as ROM and RAM.
@@ -364,8 +372,12 @@ gives another one, or
 allocates it from a region.
 For example, initialized data that runs in RAM can be stored in ROM
 after the code, and copied by the start\-up code.
-Separate load addresses need
-.BR OUTPUT_FORMAT(binary) .
+Separate load addresses need the
+.BR binary ,
+.B srec
+or
+.B ihex
+output format.
 .PP
 .B NOLOAD
 sections take up addresses but aren\(aqt written to the output.
@@ -501,10 +513,6 @@ Common blocks at the end of the data part are its uninitialized data.
 The header\(aqs total memory size reaches
 .B __heap_top
 if the script sets it.
-.SS Not yet supported
-S\-record and Intel hex output; use
-.BR objcopy01 (1)
-on a.out output.
 .SH SEGMENTS
 This is the layout of the default script.
 The assembler has 16 location counters.
