@@ -177,14 +177,14 @@ A script is a list of commands. Whitespace and comments (`/* ... */` and
 ```
 ENTRY(symbol)                   start the program at symbol
 OUTPUT_FORMAT(format)           aout (default), binary, srec or ihex
-FILL(byte)                      default gap fill for binary output
+FILL(byte)                      default fill byte for gaps
 MEMORY { region-list }          define memory regions
 SECTIONS { section-list }       define output sections
 symbol = expression ;           define a symbol
 PROVIDE(symbol = expression) ;  define it only if needed and not defined
 HIDDEN(symbol = expression) ;   define a symbol for use in the script only
 ASSERT(expression, "message")   stop with an error if false
-INCLUDE "file"                  read another script
+INCLUDE "file"                  read another script (path as given)
 ```
 
 Without `ENTRY`, the entry point is chosen as today: the first `ENTRY`
@@ -202,9 +202,11 @@ MEMORY
 ```
 
 The attributes in parentheses (`r`, `w`, `x`) are recorded for the map
-and for error messages only. A section placed in a region (`> ROM`)
-starts at the region's next free address. The linker reports an error if
-the section doesn't fit.
+only. A section placed in a region (`> ROM`) starts at the region's next
+free address. The linker reports an error if the section doesn't fit.
+Each region has one next-free address, used both by `> region` and by
+`AT> region`, so data stored after the code in ROM follows it
+automatically.
 
 ## SECTIONS
 
@@ -221,7 +223,11 @@ SECTIONS
 
 * `address` sets the VMA. Without it, the section follows the previous
   one in the same region, or the current value of `.`.
-* `AT(lma)` or `AT> region` sets a separate load address.
+* `AT(lma)` or `AT> region` sets a separate load address. Without them,
+  the load address is the same as the address. (GNU `ld` sometimes keeps
+  the previous section's offset instead.) A.out files can't hold separate
+  load addresses, so they need `OUTPUT_FORMAT(binary)`, or S-records or
+  Intel hex once phase 4 adds them.
 * `ALIGN(n)` rounds the section's start address up to a multiple of `n`.
   `SUBALIGN(n)` pads each input section within it to a multiple of `n`
   bytes, counted from its own start. If the section starts on a multiple
@@ -230,8 +236,12 @@ SECTIONS
   `ld01`, including at addresses that aren't a multiple of `n`.) The
   default is no padding, except in the default script (see below).
 * `NOLOAD` reserves the space without writing anything to the output.
-* `= fill` sets the byte used for gaps inside the section. The default is
-  0.
+  Input in a `NOLOAD` section is discarded, so it's for common blocks and
+  reserved space.
+* `= fill` sets the byte used for gaps inside the section: those from
+  `. =`, `ALIGN`, `ONEPAGE` moves and `SUBALIGN` padding. The default is
+  the top-level `FILL`, or 0. The top-level `FILL` also fills the gaps
+  between sections in the output file.
 
 Statements inside a section:
 
@@ -278,7 +288,13 @@ libnum.a:one.o(LOC*)            all counters of one archive member
 
 Each input section is placed by the first pattern that matches it, in
 script order. A pattern only matches modules that are being loaded,
-except inside `KEEP`.
+except inside `KEEP`. Because the first match wins, a section that takes
+a specific module's input must come before sections whose patterns,
+such as `*(LOC0)`, would also match it. There's no `EXCLUDE_FILE` yet.
+
+`KEEP` links a module if its file matches and one of the section
+patterns matches a non-empty location counter of the module, or names a
+`COMMON` section.
 
 ## Expressions
 
@@ -351,9 +367,13 @@ Archive members are still loaded only when needed or kept, as today.
 ## Orphans
 
 An input section of a loaded module that no pattern matches is an
-*orphan*. The linker places it where the default script would, after the
-last output section that holds the same kind of input (`LOC0` and `LOC1`
-with text, others with data), and prints a warning naming it. The
+*orphan*. The linker adds it at the end of the last output section for
+the same kind of input (`LOC0` and `LOC1` with text, others with data)
+that takes input from all files (a `*` pattern), and prints a warning
+naming it. If there's no such section, it uses the last section for that
+kind. `NOLOAD` sections are used only as a last resort. So in the ROM
+example below, orphans go into `.data`, not into `.vectors`, which only
+takes `vectors.o`. The
 `-Z` option (see below) makes orphans an error instead, for builds that
 must place everything explicitly.
 
@@ -366,7 +386,7 @@ be written as an a.out file, which has just a text and a data part. So
 | Format | Contents |
 |:-------|:---------|
 | `aout` | Today's a.out: a text part followed by a data part (see below). |
-| `binary` | A memory image from the lowest LMA to the highest, with gaps filled with the `FILL` byte. Today's `-d` produces this format. |
+| `binary` | A memory image from the lowest LMA to the highest, with gaps filled with the `FILL` byte. Today's `-d` produces this format. As today, the file ends with the last byte written, so common blocks at the end of the image aren't included. |
 | `srec` | Motorola S-records, one run of records per loadable section, at its LMA, with the entry point in the S9 record. |
 | `ihex` | Intel hex, likewise. |
 
@@ -757,7 +777,7 @@ directory with a `make check` target:
 |:------|:-----|:-------|
 | 1 | Per-module placement; tests and reference outputs | No change in behavior, except a fix for `-T`/`-D` addresses that aren't a multiple of 4. **Done.** |
 | 2 | Parser, default script, `SECTIONS`, `ONEPAGE`, symbols including `PROVIDE` and `HIDDEN`, `ENTRY`, orphans, `-S`, `-A`, `-P`, `-Z`, `-M` layout | Scripts for single-region programs. **Done.** |
-| 3 | `MEMORY`, regions, `AT`, `NOLOAD`, `KEEP`, `FILL`, `ASSERT`, `INCLUDE`, `BYTE`, `WORD` | ROM/RAM layouts |
+| 3 | `MEMORY`, regions, `AT`, `NOLOAD`, `KEEP`, `FILL`, `ASSERT`, `INCLUDE`, `BYTE`, `WORD`, `__name_load` symbols | ROM/RAM layouts. **Done.** |
 | 4 | `binary`, `srec` and `ihex` output; shared writers with `objcopy01` | Multi-region output |
 | 5 | Man page, manual chapter, examples | Documented |
 
@@ -786,3 +806,6 @@ Each phase can be merged and released on its own.
    module's start, and a backward one makes `ld01` fail with "seg 0 has
    wrong size". Should `as01` reject `ORG` in relocatable modules, leaving
    scripts as the way to place code at fixed addresses?
+6. **Excluding files from patterns.** Should patterns support something
+   like GNU's `EXCLUDE_FILE`, so that a catch-all such as `*(LOC0)` can
+   skip modules that another section places later in the script?
