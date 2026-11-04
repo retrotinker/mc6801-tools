@@ -1,0 +1,16 @@
+00001 0000              LOC 0
+00002                   
+00003                   	IMPORT	main
+00004                   
+00005                   	ENTRY __start
+00006                   
+00007             0000> __start
+00008 0000   BD   0000> 	jsr	main
+00009                   
+00010 0003   39         	rts
+
+Symbols:
+__start                     0 0000 R N main                        0 0000 R I 
+
+00000 errors
+00000 warnings

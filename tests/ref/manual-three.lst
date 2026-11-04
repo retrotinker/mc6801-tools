@@ -1,0 +1,23 @@
+00001 0000              LOC 0
+00002                   
+00003                   	IMPORT	prstring
+00004                   
+00005 0000          54  msg_three	fcb	'T,'H,'R,'E,'E,$0d,$00
+00006                   
+00007             0007> three
+00008 0007   CE   0000> 	ldx	#msg_three
+00009 000A   3C         	pshx
+00010 000B   BD   0000> 	jsr	prstring
+00011 000E   31         	ins
+00012 000F   31         	ins
+00013                   
+00014 0010   39         	rts
+00015                   
+00016                   	EXPORT three
+
+Symbols:
+msg_three                   0 0000 R   prstring                    0 0000 R I 
+three                       0 0007 R E 
+
+00000 errors
+00000 warnings

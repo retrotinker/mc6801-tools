@@ -1,0 +1,5 @@
+0 0002 ---A- PORT1
+3 0001 --IRC count
+0 0003 ---R- loop
+0 0000 E--R- main
+3 0000 ---R- pattern

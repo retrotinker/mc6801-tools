@@ -1,0 +1,39 @@
+00001 0000              LOC 0
+00002                   
+00003             4000  SCREEN	equ	$4000
+00004                   
+00005 0000   CE   4000  clrscn	ldx	#SCREEN
+00006 0003   86     60  	ldaa	#$40+' 
+00007 0005   C6     60  	ldab	#$40+' 
+00008 0007   ED     00  clrsc.1	std	,x
+00009 0009   08         	inx
+00010 000A   08         	inx
+00011 000B   8C   4200  	cpx	#(SCREEN+512)
+00012 000E   2D     F7  	blt	clrsc.1
+00013                   
+00014 0010   39         	rts
+00015                   
+00016                   	EXPORT	clrscn
+00017                   
+00018             0011> prstring
+00019 0011   30         	tsx
+00020 0012   EE     02  	ldx	2,x
+00021 0014   A6     00  prstlop	ldaa	,x
+00022 0016   27     0A  	beq	prstxit
+00023 0018   08         	inx
+00024 0019   3C         	pshx
+00025 001A   FE   FFDE  	ldx	$ffde
+00026 001D   AD     00  	jsr	,x
+00027 001F   38         	pulx
+00028 0020   20     F2  	bra	prstlop
+00029 0022   39         prstxit rts
+00030                   
+00031                   	EXPORT	prstring
+
+Symbols:
+SCREEN                      0 4000 A   clrsc.1                     0 0007 R   
+clrscn                      0 0000 R E prstlop                     0 0014 R   
+prstring                    0 0011 R E prstxit                     0 0022 R   
+
+00000 errors
+00000 warnings

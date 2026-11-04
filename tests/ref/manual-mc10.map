@@ -1,0 +1,24 @@
+Section         Address  Size     Load
+.text           0000434c 00000063
+    0000434c 00000004 crtstart.o(LOC0)
+    00004350 0000000f libnum.a:one.o(LOC0)
+    0000435f 0000000f libnum.a:two.o(LOC0)
+    0000436e 00000011 libnum.a:three.o(LOC0)
+    0000437f 0000000d main.o(LOC0)
+    0000438c 00000023 screen.o(LOC0)
+.data           000043af 00000000
+
+                 one               msg_one  0  00004350  r
+                 one                   one  0  00004355  R
+                 two                   two  0  00004364  R
+                 two               msg_two  0  0000435f  r
+               three                 three  0  00004375  R
+               three             msg_three  0  0000436e  r
+            crtstart               __start  0  0000434c  R N
+                main                  main  0  0000437f  R
+              screen                SCREEN  0  00004000  a
+              screen               clrsc.1  0  00004393  r
+              screen               prstlop  0  000043a0  r
+              screen               prstxit  0  000043ae  r
+              screen                clrscn  0  0000438c  R
+              screen              prstring  0  0000439d  R

@@ -1,0 +1,6 @@
+0 4000 ---A- SCREEN
+0 0007 ---R- clrsc.1
+0 0000 E--R- clrscn
+0 0014 ---R- prstlop
+0 0011 E--R- prstring
+0 0022 ---R- prstxit

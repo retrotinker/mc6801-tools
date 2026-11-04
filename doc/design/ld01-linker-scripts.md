@@ -784,7 +784,7 @@ directory with a `make check` target:
 | 2 | Parser, default script, `SECTIONS`, `ONEPAGE`, symbols including `PROVIDE` and `HIDDEN`, `ENTRY`, orphans, `-S`, `-A`, `-P`, `-Z`, `-M` layout | Scripts for single-region programs. **Done.** |
 | 3 | `MEMORY`, regions, `AT`, `NOLOAD`, `KEEP`, `FILL`, `ASSERT`, `INCLUDE`, `BYTE`, `WORD`, `__name_load` symbols | ROM/RAM layouts. **Done.** |
 | 4 | `binary`, `srec` and `ihex` output; shared writers with `objcopy01` | Multi-region output. **Done.** |
-| 5 | Man page, manual chapter, examples | Documented |
+| 5 | Man page, manual chapter, examples | Documented. **Done.** The manual's examples are linked by `make check`, which also checks that they match the manual. |
 
 Each phase can be merged and released on its own.
 
