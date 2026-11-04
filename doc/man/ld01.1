@@ -3,9 +3,13 @@
 ld01 \- linker for MC6801 object files
 .SH SYNOPSIS
 .B ld01
-.RB [ \-dimMrsty ]
+.RB [ \-dimMPrstyZ ]
 .RB [ \-o
 .IR outfile ]
+.RB [ \-S
+.IR script ]
+.RB [ \-A
+.IR symbol = value ]
 .RB [ \-T
 .IR textaddr ]
 .RB [ \-D
@@ -31,10 +35,25 @@ their final addresses.
 Each
 .I file
 is an object file or an archive.
-All named object files are linked.
-An archive member is linked only if it defines a symbol that is
-referenced by something already being linked.
+A module is linked only if the program uses it: starting from the
+modules that define the entry point,
+.B _main
+or
+.BR start ,
+the linker includes every module that defines a symbol a linked module
+refers to.
 Archives may appear anywhere on the command line.
+.PP
+A linker script controls where everything goes: which parts of which
+modules go into each output section, the section addresses, and extra
+symbols.
+Without
+.BR \-S ,
+the linker uses a built\-in default script, which gives the layout
+described under SEGMENTS.
+.B \-P
+prints it, as a starting point for your own.
+See LINKER SCRIPTS.
 .PP
 The program starts at the first symbol declared with the assembler\(aqs
 .B ENTRY
@@ -144,8 +163,40 @@ marks a linked module and
 an archive member that was not needed.
 .TP
 .B \-M
-List all symbols linked, with module, value and type, on standard
-output.
+Print the layout, each output section with its address and size and the
+input sections in it, then all symbols linked, with module, value and
+type, on standard output.
+.TP
+.BI \-S " script"
+Use the linker script in
+.I script
+instead of the default script.
+.TP
+.BI \-A " symbol" = value
+Define
+.IR symbol ,
+as if the script began with
+.IB symbol " = " value ;\fR.\fP
+The script can use it, and it takes the place of the script\(aqs
+.B PROVIDE
+for the same symbol.
+.TP
+.B \-P
+Print the default linker script on standard output and exit.
+The script includes the values of
+.BR \-T ,
+.BR \-D ,
+.B \-H
+and
+.BR \-d .
+Linking with it
+.RB ( \-S )
+gives the same output as linking without a script.
+No input files are needed.
+.TP
+.B \-Z
+Make it an error for the script not to place some input (see Orphans
+under LINKER SCRIPTS).
 .TP
 .B \-r
 Instead of linking, write the input objects to
@@ -209,7 +260,175 @@ are always written to the executable\(aqs symbol table, unless
 is given.
 .BR objcopy01 (1)
 uses them to find the load addresses.
+.SH LINKER SCRIPTS
+A script is a list of commands.
+Comments are written
+.B /* ... */
+or start with
+.BR # .
+For example:
+.PP
+.RS
+.nf
+ENTRY(reset)
+
+SECTIONS
+{
+    .text 0xE000 :
+    {
+        crt0.o(LOC0)
+        *(LOC0 LOC1)
+        *(COMMON0 COMMON1)
+    }
+    .data 0x0080 :
+    {
+        *(LOC*)
+        *(COMMON)
+    }
+    __stack_top = 0x00FF;
+}
+.fi
+.RE
+.SS Commands
+.TP
+.BI ENTRY( symbol )
+Start the program at
+.IR symbol ,
+before any
+.B ENTRY
+in the object files.
+.TP
+.BI OUTPUT_FORMAT( format )
+.B aout
+(the default) or
+.BR binary ,
+a memory image as with
+.BR \-d .
+.TP
+.BI SECTIONS " { ... }"
+Output sections and symbol assignments, in order.
+.TP
+.IB symbol " = " expression ;
+Define a symbol.
+.TP
+.BI PROVIDE( symbol " = " expression );
+Define it only if a linked module imports it and no module defines it.
+.TP
+.BI HIDDEN( symbol " = " expression );
+Define a symbol that only the script can use.
+.SS Output sections
+.nf
+\fIname\fP [\fIaddress\fP] : [ALIGN(\fIn\fP)] [SUBALIGN(\fIn\fP)] { \fIstatements\fP }
+.fi
+.PP
+Without an
+.IR address ,
+a section starts at the current address
+.RB ( . ),
+which is where the previous section ended.
+.B ALIGN
+rounds the start up to a multiple of
+.IR n .
+.B SUBALIGN
+pads each input section in it to a multiple of
+.I n
+bytes.
+.PP
+Statements inside a section, in order:
+.TP
+.IB file ( sections )
+Add the matching input sections.
+.TP
+.BI ONEPAGE " { statements }"
+Keep the contents within one 256\-byte page: if they would end on a
+later page than they start, they move to the start of the next page.
+.TP
+.IB symbol " = " expression ";\fR, \fP" PROVIDE ", " HIDDEN
+Define symbols, often using
+.BR . ,
+the current address.
+.TP
+.BI ". = " expression ;
+Move the current address forward.
+.SS Input sections
+Each linked module has two input sections for each location counter
+.IR n :
+.BI LOC n\fR,\fP
+its code and data, and
+.BI COMMON n\fR,\fP
+its common blocks.
+.B .text
+means
+.BR LOC0 ,
+.B .data
+means
+.BR LOC3 ,
+and
+.B COMMON
+means all the common blocks.
+.PP
+.I file
+matches the object file name, with or without its directory; archive
+members are named
+.IB archive : member\fR.\fP
+Both
+.I file
+and the section names may use the wildcards
+.B *
+and
+.BR ? .
+Each input section goes to the first statement that matches it.
+A statement adds its input sections in module order, and each module\(aqs
+in counter order.
+.SS Orphans
+Input that no statement matches is added at the end of the last output
+section for its kind (counters 0 and 1, or the others), with a warning.
+.B \-Z
+makes it an error.
+.SS Expressions
+Expressions use C operators and numbers written as for
+.BR \-T .
+A
+.B K
+suffix multiplies by 1024.
+The functions are
+.BI ADDR( section )\fR,\fP
+.BI SIZEOF( section )\fR,\fP
+.BI LOADADDR( section )\fR,\fP
+.BI ALIGN( n )
+(the current address rounded up),
+.BI ALIGN( expression ", " n )\fR,\fP
+.BI DEFINED( symbol )\fR,\fP
+.B MAX
+and
+.BR MIN .
+Symbols may be used before they're defined; the linker repeats the
+layout until nothing changes.
+.SS Symbols
+Symbols defined by a script are absolute.
+They satisfy imports from any location counter.
+A plain assignment to a symbol that a module also defines is an error.
+.SS a.out output
+The output sections up to the first one that can take input from
+location counters 2 to 15 form the a.out text part, and the rest the
+data part.
+The output is marked as having separate instruction and data spaces if
+the data part doesn\(aqt start where the text part ends.
+Common blocks at the end of the data part are its uninitialized data.
+The header\(aqs total memory size reaches
+.B __heap_top
+if the script sets it.
+.SS Not yet supported
+.BR MEMORY ,
+.BR AT ,
+.BR NOLOAD ,
+.BR KEEP ,
+.BR FILL ,
+.BR ASSERT ,
+.BR INCLUDE ,
+and S\-record or Intel hex output.
 .SH SEGMENTS
+This is the layout of the default script.
 The assembler has 16 location counters.
 Counters 0 and 1 are linked into the text segment, and counters 2
 through 15 into the data segment.
@@ -233,6 +452,15 @@ Produce a raw memory image for an EPROM at $E000:
 .RS
 .B ld01 \-d \-T0xe000 \-o rom.bin start.o prog.o
 .RE
+.PP
+Start a linker script from the default layout, edit it, and use it:
+.PP
+.RS
+.nf
+.B ld01 \-P \-T0x434c > mc10.ld
+.B ld01 \-S mc10.ld \-Cstart \-lnum \-o main.aout main.o screen.o
+.fi
+.RE
 .SH DIAGNOSTICS
 Undefined symbols are reported as
 \(lqundefined symbol:
@@ -248,14 +476,6 @@ The mc6801\-tools User\(aqs Manual
 .RI ( mc6801\-tools\-manual.pdf ).
 .SH BUGS
 Symbol names in the a.out symbol table are cut to 8 characters.
-.PP
-The usage message lists the flags
-.BR \-0 ,
-.BR \-3 ,
-.B \-N
-and
-.BR \-z ,
-which are not accepted.
 .SH HISTORY
 Derived from
 .B ld86
