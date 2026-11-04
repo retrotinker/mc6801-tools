@@ -222,11 +222,13 @@ SECTIONS
 * `address` sets the VMA. Without it, the section follows the previous
   one in the same region, or the current value of `.`.
 * `AT(lma)` or `AT> region` sets a separate load address.
-* `ALIGN(n)` aligns the section's start. `SUBALIGN(n)` pads each input
-  section within it to a multiple of `n` bytes, so each one starts and
-  ends on a multiple of `n`. (GNU `ld` only aligns the start; padding the
-  end as well matches today's `ld01`.) The default is no alignment,
-  except in the default script (see below).
+* `ALIGN(n)` rounds the section's start address up to a multiple of `n`.
+  `SUBALIGN(n)` pads each input section within it to a multiple of `n`
+  bytes, counted from its own start. If the section starts on a multiple
+  of `n`, every input section then starts on one too. (GNU `ld` aligns
+  input section addresses instead; padding the size matches today's
+  `ld01`, including at addresses that aren't a multiple of `n`.) The
+  default is no padding, except in the default script (see below).
 * `NOLOAD` reserves the space without writing anything to the output.
 * `= fill` sets the byte used for gaps inside the section. The default is
   0.
@@ -246,11 +248,13 @@ WORD(expression) ;              16 bits, high byte first
 FILL(byte) ;                    fill byte for later gaps
 ```
 
-`ONEPAGE` places the statements inside it together. If their contents
-would cross a 256-byte page boundary, the block starts at the next page
-instead, and assignments inside it see the moved addresses. It's an
-error if the contents are larger than a page. Today's `ld01` treats
-location counter 2 this way.
+`ONEPAGE` places the statements inside it together. If the block's
+start address and its start plus its size are on different 256-byte
+pages, the block starts at the next page instead, and assignments inside
+it see the moved addresses. (So a block that ends exactly at a page
+boundary moves too, as in today's `ld01`.) It's an error if the contents
+are larger than a page. Today's `ld01` treats location counter 2 this
+way.
 
 ## Input section patterns
 
@@ -361,10 +365,24 @@ be written as an a.out file, which has just a text and a data part. So
 
 | Format | Contents |
 |:-------|:---------|
-| `aout` | Today's a.out. Allowed only if the loadable sections form a text part followed by a data part, each contiguous. Otherwise the linker reports an error that suggests another format. |
+| `aout` | Today's a.out: a text part followed by a data part (see below). |
 | `binary` | A memory image from the lowest LMA to the highest, with gaps filled with the `FILL` byte. Today's `-d` produces this format. |
 | `srec` | Motorola S-records, one run of records per loadable section, at its LMA, with the entry point in the S9 record. |
 | `ihex` | Intel hex, likewise. |
+
+For `aout`, the output sections up to the first one that can take input
+from location counters 2 to 15 form the text part, and the rest form the
+data part. Within each part, sections must be in increasing address
+order; gaps between them are filled with zeros. The output is marked as
+having separate instruction and data spaces if the data part doesn't
+start where the text part ends. Common blocks at the end of the data part
+are its uninitialized data (bss). The header's total memory size reaches
+`__heap_top` if the script sets it.
+
+Each symbol a script defines gets a symbol table class: text or data if
+it's assigned inside an output section in that part, or at the top level
+from an expression that uses addresses, after such a section; otherwise
+absolute.
 
 The S-record and Intel hex writers move from `objcopy01` into a small
 shared source file used by both programs, so their output is identical.
@@ -421,10 +439,12 @@ you need. `-P` with `-S` is an error, since `-P` shows the script that
 values. The same text is used for linking and printed by `-P`, so the two
 can't differ.
 
-With `-i` (separate instruction and data spaces), the printed script
-places `.data` at the `-D` address or 0 and notes in a comment that `-i`
-must still be given. That flag selects an a.out header format, which
-isn't part of the script.
+With `-i` or `-D` (separate instruction and data spaces), the printed
+script places `.data` at the `-D` address or 0, and pads `.text` to a
+multiple of 16 bytes, as today. Linking with it doesn't need `-i`
+again: a.out output is marked as having separate instruction and data
+spaces whenever the data doesn't start where the text ends (see
+[Output formats](#output-formats)).
 
 # The default script
 
@@ -442,7 +462,8 @@ SECTIONS
 {
     .text 0x0000 : SUBALIGN(4)
     {
-        PROVIDE(__btext = .);
+        __btext = .;
+        PROVIDE(__segoff = 0);
         PROVIDE(__seg0DL = .);
         *(LOC0)
         PROVIDE(__seg0DH = .);
@@ -455,12 +476,12 @@ SECTIONS
         PROVIDE(__seg1CL = .);
         *(COMMON1)
         PROVIDE(__seg1CH = .);
-        PROVIDE(__etext = .);
+        __etext = .;
     }
 
     .data __etext : SUBALIGN(4)
     {
-        PROVIDE(__bdata = .);
+        __bdata = .;
         HIDDEN(__dend = .);
 
         ONEPAGE
@@ -486,12 +507,11 @@ SECTIONS
 
         /* ... the same for LOC4 to LOC15 ... */
 
-        PROVIDE(__end = .);
+        __edata = __dend;
+        __end = .;
     }
 
-    PROVIDE(__edata = __dend);
     PROVIDE(__heap_top = __end + 0x0000);
-    PROVIDE(__segoff = 0);
 }
 ```
 
@@ -510,10 +530,15 @@ How it reproduces today's layout:
   after that point count as bss in the a.out header.
 * **Entry point.** The script has no `ENTRY`, so the entry point is
   chosen as today.
-* **Linker symbols.** All the symbols `ld01` defines today, including
-  the `__segXDL`, `__segXDH`, `__segXCL` and `__segXCH` boundaries of
-  each counter, are `PROVIDE`d, so they only appear when used, as today.
-  `-P` prints the full script, with every counter written out.
+* **Linker symbols.** `__btext`, `__etext`, `__bdata`, `__edata` and
+  `__end` are plain assignments, so they're always defined and written to
+  the symbol table, where `objcopy01` finds the load addresses. The other
+  symbols `ld01` defines today, including the `__segXDL`, `__segXDH`,
+  `__segXCL` and `__segXCH` boundaries of each counter, are `PROVIDE`d,
+  so they only appear when used, as today. `-P` prints the full script,
+  with every counter written out.
+* **Header.** The a.out header's total memory size reaches
+  `__heap_top`, so the printed script carries the `-H` value too.
 
 The first phase of the implementation must show that this script
 produces byte-identical output to today's `ld01` for every test (see
@@ -731,8 +756,8 @@ directory with a `make check` target:
 | Phase | Work | Result |
 |:------|:-----|:-------|
 | 1 | Per-module placement; tests and reference outputs | No change in behavior, except a fix for `-T`/`-D` addresses that aren't a multiple of 4. **Done.** |
-| 2 | Parser, default script, `SECTIONS`, `ONEPAGE`, symbols including `HIDDEN`, `ENTRY`, `-S`, `-A`, `-P`, `-M` layout | Scripts for single-region programs |
-| 3 | `MEMORY`, regions, `AT`, `NOLOAD`, `KEEP`, `PROVIDE`, `FILL`, `ASSERT`, orphans, `-Z` | ROM/RAM layouts |
+| 2 | Parser, default script, `SECTIONS`, `ONEPAGE`, symbols including `PROVIDE` and `HIDDEN`, `ENTRY`, orphans, `-S`, `-A`, `-P`, `-Z`, `-M` layout | Scripts for single-region programs. **Done.** |
+| 3 | `MEMORY`, regions, `AT`, `NOLOAD`, `KEEP`, `FILL`, `ASSERT`, `INCLUDE`, `BYTE`, `WORD` | ROM/RAM layouts |
 | 4 | `binary`, `srec` and `ihex` output; shared writers with `objcopy01` | Multi-region output |
 | 5 | Man page, manual chapter, examples | Documented |
 
@@ -740,9 +765,8 @@ Each phase can be merged and released on its own.
 
 # Open questions
 
-1. **Option letters.** Are `-S`, `-A` and `-Z` acceptable, or should
-   `ld01` take long options such as `--script` and `--defsym`, as GNU
-   `ld` does?
+1. **Option letters.** Resolved: the short letters `-S`, `-A`, `-Z` and
+   `-P` are used.
 2. **A separate bss counter.** `as01` puts `.DATA` and `.BSS` in the same
    location counter, and `RMB` space is written as zeros, so only common
    blocks are really uninitialized. Should `.BSS` get its own counter, so
