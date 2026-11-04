@@ -36,11 +36,14 @@ assemble() {
 }
 
 # link NAME OPTION...: executable, -m/-M map, messages and exit status
+# (the map's last line, the linker's own memory use, isn't compared)
 link() {
 	name=$1
 	shift
-	"$LD" "$@" -o "$name.out" > "$name.map" 2> "$name.err"
+	"$LD" "$@" -o "$name.out" > "$name.map.tmp" 2> "$name.err"
 	echo $? > "$name.rc"
+	sed '/^Total memory used: /d' "$name.map.tmp" > "$name.map"
+	rm -f "$name.map.tmp"
 }
 
 for f in "$top"/demo/*.s "$tests"/src/*.s; do
@@ -61,6 +64,11 @@ link segs-TD	-m -M -T0x1000 -D0x8000 segs.o helper.o
 link segs-i	-m -M -i -T0x1000 segs.o helper.o
 link segs-H	-m -M -T0xe000 -H0x100 segs.o helper.o
 link segs-d	-d -T0xe000 segs.o helper.o
+
+# addresses that aren't a multiple of 4 (before per-module placement,
+# symbol values and code disagreed in this case)
+link segs-odd	-m -M -T0x1001 -D0x8003 segs.o helper.o
+link segs-oddd	-d -T0x1001 segs.o helper.o
 
 # location counter 2 moved to the next page
 link page	-m -M -T0 page.o

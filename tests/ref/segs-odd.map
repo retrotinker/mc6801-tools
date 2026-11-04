@@ -1,0 +1,14 @@
+segs            +segs.o
+helper          +helper.o
+                segs                  far5  5  0000802f  r
+                segs               message  3  00008003  r
+                segs                 local  0  0000101f  r
+                segs                 start  0  00001001  R N
+                segs                  last  f  00008033  r
+                segs                  fast  1  0000102d  r
+              helper                 help2  0  00001026  r
+              helper                helper  0  00001021  R
+              helper                 table  3  00008013  R
+              helper               codecom  0  00001029  R C
+              helper                   buf  3  0000801b  R C
+              helper               counter  3  0000802b  R C

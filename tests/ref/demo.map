@@ -18,4 +18,3 @@ screen          +screen.o
               screen               prstxit  0  000043b6  r
               screen                clrscn  0  00004394  R
               screen              prstring  0  000043a5  R
-Total memory used: 000004ff

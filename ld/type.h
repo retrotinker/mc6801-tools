@@ -47,6 +47,7 @@ struct modstruct		/* module table entry format */
 				/* 00 = 0, 01 = 1, 10 = 2, 11 = 4 */
     struct symstruct **symparray;	/* ^array of ptrs to referenced syms */
     struct modstruct *modnext;	/* next module in order of initial reading */
+    bin_off_t segaddr[NSEG];	/* address of this module's part of each seg */
     char segsize[1];		/* up to 64 size bytes begin here */
 };				/* careful with sizeof( struct modstruct )!! */
 

@@ -149,12 +149,8 @@ bool_pt argxsym;
 					if (!
 					    (symptr->
 					     flags & (I_MASK | SA_MASK))) {
-						/* relocate by offset of module in segment later */
-						/* relocate by offset of segment in memory special */
-						/* symbols get relocated improperly */
-						symptr->value +=
-						    segsz[symptr->
-							  flags & SEGM_MASK];
+						/* relocated by the address of the module's
+						   part of its segment, once that is known */
 					} else if (symptr->value == 0) {
 						undefined(symptr->name);
 					} else {
@@ -244,7 +240,29 @@ bool_pt argxsym;
 		segadj[seg] = segadj[seg - 1];
 	}
 
-	/* relocate symbols by offsets of segments in memory */
+	/* place each loaded module's part of each segment, in module order,
+	   padded to a multiple of 4 bytes */
+	{
+		bin_off_t nextaddr[NSEG];
+
+		for (seg = 0; seg < NSEG; ++seg)
+			nextaddr[seg] = segbase[seg];
+		for (modptr = modfirst; modptr != NUL_PTR;
+		     modptr = modptr->modnext)
+			if (modptr->loadflag)
+				for (seg = 0, cptr = modptr->segsize;
+				     seg < NSEG; ++seg) {
+					modptr->segaddr[seg] = nextaddr[seg];
+					nextaddr[seg] +=
+					    ld_roundup(cntooffset(cptr,
+						sizecount = segsizecount(
+						    (unsigned)seg, modptr)),
+						4, bin_off_t);
+					cptr += sizecount;
+				}
+	}
+
+	/* relocate symbols by the addresses of their parts of segments */
 	for (modptr = modfirst; modptr != NUL_PTR; modptr = modptr->modnext)
 		if (modptr->loadflag) {
 			register struct symstruct **symparray;
@@ -260,7 +278,7 @@ bool_pt argxsym;
 							    flags & SEGM_MASK];
 					else
 						symptr->value +=
-						    segbase[symptr->
+						    modptr->segaddr[symptr->
 							    flags & SEGM_MASK];
 				}
 		}
@@ -483,7 +501,12 @@ struct modstruct *modptr;
 	struct symstruct **symparray;
 	struct symstruct *symptr;
 
-	setseg(0);
+	/* this module's parts of the segments start at their own addresses */
+	for (curseg = 0; curseg < NSEG; ++curseg)
+		segpos[curseg] = modptr->segaddr[curseg];
+	spos = segpos[curseg = 0];
+	seekout(FILEHEADERLENGTH + (unsigned long)spos
+		+ (unsigned long)segadj[curseg]);
 	relocsize = 2;
 	symparray = modptr->symparray;
 	openin(modptr->filename);	/* does nothing if already open */
@@ -546,7 +569,7 @@ struct modstruct *modptr;
 #endif
 				offset -= (spos + relocsize);
 			}
-			offtocn(buf, segbase[modify & SEGM_MASK] + offset,
+			offtocn(buf, modptr->segaddr[modify & SEGM_MASK] + offset,
 				relocsize);
 			writeout(buf, relocsize);
 			spos += relocsize;
@@ -589,19 +612,17 @@ struct modstruct *modptr;
 				  sizecount =
 				  segsizecount((unsigned)seg, modptr));
 		sizeptr += sizecount;
-		if ((count = segpos[seg] - segbase[seg]) != size)
+		if ((count = segpos[seg] - modptr->segaddr[seg]) != size)
 			size_error(seg, count, size);
 
-		/* pad to quad boundary */
+		/* pad to the size the module was given when it was placed */
 		/* not padding in-between common areas which sometimes get into file */
-		if ((size =
-		     ld_roundup(segpos[seg], 4,
-				bin_off_t) - segpos[seg]) != 0) {
+		if ((size = modptr->segaddr[seg] + ld_roundup(size, 4, bin_off_t)
+		     - segpos[seg]) != 0) {
 			setseg(seg);
 			writenulls(size);
 			segpos[seg] = spos;
 		}
-		segbase[seg] = segpos[seg];
 	}
 }
 
