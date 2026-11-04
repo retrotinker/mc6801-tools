@@ -8,9 +8,8 @@
 #include "obj.h"
 #include "type.h"
 #include "globvar.h"
+#include "script.h"
 
-#define btextoffset (text_base_value)
-#define bdataoffset (data_base_value)
 #define page_size() ((bin_off_t)4096)
 
 #ifndef ELF_SYMS
@@ -45,23 +44,12 @@
 #define offsetof(struc, mem) ((size_t) &((struc *) 0)->mem)
 #define memsizeof(struc, mem) sizeof(((struc *) 0)->mem)
 
-PRIVATE bin_off_t combase[NSEG];	/* bases of common parts of segments */
-PRIVATE bin_off_t comsz[NSEG];	/* sizes of common parts of segments */
 PRIVATE fastin_t curseg;	/* current segment, 0 to $F */
-PRIVATE bin_off_t edataoffset;	/* end of data */
-PRIVATE bin_off_t endoffset;	/* end of bss */
-PRIVATE bin_off_t etextoffset;	/* end of text */
-PRIVATE bin_off_t etextpadoff;	/* end of padded text */
 PRIVATE unsigned nsym;		/* number of symbols written */
 PRIVATE unsigned relocsize;	/* current relocation size 1, 2 or 4 */
-PRIVATE bin_off_t segadj[NSEG];	/* adjusts (file offset - seg offset) */
-				/* depends on zero init */
-PRIVATE bin_off_t segbase[NSEG];	/* bases of data parts of segments */
-PRIVATE char segboundary[9] = "__seg0DH";
-				/* name of seg boundary __seg0DL to __segfCH */
+PRIVATE bin_off_t segadj[NSEG];	/* file offset - address, for the
+				   current module's part of each segment */
 PRIVATE bin_off_t segpos[NSEG];	/* segment positions for current module */
-PRIVATE bin_off_t segsz[NSEG];	/* sizes of data parts of segments */
-				/* depends on zero init */
 PRIVATE bool_t sepid;		/* nonzero for separate I & D */
 PRIVATE bool_t stripflag;	/* nonzero to strip symbols */
 PRIVATE bin_off_t spos;		/* position in current seg */
@@ -69,12 +57,10 @@ PRIVATE bool_t xsym;		/* extended symbol table */
 
 FORWARD void linkmod P((struct modstruct * modptr));
 FORWARD void padmod P((struct modstruct * modptr));
-FORWARD void setsym P((char *name, bin_off_t value));
-FORWARD void symres P((char *name));
 FORWARD void setseg P((fastin_pt newseg));
 FORWARD void skip P((unsigned countsize));
 FORWARD void writeheader P((void));
-FORWARD void writelinksym P((char *name, bin_off_t value, int sclass));
+FORWARD void writescriptsym P((char *name, bin_off_t value, int class));
 FORWARD void writenulls P((bin_off_t count));
 
 EXTERN bool_t reloc_output;
@@ -88,12 +74,10 @@ bool_pt argstripflag;
 bool_pt argxsym;
 {
 	char buf4[4];
-	char *cptr;
 	struct nlist extsym;
 	flags_t flags;
 	struct modstruct *modptr;
 	fastin_t seg;
-	unsigned sizecount;
 	bin_off_t tempoffset;
 
 	if (reloc_output)
@@ -104,39 +88,11 @@ bool_pt argxsym;
 	stripflag = argstripflag;
 	xsym = argxsym;
 
-	/* reserve special symbols use curseg to pass parameter to symres() */
-	for (curseg = 0; curseg < NSEG; ++curseg) {
-		segboundary[5] = hexdigit[curseg];	/* to __segX?H */
-		segboundary[6] = 'D';
-		symres(segboundary);	/* __segXDH */
-		segboundary[7] = 'L';
-		symres(segboundary);	/* __segXDL */
-		segboundary[6] = 'C';
-		symres(segboundary);	/* __segXCL */
-		segboundary[7] = 'H';
-		symres(segboundary);	/* __segXCH */
-#ifndef DATASEGS
-		if (curseg > 3) {
-			segboundary[6] = 'S';
-			segboundary[7] = 'O';
-			symres(segboundary);	/* __segXSO */
-		}
-#endif
-	}
-	curseg = 2;
-	symres("__bdata");
-	curseg = 3;
-	symres("__edata");
-	symres("__end");
-	symres("__heap_top");
-	curseg = 0;		/* text seg, s.b. variable */
-	symres("__btext");
-	symres("__etext");
-	symres("__segoff");
+	/* which imports the script satisfies, and the symbols it defines */
+	script_mark_imports();
 
-	/* calculate segment and common sizes (sum over loaded modules) */
-	/* use zero init of segsz[] */
-	/* also relocate symbols relative to starts of their segments */
+	/* allocate each loaded module's common blocks, in multiples of 4
+	   bytes, and check for undefined symbols */
 	for (modptr = modfirst; modptr != NUL_PTR; modptr = modptr->modnext)
 		if (modptr->loadflag) {
 			register struct symstruct **symparray;
@@ -146,121 +102,25 @@ bool_pt argxsym;
 			     (symptr = *symparray) != NUL_PTR; ++symparray)
 				if (symptr->modptr == modptr
 				    && !(symptr->flags & A_MASK)) {
-					if (!
-					    (symptr->
-					     flags & (I_MASK | SA_MASK))) {
-						/* relocated by the address of the module's
-						   part of its segment, once that is known */
-					} else if (symptr->value == 0) {
+					if (!(symptr->flags & (I_MASK | SA_MASK)))
+						continue;
+					if (symptr->value == 0) {
 						undefined(symptr->name);
-					} else {
-						tempoffset =
-						    ld_roundup(symptr->value, 4,
-							       bin_off_t);
-						/* temp kludge quad alignment for 386 */
-						symptr->value = comsz[seg =
-								      symptr->
-								      flags &
-								      SEGM_MASK];
-						comsz[seg] += tempoffset;
-						if (!(symptr->flags & SA_MASK))
-							symptr->flags |= C_MASK;
+						continue;
 					}
+					tempoffset =
+					    ld_roundup(symptr->value, 4, bin_off_t);
+					seg = symptr->flags & SEGM_MASK;
+					symptr->value = modptr->comsize[seg];
+					modptr->comsize[seg] += tempoffset;
+					if (!(symptr->flags & SA_MASK))
+						symptr->flags |= C_MASK;
 				}
-			for (seg = 0, cptr = modptr->segsize; seg < NSEG; ++seg) {
-				segsz[seg] += cntooffset(cptr,
-							 sizecount =
-							 segsizecount((unsigned)
-								      seg,
-								      modptr));
-
-				/* adjust sizes to even to get quad boundaries */
-				/* this should be specifiable dynamically */
-				segsz[seg] =
-				    ld_roundup(segsz[seg], 4, bin_off_t);
-				comsz[seg] =
-				    ld_roundup(comsz[seg], 4, bin_off_t);
-				cptr += sizecount;
-			}
 		}
 
-	/* calculate seg positions now their sizes are known */
-	/*
-	   #ifdef DATASEGS
-	   * Assume seg 0 is text and rest are data
-	   #else
-	   * Assume seg 1..3 are data, Seg 0 is real text, seg 4+ are far text
-	   #endif
-	 */
-	segpos[0] = segbase[0] = spos = btextoffset;
-	combase[0] = segbase[0] + segsz[0];
-	segadj[1] = segadj[0] = -btextoffset;
-	segpos[1] = segbase[1] = combase[0] + comsz[0];
-	combase[1] = segbase[1] + segsz[1];
-	etextpadoff = etextoffset = combase[1] + comsz[1];
-#ifndef DATASEGS
-	for (seg = 4; seg < NSEG; ++seg) {
-		segpos[seg] = segbase[seg] = 0;
-		combase[seg] = segbase[seg] + segsz[seg];
-		segadj[seg] = etextpadoff;
-
-		etextpadoff +=
-		    ld_roundup(segsz[seg] + comsz[seg], 0x10, bin_off_t);
-		segadj[1] +=
-		    ld_roundup(segsz[seg] + comsz[seg], 0x10, bin_off_t);
-	}
-#endif
-	if (sepid) {
-		etextpadoff = ld_roundup(etextoffset, 0x10, bin_off_t);
-		segadj[DPSEG] = segadj[DPSEG - 1] + etextpadoff - bdataoffset;
-	} else {
-		if (bdataoffset == 0)
-			bdataoffset = etextpadoff;
-		segadj[DPSEG] = segadj[DPSEG - 1];
-	}
-	segpos[DPSEG] = segbase[DPSEG] = edataoffset = bdataoffset;
-	/* temporarily have fixed DP seg */
-	/* adjust if nec so it only spans 1 page */
-	tempoffset = segsz[DPSEG] + comsz[DPSEG];
-	if (tempoffset > 0x100)
-		fatalerror("direct page segment too large");
-	if ((((segbase[DPSEG] + tempoffset) ^ segbase[DPSEG])
-	     & ~(bin_off_t) 0xFF) != 0)
-		segpos[DPSEG] = segbase[DPSEG] =
-		    (segbase[DPSEG] + 0xFF) & ~(bin_off_t) 0xFF;
-	combase[DPSEG] = segbase[DPSEG] + segsz[DPSEG];
-#ifndef DATASEGS
-	for (seg = 3; seg < 4; ++seg)
-#else
-	for (seg = 3; seg < NSEG; ++seg)
-#endif
-	{
-		segpos[seg] = segbase[seg] = combase[seg - 1] + comsz[seg - 1];
-		combase[seg] = segbase[seg] + segsz[seg];
-		segadj[seg] = segadj[seg - 1];
-	}
-
-	/* place each loaded module's part of each segment, in module order,
-	   padded to a multiple of 4 bytes */
-	{
-		bin_off_t nextaddr[NSEG];
-
-		for (seg = 0; seg < NSEG; ++seg)
-			nextaddr[seg] = segbase[seg];
-		for (modptr = modfirst; modptr != NUL_PTR;
-		     modptr = modptr->modnext)
-			if (modptr->loadflag)
-				for (seg = 0, cptr = modptr->segsize;
-				     seg < NSEG; ++seg) {
-					modptr->segaddr[seg] = nextaddr[seg];
-					nextaddr[seg] +=
-					    ld_roundup(cntooffset(cptr,
-						sizecount = segsizecount(
-						    (unsigned)seg, modptr)),
-						4, bin_off_t);
-					cptr += sizecount;
-				}
-	}
+	/* place everything as the linker script says */
+	script_layout(sepid, headerless);
+	sepid = lay_sepid;
 
 	/* relocate symbols by the addresses of their parts of segments */
 	for (modptr = modfirst; modptr != NUL_PTR; modptr = modptr->modnext)
@@ -274,7 +134,7 @@ bool_pt argxsym;
 				    && !(symptr->flags & A_MASK)) {
 					if (symptr->flags & (C_MASK | SA_MASK))
 						symptr->value +=
-						    combase[symptr->
+						    modptr->comaddr[symptr->
 							    flags & SEGM_MASK];
 					else
 						symptr->value +=
@@ -282,55 +142,7 @@ bool_pt argxsym;
 							    flags & SEGM_MASK];
 				}
 		}
-
-	/* adjust special symbols */
-	for (seg = 0; seg < NSEG; ++seg) {
-#ifdef DATASEGS
-		if (segsz[seg] != 0 && seg > 1)
-			/* only count data of nonzero length */
-#else
-		if (segsz[seg] != 0 && seg > 1 && seg < 4)
-#endif
-			edataoffset = segbase[seg] + segsz[seg];
-		segboundary[5] = hexdigit[seg];	/* to __segX?H */
-		segboundary[6] = 'D';
-		setsym(segboundary, (tempoffset = segbase[seg]) + segsz[seg]);
-		/* __segXDH */
-		segboundary[7] = 'L';
-		setsym(segboundary, tempoffset);	/* __segXDL */
-		segboundary[6] = 'C';
-		setsym(segboundary, tempoffset = combase[seg]);
-		/* __segXCL */
-		segboundary[7] = 'H';
-		setsym(segboundary, tempoffset + comsz[seg]);
-		/* __segXCH */
-#ifndef DATASEGS
-		if (seg > 3) {
-			segboundary[6] = 'S';
-			segboundary[7] = 'O';
-			setsym(segboundary,
-			       (bin_off_t) (segadj[seg] - segadj[0]) / 0x10);
-			/* __segXSO */
-		}
-#endif
-	}
-	setsym("__btext", btextoffset);
-	setsym("__etext", etextoffset);
-	setsym("__bdata", bdataoffset);
-	setsym("__edata", edataoffset);
-#ifdef DATASEGS
-	setsym("__end", endoffset = combase[NSEG - 1] + comsz[NSEG - 1]);
-#else
-	setsym("__end", endoffset = combase[3] + comsz[3]);
-#endif
-	setsym("__segoff", (bin_off_t) (segadj[1] - segadj[0]) / 0x10);
-	if (etextoffset > 65536L)
-		fatalerror("text segment too large");
-	if (endoffset > 65536L)
-		fatalerror("data segment too large");
-
-	heap_top_value += endoffset;
-	setsym("__heap_top", heap_top_value);
+	script_define_symbols();
 
 	openout(outfilename);
 	writeheader();
@@ -343,8 +155,8 @@ bool_pt argxsym;
 	/* dump symbol table */
 	if (!stripflag) {
 		seekout(FILEHEADERLENGTH
-			+ (unsigned long)(etextpadoff - btextoffset)
-			+ (unsigned long)(edataoffset - bdataoffset)
+			+ (unsigned long)(lay_text_end - lay_text_start)
+			+ (unsigned long)(lay_data_end - lay_data_start)
 		    );
 		extsym.n_numaux = extsym.n_type = 0;
 		for (modptr = modfirst; modptr != NUL_PTR;
@@ -473,14 +285,10 @@ bool_pt argxsym;
 #endif
 					}
 			}
-		/* linker-defined symbols are only written above if a module
-		   uses them; always write the segment boundaries, so that
-		   objcopy can find the load addresses */
-		writelinksym("__btext", btextoffset, C_EXT | N_TEXT);
-		writelinksym("__etext", etextoffset, C_EXT | N_TEXT);
-		writelinksym("__bdata", bdataoffset, C_EXT | N_DATA);
-		writelinksym("__edata", edataoffset, C_EXT | N_DATA);
-		writelinksym("__end", endoffset, C_EXT | N_DATA);
+		/* script symbols that a module imports were written above;
+		   write the others, including the segment boundaries that
+		   objcopy uses to find the load addresses */
+		script_write_symbols(writescriptsym);
 		seekout((unsigned long)offsetof(struct exec, a_syms));
 		u4cn(buf4, (u4_t) nsym * sizeof extsym,
 		     memsizeof(struct exec, a_syms));
@@ -501,9 +309,12 @@ struct modstruct *modptr;
 	struct symstruct **symparray;
 	struct symstruct *symptr;
 
-	/* this module's parts of the segments start at their own addresses */
-	for (curseg = 0; curseg < NSEG; ++curseg)
+	/* this module's parts of the segments start at their own addresses,
+	   and go at their own places in the file */
+	for (curseg = 0; curseg < NSEG; ++curseg) {
 		segpos[curseg] = modptr->segaddr[curseg];
+		segadj[curseg] = modptr->segfadj[curseg];
+	}
 	spos = segpos[curseg = 0];
 	seekout(FILEHEADERLENGTH + (unsigned long)spos
 		+ (unsigned long)segadj[curseg]);
@@ -615,10 +426,9 @@ struct modstruct *modptr;
 		if ((count = segpos[seg] - modptr->segaddr[seg]) != size)
 			size_error(seg, count, size);
 
-		/* pad to the size the module was given when it was placed */
+		/* pad as the layout decided (SUBALIGN) */
 		/* not padding in-between common areas which sometimes get into file */
-		if ((size = modptr->segaddr[seg] + ld_roundup(size, 4, bin_off_t)
-		     - segpos[seg]) != 0) {
+		if ((size = modptr->segpad[seg]) != 0) {
 			setseg(seg);
 			writenulls(size);
 			segpos[seg] = spos;
@@ -626,50 +436,28 @@ struct modstruct *modptr;
 	}
 }
 
-PRIVATE void setsym(name, value)
+/* write a symbol defined by the linker script */
+
+PRIVATE void writescriptsym(name, value, class)
 char *name;
 bin_off_t value;
-{
-	struct symstruct *symptr;
-
-	if ((symptr = findsym(name)) != NUL_PTR)
-		symptr->value = value;
-}
-
-/* write a linker-defined symbol, unless a loaded module already did */
-
-PRIVATE void writelinksym(name, value, sclass)
-char *name;
-bin_off_t value;
-int sclass;
+int class;
 {
 	struct nlist extsym;
-	struct symstruct *symptr;
+	int sclass;
 
-	symptr = findsym(name);
-	if (symptr != NUL_PTR && symptr->modptr != NUL_PTR
-	    && symptr->modptr->loadflag)
-		return;
+	if (class == SCRIPT_TEXT)
+		sclass = C_EXT | N_TEXT;
+	else if (class == SCRIPT_DATA)
+		sclass = C_EXT | N_DATA;
+	else
+		sclass = N_ABS;
 	memset((void *)&extsym, 0, sizeof extsym);
 	strncpy((char *)extsym.n_name, name, sizeof extsym.n_name);
 	u4cn((char *)&extsym.n_value, (u4_t) value, sizeof extsym.n_value);
 	extsym.n_sclass = sclass;
 	writeout((char *)&extsym, sizeof extsym);
 	++nsym;
-}
-
-PRIVATE void symres(name)
-register char *name;
-{
-	register struct symstruct *symptr;
-
-	if ((symptr = findsym(name)) != NUL_PTR) {
-		if ((symptr->flags & SEGM_MASK) == SEGM_MASK)
-			symptr->flags &= ~SEGM_MASK | curseg;
-		if (symptr->flags != (I_MASK | curseg) || symptr->value != 0)
-			reserved(name);
-		symptr->flags = E_MASK | curseg;	/* show defined, not common */
-	}
 }
 
 /* set new segment */
@@ -694,6 +482,7 @@ unsigned countsize;
 PRIVATE void writeheader()
 {
 	struct exec header;
+	bin_off_t heaptop;
 
 	memset(&header, 0, sizeof header);
 	header.a_magic[0] = A_MAGIC0;
@@ -701,17 +490,20 @@ PRIVATE void writeheader()
 	header.a_flags = sepid ? A_SEP : A_EXEC;
 	header.a_cpu = A_M6801;
 	header.a_hdrlen = FILEHEADERLENGTH;
-	offtocn((char *)&header.a_text, etextpadoff - btextoffset,
+	offtocn((char *)&header.a_text, lay_text_end - lay_text_start,
 		sizeof header.a_text);
-	offtocn((char *)&header.a_data, edataoffset - bdataoffset,
+	offtocn((char *)&header.a_data, lay_data_end - lay_data_start,
 		sizeof header.a_data);
-	offtocn((char *)&header.a_bss, endoffset - edataoffset,
+	offtocn((char *)&header.a_bss, lay_bss_end - lay_data_end,
 		sizeof header.a_bss);
 	offtocn((char *)&header.a_entry, entryfirst->elsymptr->value,
 		sizeof header.a_entry);
 
+	/* total memory: up to __heap_top if the script sets it */
+	if (!script_value("__heap_top", &heaptop))
+		heaptop = lay_bss_end + heap_top_value;
 	offtocn((char *)&header.a_total,
-		heap_top_value - bdataoffset + etextpadoff - btextoffset,
+		heaptop - lay_data_start + lay_text_end - lay_text_start,
 		sizeof header.a_total);
 	if (FILEHEADERLENGTH)
 		writeout((char *)&header, FILEHEADERLENGTH);

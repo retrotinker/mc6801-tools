@@ -77,6 +77,59 @@ link page	-m -M -T0 page.o
 link mainent	-m -M mainent.o
 link noentry	noentry.o
 
+# linker scripts (copied here, so messages name them without a path)
+cp "$tests"/scripts/*.ld .
+link custom	-m -M -S custom.ld usesym.o segs.o helper.o
+link custom-A	-m -M -S custom.ld -A __heap_top=0x6000 -A extra=7 \
+		usesym.o segs.o helper.o
+link orphan	-m -M -S orphan.ld segs.o helper.o
+link orphan-Z	-Z -S orphan.ld segs.o helper.o
+for f in syntax undef overlap range both settle entry unknown; do
+	link err-$f -S err-$f.ld segs.o helper.o
+done
+link err-onepage -S err-onepage.ld page.o
+
+# the default script, as printed by -P, and linking with it: the output
+# must be the same as without a script, with or without the options
+"$LD" -P > default.ld 2> default.err
+echo $? > default.rc
+"$LD" -P -S custom.ld > p-and-s.out 2> p-and-s.err
+echo $? > p-and-s.rc
+roundtrip() {
+	rt=$1		# (link() uses $name)
+	shift
+	"$LD" -P "$@" > "$rt-P.ld"
+	link "$rt-P" -S "$rt-P.ld" "$@" $objs
+	link "$rt-Ponly" -S "$rt-P.ld" $flags $objs
+	for v in P Ponly; do
+		if cmp -s "$rt.out" "$rt-$v.out" &&
+		   cmp -s "$rt.map" "$rt-$v.map" &&
+		   cmp -s "$rt.rc" "$rt-$v.rc"; then
+			echo "ok   $rt-$v"
+		else
+			echo "DIFF $rt-$v"
+		fi
+		rm -f "$rt-$v.out" "$rt-$v.map" "$rt-$v.err" "$rt-$v.rc"
+	done >> roundtrip.result
+}
+objs="-lnum -Cstart main.o screen.o" flags="-m -M"
+roundtrip demo -m -M -T0x434c
+objs="segs.o helper.o"
+roundtrip segs -m -M -T0
+roundtrip segs-TD -m -M -T0x1000 -D0x8000
+flags="-m -M -i"
+roundtrip segs-i -m -M -i -T0x1000
+flags="-m -M"
+roundtrip segs-H -m -M -T0xe000 -H0x100
+flags="-d"
+roundtrip segs-d -d -T0xe000
+flags="-m -M"
+roundtrip segs-odd -m -M -T0x1001 -D0x8003
+objs="page.o"
+roundtrip page -m -M -T0
+objs="mainent.o"
+roundtrip mainent -m -M
+
 # relocatable output: an archive, compared by its contents since the
 # member headers contain file dates
 "$LD" -r -o rel.a segs.o helper.o > rel.err 2>&1

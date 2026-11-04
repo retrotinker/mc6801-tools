@@ -1,0 +1,1 @@
+ld01: err-settle.ld: the layout doesn't settle: check for symbols that depend on each other

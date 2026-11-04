@@ -1,0 +1,1 @@
+ld01: err-range.ld:1: section .text goes past $FFFF

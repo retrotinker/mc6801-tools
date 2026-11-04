@@ -1,0 +1,1 @@
+ld01: err-overlap.ld:4: sections .text and .data overlap

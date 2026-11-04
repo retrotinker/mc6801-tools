@@ -1,3 +1,9 @@
 page            +page.o
+Section         Address  Size     Load
+.text           00000000 000000f4
+    00000000 000000f4 page.o(LOC0)
+.data           000000f4 00000030
+    00000100 00000021 page.o(LOC2)
+
                 page                pstart  0  00000000  R N
                 page                    dp  2  00000100  r
