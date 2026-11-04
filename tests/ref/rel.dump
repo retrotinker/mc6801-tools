@@ -1,0 +1,93 @@
+ARCHIVEFILE 'rel.a'
+OBJECTFILE 'segs.o'
+MODULE  'segs'
+BYTEPOS 00000093
+BINLEN  0000003b
+STRINGS 0092 +0045
+VERSION 0.0
+SEG0 00000020
+SEG1 00000003
+SEG3 00000010
+SEG5 00000003
+SEGf 00000005
+
+SYMS 10
+SYM 0    00000000 ....5 far5
+SYM 1    00000000 ...IT helper
+SYM 2    00000000 ...ID table
+SYM 3    00000000 ....D message
+SYM 4    00000000 ...IT codecom
+SYM 5    0000001e ....T local
+SYM 6    00000000 .NE.T start
+SYM 7    00000000 ....U last
+SYM 8    00000000 ....1 fast
+SYM 9    00000000 ...ID counter
+
+text	data	bss	dec	hex	filename
+35	24	0	59	3b	rel.a(segs.o)
+
+BYTECODE
+SEG 0
+: 8e 00 ff bd                                       ....            
+RELSZ 2
+DW helper
+: 8d 16 ce                                          ...             
+DW table
+: b6                                                .               
+DW counter
+: ce                                                .               
+DW codecom
+: ce                                                .               
+DW SEG3
+: ce                                                .               
+DW SEG1
+: ce                                                .               
+DW SEG5
+: ce                                                .               
+DW SEGf
+: 39 01 39                                          9.9             
+SEG 1
+: 86 02 39                                          ..9             
+SEG 3
+: 53 45 47 53 00                                    SEGS.           
+SKP 5
+DW SEG0
+DW SEG0+0x001e
+DW SEG1
+SEG 5
+: 05 06 07                                          ...             
+SEG f
+DW SEG3
+SKP 3
+
+ARCHIVEFILE 'rel.a'
+OBJECTFILE 'helper.o'
+MODULE  'helper'
+BYTEPOS 00000073
+BINLEN  0000000d
+STRINGS 01a5 +0034
+VERSION 0.0
+SEG0 00000006
+SEG3 00000007
+
+SYMS 7
+SYM 0    00000005 ....T help2
+SYM 1    00000000 ..E.T helper
+SYM 2    00000000 ..E.D table
+SYM 3    00000004 ...IT codecom
+SYM 4    00000010 ...ID buf
+SYM 5    00000000 ...IT start
+SYM 6    00000002 ...ID counter
+
+text	data	bss	dec	hex	filename
+6	7	22	35	23	rel.a(helper.o)
+
+BYTECODE
+SEG 0
+: 86 01 8d 01 39 39                                 ....99          
+SEG 3
+RELSZ 2
+DW SEG0
+DW start
+: 01 02 03                                          ...             
+

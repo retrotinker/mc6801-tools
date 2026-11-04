@@ -1,0 +1,8 @@
+00001                   ; noentry.s - no entry point at all: linking must fail
+00002 0000              	LOC	0
+00003 0000   01         	nop
+
+Symbols:
+
+00000 errors
+00000 warnings

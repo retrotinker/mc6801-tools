@@ -1,0 +1,15 @@
+segs            +segs.o
+helper          +helper.o
+                segs                  far5  5  0000005c  r
+                segs               message  3  00000030  r
+                segs                 local  0  0000001e  r
+                segs                 start  0  00000000  R N
+                segs                  last  f  00000060  r
+                segs                  fast  1  0000002c  r
+              helper                 help2  0  00000025  r
+              helper                helper  0  00000020  R
+              helper                 table  3  00000040  R
+              helper               codecom  0  00000028  R C
+              helper                   buf  3  00000048  R C
+              helper               counter  3  00000058  R C
+Total memory used: 000002d6

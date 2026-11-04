@@ -1,0 +1,4 @@
+page            +page.o
+                page                pstart  0  00000000  R N
+                page                    dp  2  00000100  r
+Total memory used: 000000ba

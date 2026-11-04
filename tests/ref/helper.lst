@@ -1,0 +1,26 @@
+00001                   ; helper.s - second module for the linker tests: code, data and common
+00002                   ; blocks in several location counters
+00003 0000              	LOC	0
+00004                   	EXPORT	helper
+00005                   	IMPORT	start
+00006 0000   86     01  helper	ldaa	#1
+00007 0002   8D     01  	bsr	help2
+00008 0004   39         	rts
+00009 0005   39         help2	rts
+00010             0004> codecom	COMM	4
+00011                   
+00012 0000              	LOC	3
+00013                   	EXPORT	table
+00014 0000        0000> table	fdb	helper,start
+00015 0004          01  	fcb	1,2,3
+00016             0002> counter	COMM	2
+00017             0010> buf	COMM	16
+
+Symbols:
+buf                         3 0010 R C codecom                     0 0004 R C 
+counter                     3 0002 R C help2                       0 0005 R   
+helper                      0 0000 R E start                       0 0000 R I 
+table                       3 0000 R E 
+
+00000 errors
+00000 warnings

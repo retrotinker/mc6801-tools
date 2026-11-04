@@ -1,0 +1,27 @@
+00001 0000              LOC 0
+00002                   
+00003                   	IMPORT	clrscn
+00004                   	IMPORT	prstring
+00005                   
+00006                   	IMPORT	one
+00007                   	IMPORT	two
+00008                   	IMPORT	three
+00009                   
+00010             0000> main
+00011 0000   BD   0000> 	jsr	clrscn
+00012                   
+00013 0003   BD   0000> 	jsr	one
+00014 0006   BD   0000> 	jsr	two
+00015 0009   BD   0000> 	jsr	three
+00016                   
+00017 000C   39         	rts
+00018                   
+00019                   	EXPORT	main
+
+Symbols:
+clrscn                      0 0000 R I main                        0 0000 R E 
+one                         0 0000 R I prstring                    0 0000 R I 
+three                       0 0000 R I two                         0 0000 R I 
+
+00000 errors
+00000 warnings
