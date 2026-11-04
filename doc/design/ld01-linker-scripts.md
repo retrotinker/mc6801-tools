@@ -46,7 +46,11 @@ has:
   address space but have no contents.
 
 Symbols are either absolute, or relative to one of the module's location
-counters.
+counters. An `IMPORT` also records the location counter that was current
+when it was declared. If the defining module puts the symbol in a
+different counter, or makes it absolute, `ld01` warns ("redefined with
+different segment or relocatability") and leaves the symbol undefined.
+So data symbols have to be imported while the data counter is current.
 
 ## Module selection
 
@@ -302,7 +306,10 @@ assignments in a loop until values stop changing (see
 ## Symbols
 
 A symbol defined in a script is absolute. It satisfies `IMPORT`s in any
-module, just like an `EXPORT`ed symbol.
+module, just like an `EXPORT`ed symbol. Unlike a symbol defined in an
+object file, it matches an import from any location counter: the
+segment and relocatability check described in
+[Input](#input) doesn't apply to script symbols.
 
 * `symbol = expression;` always defines it. An object file defining the
   same symbol is an error.
@@ -723,7 +730,7 @@ directory with a `make check` target:
 
 | Phase | Work | Result |
 |:------|:-----|:-------|
-| 1 | Per-module placement; tests and reference outputs | No change in behavior |
+| 1 | Per-module placement; tests and reference outputs | No change in behavior, except a fix for `-T`/`-D` addresses that aren't a multiple of 4. **Done.** |
 | 2 | Parser, default script, `SECTIONS`, `ONEPAGE`, symbols including `HIDDEN`, `ENTRY`, `-S`, `-A`, `-P`, `-M` layout | Scripts for single-region programs |
 | 3 | `MEMORY`, regions, `AT`, `NOLOAD`, `KEEP`, `PROVIDE`, `FILL`, `ASSERT`, orphans, `-Z` | ROM/RAM layouts |
 | 4 | `binary`, `srec` and `ihex` output; shared writers with `objcopy01` | Multi-region output |
