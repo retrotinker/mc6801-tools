@@ -1215,8 +1215,20 @@ PRIVATE char *piecename(struct piece *pc)
 	return name;
 }
 
+/* does a statement (or any inside it) take input from all files? */
+PRIVATE int allfiles(struct stmt *s)
+{
+	for (; s != NULL; s = s->next)
+		if ((s->kind == S_INPUT && s->filepat != NULL
+		     && strcmp(s->filepat, "*") == 0)
+		    || (s->kind == S_ONEPAGE && allfiles(s->body)))
+			return 1;
+	return 0;
+}
+
 /* input sections that no statement matched go after the last section of
-   the same kind, as in the default script */
+   the same kind that takes input from all files ("*"), or else the last
+   section of that kind, as in the default script */
 PRIVATE void orphans(void)
 {
 	struct osect *sect, *last[2];
@@ -1227,7 +1239,10 @@ PRIVATE void orphans(void)
 	last[0] = last[1] = NULL;
 	orphan[0] = orphan[1] = NULL;
 	for (sect = sects; sect != NULL; sect = sect->next)
-		if (!sect->noload)
+		if (!sect->noload && allfiles(sect->body))
+			last[sect->datapart] = sect;
+	for (sect = sects; sect != NULL; sect = sect->next)
+		if (last[sect->datapart] == NULL && !sect->noload)
 			last[sect->datapart] = sect;
 	for (sect = sects; sect != NULL; sect = sect->next)
 		if (last[sect->datapart] == NULL)
