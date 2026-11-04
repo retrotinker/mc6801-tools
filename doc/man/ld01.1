@@ -303,7 +303,31 @@ in the object files.
 (the default) or
 .BR binary ,
 a memory image as with
-.BR \-d .
+.BR \-d ,
+covering the load addresses from the lowest to the highest used.
+.TP
+.BI MEMORY " { " "name " [( attributes )] " : ORIGIN = " "expr" ", LENGTH = " "expr ... " }
+Define memory regions, such as ROM and RAM.
+The attributes, such as
+.BR rx ,
+are only shown in the
+.B \-M
+layout.
+.TP
+.BI FILL( byte )
+The byte for gaps, where a section doesn\(aqt set its own (default 0).
+.TP
+.BI ASSERT( expression ", \(dq" message \(dq)
+Stop with
+.I message
+if
+.I expression
+is 0 once the layout is complete.
+The modules that define its symbols are linked.
+.TP
+.BI "INCLUDE \(dq" file \(dq
+Read another script here (also allowed inside
+.BR SECTIONS ).
 .TP
 .BI SECTIONS " { ... }"
 Output sections and symbol assignments, in order.
@@ -318,14 +342,35 @@ Define it only if a linked module imports it and no module defines it.
 Define a symbol that only the script can use.
 .SS Output sections
 .nf
-\fIname\fP [\fIaddress\fP] : [ALIGN(\fIn\fP)] [SUBALIGN(\fIn\fP)] { \fIstatements\fP }
+\fIname\fP [\fIaddress\fP] [(NOLOAD)] : [AT(\fIlma\fP)] [ALIGN(\fIn\fP)] [SUBALIGN(\fIn\fP)]
+    { \fIstatements\fP } [> \fIregion\fP] [AT> \fIregion\fP] [= \fIfill\fP]
 .fi
 .PP
 Without an
 .IR address ,
-a section starts at the current address
+a section placed in a region
+.RI ( "> region" )
+starts at the region\(aqs next free address, and other sections start
+at the current address
 .RB ( . ),
 which is where the previous section ended.
+It\(aqs an error if a section doesn\(aqt fit in its region.
+.PP
+A section is stored at its load address, which is the same as its
+address unless
+.B AT
+gives another one, or
+.B AT>
+allocates it from a region.
+For example, initialized data that runs in RAM can be stored in ROM
+after the code, and copied by the start\-up code.
+Separate load addresses need
+.BR OUTPUT_FORMAT(binary) .
+.PP
+.B NOLOAD
+sections take up addresses but aren\(aqt written to the output.
+.B = fill
+sets the byte for gaps in the section.
 .B ALIGN
 rounds the start up to a multiple of
 .IR n .
@@ -350,6 +395,25 @@ the current address.
 .TP
 .BI ". = " expression ;
 Move the current address forward.
+The gap is filled with the fill byte.
+.TP
+.BI KEEP( file ( sections ))
+Add input sections like
+.IB file ( sections )\fR,\fP
+and link their modules even if nothing refers to them.
+.TP
+.BI BYTE( expression "); WORD(" expression );
+Put a byte, or a 16\-bit word (high byte first), into the section.
+.TP
+.BI FILL( byte );
+Use
+.I byte
+for the gaps that follow.
+.TP
+.BI ASSERT( expression ", \(dq" message \(dq);
+As at the top level, but with
+.B .
+as here.
 .SS Input sections
 Each linked module has two input sections for each location counter
 .IR n :
@@ -381,8 +445,11 @@ Each input section goes to the first statement that matches it.
 A statement adds its input sections in module order, and each module\(aqs
 in counter order.
 .SS Orphans
-Input that no statement matches is added at the end of the last output
-section for its kind (counters 0 and 1, or the others), with a warning.
+Input that no statement matches is added, with a warning, at the end of
+the last output section for its kind (counters 0 and 1, or the others)
+that takes input from all files
+.RB ( * ),
+or else the last section for its kind.
 .B \-Z
 makes it an error.
 .SS Expressions
@@ -399,6 +466,8 @@ The functions are
 (the current address rounded up),
 .BI ALIGN( expression ", " n )\fR,\fP
 .BI DEFINED( symbol )\fR,\fP
+.BI ORIGIN( region )\fR,\fP
+.BI LENGTH( region )\fR,\fP
 .B MAX
 and
 .BR MIN .
@@ -408,6 +477,20 @@ layout until nothing changes.
 Symbols defined by a script are absolute.
 They satisfy imports from any location counter.
 A plain assignment to a symbol that a module also defines is an error.
+.PP
+For each output section, the linker also provides
+.BI __ name _start\fR,\fP
+.BI __ name _end
+and
+.BI __ name _load
+(its load address), with the section name\(aqs leading dot dropped,
+if a module imports them.
+For example, start\-up code can copy
+.B .data
+from
+.B __data_load
+to
+.BR __data_start .
 .SS a.out output
 The output sections up to the first one that can take input from
 location counters 2 to 15 form the a.out text part, and the rest the
@@ -419,14 +502,9 @@ The header\(aqs total memory size reaches
 .B __heap_top
 if the script sets it.
 .SS Not yet supported
-.BR MEMORY ,
-.BR AT ,
-.BR NOLOAD ,
-.BR KEEP ,
-.BR FILL ,
-.BR ASSERT ,
-.BR INCLUDE ,
-and S\-record or Intel hex output.
+S\-record and Intel hex output; use
+.BR objcopy01 (1)
+on a.out output.
 .SH SEGMENTS
 This is the layout of the default script.
 The assembler has 16 location counters.
