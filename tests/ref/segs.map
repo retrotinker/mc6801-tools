@@ -12,4 +12,3 @@ helper          +helper.o
               helper               codecom  0  00000028  R C
               helper                   buf  3  00000048  R C
               helper               counter  3  00000058  R C
-Total memory used: 000002d6
