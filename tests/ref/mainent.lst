@@ -1,0 +1,10 @@
+00001                   ; mainent.s - no ENTRY, so the linker uses _main as the entry point
+00002 0000              	LOC	0
+00003                   	EXPORT	_main
+00004 0000   39         _main	rts
+
+Symbols:
+_main                       0 0000 R E 
+
+00000 errors
+00000 warnings

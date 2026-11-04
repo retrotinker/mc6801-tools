@@ -1,0 +1,46 @@
+00001                   ; segs.s - main module for the linker tests: uses several location
+00002                   ; counters and refers to symbols in other modules and counters
+00003 0000              	LOC	0
+00004                   	ENTRY	start
+00005                   	IMPORT	helper, codecom
+00006 0000   8E   00FF  start	lds	#$00ff
+00007 0003   BD   0000> 	jsr	helper
+00008 0006   8D     16  	bsr	local
+00009 0008   CE   0000> 	ldx	#table
+00010 000B   B6   0000> 	ldaa	counter
+00011 000E   CE   0000> 	ldx	#codecom
+00012 0011   CE   0000> 	ldx	#message
+00013 0014   CE   0000> 	ldx	#fast
+00014 0017   CE   0000> 	ldx	#far5
+00015 001A   CE   0000> 	ldx	#last
+00016 001D   39         	rts
+00017 001E   01         local	nop
+00018 001F   39         	rts
+00019                   
+00020 0000              	LOC	1
+00021 0000   86     02  fast	ldaa	#2
+00022 0002   39         	rts
+00023                   
+00024 0000              	LOC	3
+00025                   	IMPORT	table, counter
+00026 0000          53  message	fcc	"SEGS"
+00027 0004          00  	fcb	0
+00028 0005        0005  	rmb	5
+00029 000A        0000> 	fdb	start,local,fast
+00030                   
+00031 0000              	LOC	5
+00032 0000          05  far5	fcb	5,6,7
+00033                   
+00034 0000              	LOC	15
+00035 0000        0000> last	fdb	message
+00036 0002        0003  	rmb	3
+
+Symbols:
+codecom                     0 0000 R I counter                     3 0000 R I 
+far5                        5 0000 R   fast                        1 0000 R   
+helper                      0 0000 R I last                        F 0000 R   
+local                       0 001E R   message                     3 0000 R   
+start                       0 0000 R N table                       3 0000 R I 
+
+00000 errors
+00000 warnings

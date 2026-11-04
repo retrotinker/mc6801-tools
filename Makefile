@@ -1,4 +1,4 @@
-.PHONY: all clean install install-man
+.PHONY: all clean install install-man check
 
 PREFIX=/usr/local/m6801-tools
 MANDIR=/usr/local/share/man
@@ -17,3 +17,7 @@ install: install-man
 
 install-man:
 	$(MAKE) -C doc DESTDIR=$(DESTDIR) MANDIR=$(MANDIR) install-man
+
+# regression tests: compare outputs with the references in tests/ref
+check: all
+	tests/run.sh

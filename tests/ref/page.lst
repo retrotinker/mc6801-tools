@@ -1,0 +1,17 @@
+00001                   ; page.s - location counter 2 crosses a 256-byte page boundary, so the
+00002                   ; linker moves it to the next page
+00003 0000              	LOC	0
+00004                   	ENTRY	pstart
+00005 0000   CE   0000> pstart	ldx	#dp
+00006 0003   39         	rts
+00007 0004        00F0  	rmb	$f0
+00008                   
+00009 0000              	LOC	2
+00010 0000        0020  dp	rmb	$20
+00011 0020          01  	fcb	1
+
+Symbols:
+dp                          2 0000 R   pstart                      0 0000 R N 
+
+00000 errors
+00000 warnings

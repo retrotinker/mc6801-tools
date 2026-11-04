@@ -1,0 +1,7 @@
+3 0010 --IRC buf
+0 0004 --IRC codecom
+3 0002 --IRC counter
+0 0005 ---R- help2
+0 0000 E--R- helper
+0 0000 --IR- start
+3 0000 E--R- table
