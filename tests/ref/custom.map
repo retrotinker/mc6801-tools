@@ -1,0 +1,35 @@
+usesym          +usesym.o
+segs            +segs.o
+helper          +helper.o
+Section         Address  Size     Load
+.text           00004000 00000037
+    00004000 00000006 helper.o(LOC0)
+    00004006 0000000a usesym.o(LOC0)
+    00004010 00000020 segs.o(LOC0)
+    00004030 00000003 segs.o(LOC1)
+    00004033 00000004 helper.o(COMMON0)
+.data           00004100 00000036
+    00004100 00000001 usesym.o(LOC3)
+    00004101 00000010 segs.o(LOC3)
+    00004111 00000003 segs.o(LOC5)
+    00004114 00000007 helper.o(LOC3)
+    0000411b 00000005 segs.o(LOC15)
+    00004122 00000014 helper.o(COMMON3)
+
+              usesym                ioport  0  00000002  A
+              usesym              stacktop  3  00004176  R
+              usesym            __heap_top  0  00007000  A
+              usesym                ustart  0  00004006  R N
+              usesym                 ubyte  3  00004100  r
+                segs                  far5  5  00004111  r
+                segs               message  3  00004101  r
+                segs                 local  0  0000402e  r
+                segs                 start  0  00004010  R N
+                segs                  last  f  0000411b  r
+                segs                  fast  1  00004030  r
+              helper                 help2  0  00004005  r
+              helper                helper  0  00004000  R
+              helper                 table  3  00004114  R
+              helper               codecom  0  00004033  R C
+              helper                   buf  3  00004122  R C
+              helper               counter  3  00004132  R C

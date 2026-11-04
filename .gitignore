@@ -7,3 +7,4 @@ ld/objcopy01
 ld/objdump01
 doc/build/
 tests/out/
+!tests/ref/*.o

@@ -4,6 +4,16 @@ three           +libnum.a(three.o)
 crtstart        +crtstart.o
 main            +main.o
 screen          +screen.o
+Section         Address  Size     Load
+.text           0000434c 0000006c
+    0000434c 0000000f libnum.a:one.o(LOC0)
+    0000435c 0000000f libnum.a:two.o(LOC0)
+    0000436c 00000011 libnum.a:three.o(LOC0)
+    00004380 00000004 crtstart.o(LOC0)
+    00004384 0000000d main.o(LOC0)
+    00004394 00000023 screen.o(LOC0)
+.data           000043b8 00000000
+
                  one               msg_one  0  0000434c  r
                  one                   one  0  00004351  R
                  two                   two  0  00004361  R

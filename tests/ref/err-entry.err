@@ -1,0 +1,1 @@
+ld01: err-entry.ld: entry symbol nosuch isn't defined by a module

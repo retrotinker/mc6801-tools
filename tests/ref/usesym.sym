@@ -1,0 +1,5 @@
+0 0000 --IR- __heap_top
+3 0000 --IR- ioport
+0 0000 --IR- stacktop
+3 0000 ---R- ubyte
+0 0000 EN-R- ustart

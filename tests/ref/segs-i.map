@@ -1,5 +1,18 @@
 segs            +segs.o
 helper          +helper.o
+Section         Address  Size     Load
+.text           00001000 00000030
+    00001000 00000020 segs.o(LOC0)
+    00001020 00000006 helper.o(LOC0)
+    00001028 00000004 helper.o(COMMON0)
+    0000102c 00000003 segs.o(LOC1)
+.data           00000000 00000038
+    00000000 00000010 segs.o(LOC3)
+    00000010 00000007 helper.o(LOC3)
+    00000018 00000014 helper.o(COMMON3)
+    0000002c 00000003 segs.o(LOC5)
+    00000030 00000005 segs.o(LOC15)
+
                 segs                  far5  5  0000002c  r
                 segs               message  3  00000000  r
                 segs                 local  0  0000101e  r

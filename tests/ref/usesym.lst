@@ -1,0 +1,21 @@
+00001                   ; usesym.s - refers to symbols that linker scripts define, from two
+00002                   ; location counters
+00003 0000              	LOC	3
+00004                   	IMPORT	ioport
+00005 0000              	LOC	0
+00006                   	ENTRY	ustart
+00007                   	IMPORT	stacktop, __heap_top
+00008 0000   8E   0000> ustart	lds	#stacktop
+00009 0003   CE   0000> 	ldx	#__heap_top
+00010 0006   B6   0000> 	ldaa	ioport
+00011 0009   39         	rts
+00012 0000              	LOC	3
+00013 0000          01  ubyte	fcb	1
+
+Symbols:
+__heap_top                  0 0000 R I ioport                      3 0000 R I 
+stacktop                    0 0000 R I ubyte                       3 0000 R   
+ustart                      0 0000 R N 
+
+00000 errors
+00000 warnings

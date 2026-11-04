@@ -580,6 +580,15 @@ bin_off_t size;
 	errexit("");
 }
 
+PUBLIC void warning(message)
+char *message;
+{
+	++warncount;
+	refer();
+	putstr("warning: ");
+	putstrn(message);
+}
+
 PUBLIC void undefined(name)
 char *name;
 {
@@ -596,12 +605,14 @@ PUBLIC void usage()
 	putstr(refname);
 #ifdef REL_OUTPUT
 	errexit("\
- [-03NMdimrstz[-]] [-llib_extension] [-o outfile] [-Ccrtfile]\n\
-       [-Llibdir] [-Olibfile] [-Ttextaddr] [-Ddataaddr] [-Hheapsize] infile...");
+ [-MPZdimrsty[-]] [-llib] [-o outfile] [-Ccrt] [-Llibdir] [-Olibfile]\n\
+       [-Ttextaddr] [-Ddataaddr] [-Hheapsize] [-S script] [-A sym=value]\n\
+       infile...");
 #else
 	errexit("\
- [-03NMdimstz[-]] [-llib_extension] [-o outfile] [-Ccrtfile]\n\
-       [-Llibdir] [-Olibfile] [-Ttextaddr] [-Ddataaddr] [-Hheapsize] infile...");
+ [-MPZdimsty[-]] [-llib] [-o outfile] [-Ccrt] [-Llibdir] [-Olibfile]\n\
+       [-Ttextaddr] [-Ddataaddr] [-Hheapsize] [-S script] [-A sym=value]\n\
+       infile...");
 #endif
 }
 

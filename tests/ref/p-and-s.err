@@ -1,0 +1,4 @@
+ld01: -P shows the default script, which -S replaces
+usage: ld01 [-MPZdimrsty[-]] [-llib] [-o outfile] [-Ccrt] [-Llibdir] [-Olibfile]
+       [-Ttextaddr] [-Ddataaddr] [-Hheapsize] [-S script] [-A sym=value]
+       infile...
