@@ -20,6 +20,9 @@ files that control how a program is laid out in memory. A script can:
 * fill gaps, align sections, force modules into the link, and choose
   the output format.
 
+`ld01 -P` prints the default script, as a starting point for writing
+your own.
+
 The design keeps today's behavior as the default. The current fixed
 layout is expressed as a built-in *default script*, so a link without a
 script produces byte-identical output to today's `ld01`. The script
@@ -175,9 +178,13 @@ MEMORY { region-list }          define memory regions
 SECTIONS { section-list }       define output sections
 symbol = expression ;           define a symbol
 PROVIDE(symbol = expression) ;  define it only if needed and not defined
+HIDDEN(symbol = expression) ;   define a symbol for use in the script only
 ASSERT(expression, "message")   stop with an error if false
 INCLUDE "file"                  read another script
 ```
+
+Without `ENTRY`, the entry point is chosen as today: the first `ENTRY`
+symbol in the object files, otherwise `_main`.
 
 ## MEMORY
 
@@ -211,9 +218,11 @@ SECTIONS
 * `address` sets the VMA. Without it, the section follows the previous
   one in the same region, or the current value of `.`.
 * `AT(lma)` or `AT> region` sets a separate load address.
-* `ALIGN(n)` aligns the section's start. `SUBALIGN(n)` aligns each input
-  section within it. The default is no alignment, except in the default
-  script (see below).
+* `ALIGN(n)` aligns the section's start. `SUBALIGN(n)` pads each input
+  section within it to a multiple of `n` bytes, so each one starts and
+  ends on a multiple of `n`. (GNU `ld` only aligns the start; padding the
+  end as well matches today's `ld01`.) The default is no alignment,
+  except in the default script (see below).
 * `NOLOAD` reserves the space without writing anything to the output.
 * `= fill` sets the byte used for gaps inside the section. The default is
   0.
@@ -223,13 +232,21 @@ Statements inside a section:
 ```
 pattern                         include input sections
 KEEP(pattern)                   include them, and load their modules
+ONEPAGE { statements }          keep them within one 256-byte page
 symbol = expression ;           define a symbol, often using .
 PROVIDE(symbol = expression) ;
+HIDDEN(symbol = expression) ;
 . = expression ;                move within the section
 BYTE(expression) ;              put data into the section
 WORD(expression) ;              16 bits, high byte first
 FILL(byte) ;                    fill byte for later gaps
 ```
+
+`ONEPAGE` places the statements inside it together. If their contents
+would cross a 256-byte page boundary, the block starts at the next page
+instead, and assignments inside it see the moved addresses. It's an
+error if the contents are larger than a page. Today's `ld01` treats
+location counter 2 this way.
 
 ## Input section patterns
 
@@ -292,6 +309,14 @@ module, just like an `EXPORT`ed symbol.
 * `PROVIDE(symbol = expression);` defines it only if some module refers
   to it and no module defines it. This is how the default script defines
   `__btext` and the other linker symbols today.
+* `HIDDEN(symbol = expression);` defines a symbol that only the script
+  can use. It doesn't satisfy imports and isn't written to the output's
+  symbol table.
+
+A symbol may be assigned more than once. Assignments take effect in
+order, as the linker walks through the script, so an expression sees the
+most recent value. A reference to a symbol that's only assigned later
+sees the final value from the previous pass.
 
 The linker also defines symbols for each output section:
 `__name_start`, `__name_end` and `__name_load` (the section's LMA), with
@@ -346,6 +371,7 @@ shared source file used by both programs, so their output is identical.
 | `-A symbol=value` | Define a symbol, as if the script had `symbol = value;`. |
 | `-Z` | Treat orphan input sections as an error. |
 | `-M` | Also print the layout: each memory region and output section with its VMA, LMA and size, and the input sections in it. |
+| `-P` | Print the default linker script and exit. |
 
 The letters are chosen to avoid `ld01`'s existing options, which already
 use `-T`, `-D`, `-L` and `-s`, the letters GNU `ld` uses for these.
@@ -360,53 +386,127 @@ The existing options keep their meaning. With a script:
 * `-C`, `-l`, `-L` and `-O` work as today. Their files can be matched by
   name in the script.
 
+## Printing the default script
+
+`-P` prints the default script on standard output and exits with status
+0. No input files are needed; any that are given are ignored. The
+printed script fills in the values from the other options on the command
+line:
+
+* the `-T` and `-D` addresses;
+* the `-H` heap size;
+* `OUTPUT_FORMAT(binary)` instead of `aout` with `-d`.
+
+The printed script is a complete, working script. Saving it and linking
+with `-S` gives exactly the same output as linking without a script,
+given the same other options:
+
+```
+$ ld01 -P -T0x434c > mc10.ld
+$ ld01 -S mc10.ld -lnum -Cstart -o main.aout main.o screen.o
+```
+
+This makes it easy to start from the default layout and change only what
+you need. `-P` with `-S` is an error, since `-P` shows the script that
+`-S` replaces.
+
+`ld01` stores the default script as text with placeholders for these
+values. The same text is used for linking and printed by `-P`, so the two
+can't differ.
+
+With `-i` (separate instruction and data spaces), the printed script
+places `.data` at the `-D` address or 0 and notes in a comment that `-i`
+must still be given. That flag selects an a.out header format, which
+isn't part of the script.
+
 # The default script
 
 The current layout is written as a script, compiled into `ld01`. It's
-used when no `-S` is given:
+used when no `-S` is given, and `ld01 -P` prints it. With no other
+options, `-P` prints:
 
 ```
-ENTRY(__start_symbol)            /* see note 1 */
+/* Default linker script for ld01.
+   Values from the command line: -T 0x0000, no -D, no -H. */
+
 OUTPUT_FORMAT(aout)
 
 SECTIONS
 {
-    .text __text_base : SUBALIGN(4)        /* -T, default 0 */
+    .text 0x0000 : SUBALIGN(4)
     {
         PROVIDE(__btext = .);
-        *(LOC0) *(COMMON0)
-        *(LOC1) *(COMMON1)
+        PROVIDE(__seg0DL = .);
+        *(LOC0)
+        PROVIDE(__seg0DH = .);
+        PROVIDE(__seg0CL = .);
+        *(COMMON0)
+        PROVIDE(__seg0CH = .);
+        PROVIDE(__seg1DL = .);
+        *(LOC1)
+        PROVIDE(__seg1DH = .);
+        PROVIDE(__seg1CL = .);
+        *(COMMON1)
+        PROVIDE(__seg1CH = .);
         PROVIDE(__etext = .);
     }
-    .data __data_base : SUBALIGN(4)        /* see note 2 */
+
+    .data __etext : SUBALIGN(4)
     {
         PROVIDE(__bdata = .);
-        *(LOC2) *(COMMON2)                 /* see note 3 */
-        *(LOC3) *(COMMON3)
-        *(LOC4) *(COMMON4)
-        ...
-        *(LOC15) *(COMMON15)
+        HIDDEN(__dend = .);
+
+        ONEPAGE
+        {
+            PROVIDE(__seg2DL = .);
+            HIDDEN(__dpos = .);
+            *(LOC2)
+            HIDDEN(__dend = . != __dpos ? . : __dend);
+            PROVIDE(__seg2DH = .);
+            PROVIDE(__seg2CL = .);
+            *(COMMON2)
+            PROVIDE(__seg2CH = .);
+        }
+
+        PROVIDE(__seg3DL = .);
+        HIDDEN(__dpos = .);
+        *(LOC3)
+        HIDDEN(__dend = . != __dpos ? . : __dend);
+        PROVIDE(__seg3DH = .);
+        PROVIDE(__seg3CL = .);
+        *(COMMON3)
+        PROVIDE(__seg3CH = .);
+
+        /* ... the same for LOC4 to LOC15 ... */
+
         PROVIDE(__end = .);
     }
-    PROVIDE(__edata = __data_end);         /* see note 4 */
-    PROVIDE(__heap_top = __end + __heap_size);   /* -H */
+
+    PROVIDE(__edata = __dend);
+    PROVIDE(__heap_top = __end + 0x0000);
+    PROVIDE(__segoff = 0);
 }
 ```
 
-Notes:
+How it reproduces today's layout:
 
-1. Entry selection stays as today: the first `ENTRY` symbol in the
-   objects, otherwise `_main`. `__start_symbol` stands for that rule; it
-   isn't a real symbol.
-2. `__data_base` is the `-D` address if given. Otherwise it's `__etext`,
-   or 0 with separate instruction and data spaces (`-i`).
-3. Today's special rule for counter 2 becomes an internal `ASSERT` that
-   moves it to the next page if needed.
-4. `__data_end` stands for today's rule: the end of the data part of the
-   last data counter that isn't empty. Common blocks after it count as
-   bss in the a.out header.
-
-The `__segXDL` and related symbols are provided in the same way.
+* **Text and data.** Counters 0 and 1 go into `.text` at the `-T`
+  address. Counters 2 to 15 go into `.data`, which follows the text, or
+  starts at the `-D` address.
+* **Common blocks** follow their counter's data, as today.
+* **Padding.** `SUBALIGN(4)` reproduces the 4-byte padding of each
+  module's part of each counter.
+* **Counter 2.** `ONEPAGE` reproduces its special rule.
+* **`__edata`** is the end of the data part of the last data counter
+  that isn't empty. `__dend` tracks it: after each counter, it moves to
+  the current address if that counter added anything. The common blocks
+  after that point count as bss in the a.out header.
+* **Entry point.** The script has no `ENTRY`, so the entry point is
+  chosen as today.
+* **Linker symbols.** All the symbols `ld01` defines today, including
+  the `__segXDL`, `__segXDH`, `__segXCL` and `__segXCH` boundaries of
+  each counter, are `PROVIDE`d, so they only appear when used, as today.
+  `-P` prints the full script, with every counter written out.
 
 The first phase of the implementation must show that this script
 produces byte-identical output to today's `ld01` for every test (see
@@ -607,9 +707,12 @@ directory with a `make check` target:
   without a script, and compare against reference outputs produced by
   today's `ld01`. These must be byte-identical after part 1 and after
   every later part.
-* **Default script.** Link the same inputs with `-S` and a file
-  containing the default script. The output must equal the no-script
-  output.
+* **Default script.** For several combinations of `-T`, `-D`, `-H`,
+  `-d` and `-i`, save the output of `ld01 -P` with those options. Then
+  link the same inputs with `-S` and that script, and with the same
+  options. The output must equal the no-script output.
+* **`-P`.** `ld01 -P` exits with status 0 without any input files, and
+  `-P` with `-S` is an error.
 * **Features.** For each script feature, a small script, test modules
   and the expected output: S-records, a map from `-M`, or an error
   message.
@@ -621,7 +724,7 @@ directory with a `make check` target:
 | Phase | Work | Result |
 |:------|:-----|:-------|
 | 1 | Per-module placement; tests and reference outputs | No change in behavior |
-| 2 | Parser, default script, `SECTIONS`, symbols, `ENTRY`, `-S`, `-A`, `-M` layout | Scripts for single-region programs |
+| 2 | Parser, default script, `SECTIONS`, `ONEPAGE`, symbols including `HIDDEN`, `ENTRY`, `-S`, `-A`, `-P`, `-M` layout | Scripts for single-region programs |
 | 3 | `MEMORY`, regions, `AT`, `NOLOAD`, `KEEP`, `PROVIDE`, `FILL`, `ASSERT`, orphans, `-Z` | ROM/RAM layouts |
 | 4 | `binary`, `srec` and `ihex` output; shared writers with `objcopy01` | Multi-region output |
 | 5 | Man page, manual chapter, examples | Documented |
