@@ -1,0 +1,22 @@
+crt0            +crt0.o
+vectors         +vectors.o
+Memory region   Origin   Length   Used
+ROM             0000e000 00001ff0 00000010
+VEC             0000fff0 00000010 00000010
+RAM             00000080 00000080 00000002
+
+Section         Address  Size     Load
+.text           0000e000 0000000e
+    0000e000 0000000e crt0.o(LOC0)
+.data           00000080 00000002 0000e00e
+    00000080 00000002 crt0.o(LOC3)
+.bss            00000082 00000000 (NOLOAD)
+.vectors        0000fff0 00000010
+    0000fff0 00000010 vectors.o(LOC2)
+
+                crt0          __data_start  3  00000080  R
+                crt0           __data_load  3  0000e00e  R
+                crt0           __stack_top  3  000000ff  R
+                crt0                 reset  0  0000e000  R N
+                crt0            __data_end  3  00000082  R
+                crt0              greeting  3  00000080  r

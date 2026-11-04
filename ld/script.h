@@ -22,8 +22,12 @@ void script_write_data P((void (*out) (bin_off_t offset, char *buf,
 void script_roots P((void (*link) (struct modstruct *modptr)));
 #endif
 int script_value P((char *name, bin_off_t *value));	/* if assigned */
+void script_convert P((char *outfilename, bin_off_t entry));
 
-extern int script_binary;		/* OUTPUT_FORMAT(binary) */
+extern int script_binary;		/* no header: binary, srec or ihex */
+extern int script_records;		/* OUTPUT_FORMAT(srec) or (ihex) */
+#define RECORDS_SREC	1
+#define RECORDS_IHEX	2
 extern int script_orphan_error;		/* -Z */
 extern int text_base_given;		/* -T was given */
 
