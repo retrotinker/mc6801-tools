@@ -17,6 +17,7 @@
 #include <getopt.h>
 
 #include "x86_aout.h"
+#include "srec.h"
 
 #define SREC_LINESIZE	16
 #define IHEX_LINESIZE	16
@@ -176,8 +177,7 @@ void raw_output(FILE *ifd, FILE *ofd, struct exec header)
 unsigned int write_s1(FILE *ifd, FILE *ofd, unsigned bsize, unsigned address)
 {
 	unsigned char buffer[SREC_LINESIZE];
-	unsigned int i, ssize, lines = 0;
-	unsigned char csum;
+	unsigned int ssize, lines = 0;
 
 	while (bsize > 0) {
 		if (bsize > sizeof(buffer))
@@ -188,27 +188,16 @@ unsigned int write_s1(FILE *ifd, FILE *ofd, unsigned bsize, unsigned address)
 		if ((ssize = fread(buffer, 1, ssize, ifd)) <= 0)
 			fatal("Error reading segment from executable");
 
-		fprintf(ofd, "S1%02X%04X", ssize + 3, address);
-		csum = ssize + 3 +
-		       ((address & 0xff00) >> 8) + (address & 0x00ff);
+		lines += srec_data(ofd, buffer, ssize, address);
 		address += ssize;
-		for (i = 0; i < ssize; i++) {
-			csum += buffer[i];
-			fprintf(ofd, "%02X", buffer[i]);
-		}
-		csum ^= 0xff;
-		fprintf(ofd, "%02X\n", csum);
-
 		bsize -= ssize;
-		lines++;
 	}
 	return lines;
 }
 
 void srec_output(FILE *ifd, FILE *ofd, struct exec header)
 {
-	unsigned int i, len, s1count;
-	unsigned char csum;
+	unsigned int s1count;
 
 	if (!textaddr)
 		textaddr = textstart;
@@ -221,13 +210,7 @@ void srec_output(FILE *ifd, FILE *ofd, struct exec header)
 	if (!dataaddr && header.a_data)
 		warning("SREC data load address is zero (use -D)");
 
-	csum = len = strlen(objname);
-	fprintf(ofd, "S0%02X0000", len+3);
-	for (i = 0; i < len; i++) {
-		fprintf(ofd, "%02X", objname[i]);
-	}
-	csum ^= 0xff;
-	fprintf(ofd, "%02X\n", csum);
+	srec_header(ofd, objname);
 
 	if (fseek(ifd, A_TEXTPOS(header), 0) < 0)
 		fatal("Cannot seek to start of text");
@@ -239,22 +222,13 @@ void srec_output(FILE *ifd, FILE *ofd, struct exec header)
 
 	s1count += write_s1(ifd, ofd, header.a_data, dataaddr);
 
-	fprintf(ofd, "S503%04X", s1count);
-	csum  = 3 + ((s1count & 0xff00) >> 8) + (s1count & 0x00ff);
-	csum ^= 0xff;
-	fprintf(ofd, "%02X\n", csum);
-
-	fprintf(ofd, "S903%04X", header.a_entry);
-	csum  = 3 + ((header.a_entry & 0xff00) >> 8) + (header.a_entry & 0x00ff);
-	csum ^= 0xff;
-	fprintf(ofd, "%02X\n", csum);
+	srec_end(ofd, s1count, header.a_entry);
 }
 
 void write_ihex(FILE *ifd, FILE *ofd, unsigned bsize, unsigned address)
 {
 	unsigned char buffer[IHEX_LINESIZE];
-	unsigned int i, ssize;
-	unsigned char csum;
+	unsigned int ssize;
 
 	while (bsize > 0) {
 		if (bsize > sizeof(buffer))
@@ -265,24 +239,14 @@ void write_ihex(FILE *ifd, FILE *ofd, unsigned bsize, unsigned address)
 		if ((ssize = fread(buffer, 1, ssize, ifd)) <= 0)
 			fatal("Error reading segment from executable");
 
-		fprintf(ofd, ":%02X%04X00", ssize, address);
-		csum = ssize +
-		       ((address & 0xff00) >> 8) + (address & 0x00ff);
+		ihex_data(ofd, buffer, ssize, address);
 		address += ssize;
-		for (i = 0; i < ssize; i++) {
-			csum += buffer[i];
-			fprintf(ofd, "%02X", buffer[i]);
-		}
-		csum = (csum ^ 0xff) + 1;
-		fprintf(ofd, "%02X\r\n", csum);
-
 		bsize -= ssize;
 	}
 }
 
 void ihex_output(FILE *ifd, FILE *ofd, struct exec header)
 {
-	unsigned char csum;
 
 	if (!textaddr)
 		textaddr = textstart;
@@ -305,10 +269,7 @@ void ihex_output(FILE *ifd, FILE *ofd, struct exec header)
 
 	write_ihex(ifd, ofd, header.a_data, dataaddr);
 
-	fprintf(ofd, ":00%04X01", header.a_entry);
-	csum = 1 + ((header.a_entry & 0xff00) >> 8) + (header.a_entry & 0x00ff);
-	csum = (csum ^ 0xff) + 1;
-	fprintf(ofd, "%02X\n", csum);
+	ihex_end(ofd, header.a_entry);
 }
 
 void write_cas(FILE *ifd, FILE *ofd, unsigned bsize)

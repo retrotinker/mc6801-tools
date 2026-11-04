@@ -19,7 +19,7 @@ DEFS	=-DDATASEGS -DREL_OUTPUT -DVERSION=\"$(VERSION)\"
 # NATIVE=-DA_OUT_INCL='"a_out_local.h"' 
 
 OBJS= dumps.o io.o ld.o readobj.o table.o typeconv.o linksyms.o mkar.o \
-      script.o \
+      script.o srec.o \
       writex86.o
 
 all: ld01 objdump01 objcopy01
@@ -30,8 +30,8 @@ ld01: $(OBJS)
 objdump01: objdump86.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $< -o $@
 
-objcopy01: objcopy.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $< -o $@
+objcopy01: objcopy.c srec.c srec.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) objcopy.c srec.c -o $@
 
 install: ld01 objdump01 objcopy01
 	install -d $(DESTDIR)$(LIBDIR)
@@ -47,7 +47,7 @@ clean realclean clobber:
 io.o: ../VERSION
 
 $(OBJS): align.h bindef.h byteord.h config.h const.h globvar.h obj.h \
-	 syshead.h type.h x86_aout.h script.h
+	 syshead.h type.h x86_aout.h script.h srec.h
 
 .c.o:
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(DEFS) -c $< -o $@
