@@ -1,0 +1,11 @@
+00001                   ; romvec.s - the vector table for the ROM layout test: nothing refers to
+00002                   ; it, so the linker script has to KEEP it
+00003 0000              	LOC	0
+00004                   	IMPORT	reset
+00005 0000        0000> 	fdb	reset,reset,reset,reset,reset,reset,reset,reset
+
+Symbols:
+reset                       0 0000 R I 
+
+00000 errors
+00000 warnings

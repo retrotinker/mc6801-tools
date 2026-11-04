@@ -1,0 +1,7 @@
+3 0000 --IR- __data_end
+0 0000 --IR- __data_load
+3 0000 --IR- __data_start
+0 0000 --IR- __stack_top
+0 0000 EN-R- reset
+0 0000 --IR- start
+3 0000 ---R- vars

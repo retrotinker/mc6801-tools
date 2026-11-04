@@ -1,1 +1,1 @@
-ld01: err-unknown.ld:1: this command isn't supported yet
+ld01: err-unknown.ld:1: unknown command BOGUS

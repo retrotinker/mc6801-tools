@@ -52,6 +52,8 @@ struct modstruct		/* module table entry format */
     bin_off_t comsize[NSEG];	/* size of its common blocks in each seg */
     bin_off_t segfadj[NSEG];	/* file offset - address, for each seg */
     bin_off_t segpad[NSEG];	/* padding after its part of each seg */
+    char segfill[NSEG];		/* byte for that padding */
+    char segnoload[NSEG];	/* its part of the seg isn't written */
     char segsize[1];		/* up to 64 size bytes begin here */
 };				/* careful with sizeof( struct modstruct )!! */
 

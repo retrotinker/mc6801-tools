@@ -49,6 +49,7 @@ PRIVATE unsigned nsym;		/* number of symbols written */
 PRIVATE unsigned relocsize;	/* current relocation size 1, 2 or 4 */
 PRIVATE bin_off_t segadj[NSEG];	/* file offset - address, for the
 				   current module's part of each segment */
+PRIVATE char segdiscard[NSEG];	/* its part isn't written (NOLOAD) */
 PRIVATE bin_off_t segpos[NSEG];	/* segment positions for current module */
 PRIVATE bool_t sepid;		/* nonzero for separate I & D */
 PRIVATE bool_t stripflag;	/* nonzero to strip symbols */
@@ -62,6 +63,9 @@ FORWARD void skip P((unsigned countsize));
 FORWARD void writeheader P((void));
 FORWARD void writescriptsym P((char *name, bin_off_t value, int class));
 FORWARD void writenulls P((bin_off_t count));
+FORWARD void writefill P((bin_off_t count, int byte));
+FORWARD void segwrite P((char *buf, unsigned count));
+FORWARD void writeat P((bin_off_t offset, char *buf, unsigned count));
 
 EXTERN bool_t reloc_output;
 
@@ -146,11 +150,13 @@ bool_pt argxsym;
 
 	openout(outfilename);
 	writeheader();
+	script_write_fill(writeat);
 	for (modptr = modfirst; modptr != NUL_PTR; modptr = modptr->modnext)
 		if (modptr->loadflag) {
 			linkmod(modptr);
 			padmod(modptr);
 		}
+	script_write_data(writeat);
 
 	/* dump symbol table */
 	if (!stripflag) {
@@ -314,10 +320,12 @@ struct modstruct *modptr;
 	for (curseg = 0; curseg < NSEG; ++curseg) {
 		segpos[curseg] = modptr->segaddr[curseg];
 		segadj[curseg] = modptr->segfadj[curseg];
+		segdiscard[curseg] = modptr->segnoload[curseg];
 	}
 	spos = segpos[curseg = 0];
-	seekout(FILEHEADERLENGTH + (unsigned long)spos
-		+ (unsigned long)segadj[curseg]);
+	if (!segdiscard[curseg])
+		seekout(FILEHEADERLENGTH + (unsigned long)spos
+			+ (unsigned long)segadj[curseg]);
 	relocsize = 2;
 	symparray = modptr->symparray;
 	openin(modptr->filename);	/* does nothing if already open */
@@ -366,7 +374,7 @@ struct modstruct *modptr;
 			if (modify == 0)
 				modify = ABS_TEXT_MAX;
 			readin(buf, (unsigned)modify);
-			writeout(buf, (unsigned)modify);
+			segwrite(buf, (unsigned)modify);
 			spos += (int)modify;
 			break;
 		case CM_OFFSET_RELOC:
@@ -382,7 +390,7 @@ struct modstruct *modptr;
 			}
 			offtocn(buf, modptr->segaddr[modify & SEGM_MASK] + offset,
 				relocsize);
-			writeout(buf, relocsize);
+			segwrite(buf, relocsize);
 			spos += relocsize;
 			break;
 		case CM_SYMBOL_RELOC:
@@ -403,7 +411,7 @@ struct modstruct *modptr;
 			}
 			offset += symptr->value;
 			offtocn(buf, offset, relocsize);
-			writeout(buf, relocsize);
+			segwrite(buf, relocsize);
 			spos += relocsize;
 		}
 	}
@@ -430,7 +438,7 @@ struct modstruct *modptr;
 		/* not padding in-between common areas which sometimes get into file */
 		if ((size = modptr->segpad[seg]) != 0) {
 			setseg(seg);
-			writenulls(size);
+			writefill(size, modptr->segfill[seg]);
 			segpos[seg] = spos;
 		}
 	}
@@ -468,8 +476,9 @@ fastin_pt newseg;
 	if (newseg != curseg) {
 		segpos[curseg] = spos;
 		spos = segpos[curseg = newseg];
-		seekout(FILEHEADERLENGTH + (unsigned long)spos
-			+ (unsigned long)segadj[curseg]);
+		if (!segdiscard[curseg])
+			seekout(FILEHEADERLENGTH + (unsigned long)spos
+				+ (unsigned long)segadj[curseg]);
 	}
 }
 
@@ -509,11 +518,43 @@ PRIVATE void writeheader()
 		writeout((char *)&header, FILEHEADERLENGTH);
 }
 
+/* write module data, unless its part of the segment is NOLOAD */
+PRIVATE void segwrite(buf, count)
+char *buf;
+unsigned count;
+{
+	if (!segdiscard[curseg])
+		writeout(buf, count);
+}
+
+/* write bytes for the linker script at an offset after the header */
+PRIVATE void writeat(offset, buf, count)
+bin_off_t offset;
+char *buf;
+unsigned count;
+{
+	seekout(FILEHEADERLENGTH + (unsigned long)offset);
+	writeout(buf, count);
+}
+
+PRIVATE void writefill(count, byte)
+bin_off_t count;
+int byte;
+{
+	spos += count;
+	if (segdiscard[curseg])
+		return;
+	while (count-- > 0)
+		writechar(byte);
+}
+
 PRIVATE void writenulls(count)
 bin_off_t count;
 {
 	long lcount = count;
 	spos += count;
+	if (segdiscard[curseg])
+		return;
 #if 0
 	/* This will only work if we record the highest spos found an seek there
 	 * at the end of the generation

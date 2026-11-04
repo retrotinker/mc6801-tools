@@ -9,6 +9,7 @@
 #include "type.h"
 #undef EXTERN
 #include "globvar.h"
+#include "script.h"
 
 FORWARD void linkrefs P((struct modstruct * modptr));
 PUBLIC bool_t reloc_output = 0;
@@ -45,6 +46,8 @@ bool_pt argreloc_output;
 			modptr->loadflag = FALSE;
 		for (; elptr != NUL_PTR; elptr = elptr->elnext)
 			linkrefs(elptr->elsymptr->modptr);
+		/* modules the linker script keeps or uses in ASSERTs */
+		script_roots(linkrefs);
 		if ((symptr = findsym("start")) != NUL_PTR)
 			linkrefs(symptr->modptr);
 		needlink = FALSE;

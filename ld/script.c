@@ -53,7 +53,7 @@ struct expr {
 
 /* statements, sections and symbols */
 
-enum { S_ASSIGN = 1, S_INPUT, S_ONEPAGE, S_SECTION };
+enum { S_ASSIGN = 1, S_INPUT, S_ONEPAGE, S_SECTION, S_DATA, S_FILL, S_ASSERT };
 enum { A_PLAIN = 1, A_PROVIDE, A_HIDDEN };
 enum { C_TEXT, C_DATA, C_ABS };		/* symbol classes */
 
@@ -68,6 +68,7 @@ struct stmt {
 	struct ssym *sym;		/* null for "." */
 	struct expr *e;
 	/* S_INPUT */
+	int keep;			/* KEEP(...): load the modules */
 	char *filepat;			/* null for orphans */
 	char **secpats;
 	int nsecpats;
@@ -77,6 +78,28 @@ struct stmt {
 	struct stmt *body;
 	/* S_SECTION */
 	struct osect *sect;
+	/* S_DATA: BYTE or WORD; S_FILL; S_ASSERT */
+	int size;
+	char *message;
+};
+
+struct region {
+	char *name;
+	char *attr;
+	int line;
+	struct expr *origin, *length;
+	long org, len;
+	long cursor;			/* next free address */
+	struct region *next;
+};
+
+/* fill and data that the layout adds to the output */
+struct extra {
+	struct osect *sect;
+	long vma;
+	long len;			/* gap length, or 1 or 2 for data */
+	long value;			/* fill byte, or data */
+	int data;
 };
 
 struct osect {
@@ -86,6 +109,10 @@ struct osect {
 	struct stmt *body;
 	struct osect *next;
 	int datapart;			/* in the a.out data part */
+	int noload;			/* NOLOAD: not written */
+	struct region *region;		/* > region */
+	struct region *lmaregion;	/* AT> region */
+	struct expr *fillexpr;		/* = fill */
 	long sub;			/* SUBALIGN value, or 1 */
 	long vma, lma, size;
 	long pvma, plma, psize;		/* previous pass */
@@ -123,6 +150,9 @@ PRIVATE int nssyms;
 PRIVATE char *entryname;
 PRIVATE char *scriptname;
 PRIVATE struct stmt *defines, **definestail = &defines;	/* -A */
+PRIVATE struct region *regions, **regiontail = &regions;
+PRIVATE struct expr *globalfill;	/* top-level FILL */
+PRIVATE int includes;			/* depth of INCLUDE */
 
 /* the layout */
 
@@ -133,6 +163,12 @@ PRIVATE int pass;
 PRIVATE struct osect *cursect;	/* section being laid out */
 PRIVATE struct osect *lastsect;	/* last section laid out */
 PRIVATE int sepid_option;
+PRIVATE int binary_output;
+PRIVATE long curfill;			/* fill byte for gaps here */
+PRIVATE struct extra *extras;		/* from the latest pass */
+PRIVATE int nextras, maxextras;
+PRIVATE struct stmt *failed;		/* first failed ASSERT this pass */
+PRIVATE long filelow;			/* lowest load address, for binary */
 
 /* memory and messages */
 
@@ -286,6 +322,34 @@ PRIVATE struct osect *findsect(const char *s)
 	return NULL;
 }
 
+PRIVATE struct region *findregion(const char *s, int line)
+{
+	struct region *r;
+
+	for (r = regions; r != NULL; r = r->next)
+		if (strcmp(r->name, s) == 0)
+			return r;
+	script_error(line, "there's no memory region %s", s);
+	return NULL;
+}
+
+/* a string in double quotes */
+PRIVATE char *string(void)
+{
+	char *start;
+
+	skipspace();
+	if (*p != '"')
+		script_error(line, "expected a string in double quotes");
+	start = ++p;
+	while (*p && *p != '"' && *p != '\n')
+		++p;
+	if (*p != '"')
+		script_error(line, "unterminated string");
+	++p;
+	return strncpy(xalloc(p - start), start, p - start - 1);
+}
+
 /* expressions */
 
 PRIVATE struct expr *newexpr(int op)
@@ -358,10 +422,10 @@ PRIVATE struct expr *primary(void)
 		expect(",");
 		e->b = expression();
 	} else if (strcmp(e->name, "ORIGIN") == 0
-		   || strcmp(e->name, "LENGTH") == 0)
-		script_error(line, "%s() needs MEMORY, which isn't supported yet",
-			     e->name);
-	else
+		   || strcmp(e->name, "LENGTH") == 0) {
+		e->a = newexpr(X_SYM);
+		e->a->name = name();
+	} else
 		script_error(line, "unknown function %s()", e->name);
 	expect(")");
 	return e;
@@ -519,12 +583,26 @@ PRIVATE struct stmt *assignment(int akind, char *target)
 }
 
 PRIVATE struct stmt *statements(void);
+PRIVATE struct stmt *input(char *word);
+
+/* ASSERT(expression, "message") */
+PRIVATE struct stmt *assertion(void)
+{
+	struct stmt *s = newstmt(S_ASSERT);
+
+	expect("(");
+	s->e = expression();
+	expect(",");
+	s->message = string();
+	expect(")");
+	accept(";");
+	return s;
+}
 
 /* one statement inside a section */
 PRIVATE struct stmt *statement(void)
 {
 	struct stmt *s;
-	char *word;
 
 	if (accept("PROVIDE"))
 		return assignment(A_PROVIDE, NULL);
@@ -537,7 +615,40 @@ PRIVATE struct stmt *statement(void)
 		expect("}");
 		return s;
 	}
-	word = pattern();
+	if (accept("BYTE") || accept("WORD")) {
+		s = newstmt(S_DATA);
+		s->size = p[-1] == 'E' ? 1 : 2;		/* BYTE or WORD */
+		expect("(");
+		s->e = expression();
+		expect(")");
+		accept(";");
+		return s;
+	}
+	if (accept("FILL")) {
+		s = newstmt(S_FILL);
+		expect("(");
+		s->e = expression();
+		expect(")");
+		accept(";");
+		return s;
+	}
+	if (accept("ASSERT"))
+		return assertion();
+	if (accept("KEEP")) {
+		expect("(");
+		s = input(pattern());
+		expect(")");
+		s->keep = 1;
+		return s;
+	}
+	return input(pattern());
+}
+
+/* file(sections), or an assignment to a name read as a pattern */
+PRIVATE struct stmt *input(char *word)
+{
+	struct stmt *s;
+
 	skipspace();
 	if (*p == '=')
 		return assignment(A_PLAIN, word);
@@ -571,7 +682,19 @@ PRIVATE struct stmt *statements(void)
 	return first;
 }
 
-/* name [address] : [AT(lma)] [ALIGN(n)] [SUBALIGN(n)] { statements } */
+/* is the next thing "(NOLOAD)"?  if so, skip it */
+PRIVATE int noload(void)
+{
+	char *save = p;
+
+	if (accept("(") && accept("NOLOAD") && accept(")"))
+		return 1;
+	p = save;
+	return 0;
+}
+
+/* name [address] [(NOLOAD)] : [AT(lma)] [ALIGN(n)] [SUBALIGN(n)]
+	{ statements } [> region] [AT> region] [= fill] */
 PRIVATE struct stmt *section(char *sname)
 {
 	struct stmt *s = newstmt(S_SECTION);
@@ -581,15 +704,20 @@ PRIVATE struct stmt *section(char *sname)
 		script_error(line, "section %s is defined more than once", sname);
 	sect->name = sname;
 	sect->line = line;
-	if (!accept(":")) {
+	skipspace();
+	if (noload())
+		sect->noload = 1;
+	else if (*p != ':') {
 		sect->addr = expression();
-		expect(":");
+		sect->noload = noload();
 	}
+	expect(":");
 	for (;;) {
-		if (accept("AT"))
-			/* load addresses come with phase 3 of the design */
-			script_error(line, "AT isn't supported yet");
-		else if (accept("ALIGN")) {
+		if (accept("AT")) {
+			expect("(");
+			sect->at = expression();
+			expect(")");
+		} else if (accept("ALIGN")) {
 			expect("(");
 			sect->align = expression();
 			expect(")");
@@ -603,6 +731,17 @@ PRIVATE struct stmt *section(char *sname)
 	expect("{");
 	sect->body = statements();
 	expect("}");
+	for (;;) {
+		if (accept("AT")) {
+			expect(">");
+			sect->lmaregion = findregion(name(), line);
+		} else if (accept(">"))
+			sect->region = findregion(name(), line);
+		else if (accept("=") ) {
+			sect->fillexpr = expression();
+		} else
+			break;
+	}
 	s->sect = sect;
 	*secttail = sect;
 	secttail = &sect->next;
@@ -615,13 +754,127 @@ PRIVATE void addtop(struct stmt *s)
 	toptail = &s->next;
 }
 
-PRIVATE void parse(char *text, char *filename)
+PRIVATE void commands(void);
+PRIVATE void sections_body(int toplevel);
+
+PRIVATE char *readfile(char *filename)
+{
+	FILE *f;
+	char *text;
+	long n;
+
+	if ((f = fopen(filename, "r")) == NULL) {
+		scriptname = filename;
+		script_error(0, "can't open the linker script");
+	}
+	fseek(f, 0, SEEK_END);
+	n = ftell(f);
+	rewind(f);
+	text = xalloc(n + 1);
+	if (n < 0 || fread(text, 1, n, f) != (size_t)n) {
+		scriptname = filename;
+		script_error(0, "can't read the linker script");
+	}
+	text[n] = '\0';
+	fclose(f);
+	return text;
+}
+
+/* INCLUDE "file": read it in the current context */
+PRIVATE void include(int insections)
+{
+	char *filename = string();
+	char *savep = p, *savename = scriptname;
+	int saveline = line;
+
+	if (++includes > 10)
+		script_error(line, "INCLUDE is nested too deeply");
+	p = readfile(filename);
+	scriptname = filename;
+	line = 1;
+	if (insections)
+		sections_body(1);
+	else
+		commands();
+	p = savep;
+	scriptname = savename;
+	line = saveline;
+	--includes;
+}
+
+/* MEMORY { name [(attributes)] : ORIGIN = expr, LENGTH = expr ... } */
+PRIVATE void memory(void)
+{
+	struct region *r;
+	char *start;
+
+	expect("{");
+	while (!accept("}")) {
+		r = xalloc(sizeof *r);
+		r->line = line;
+		r->name = name();
+		if (accept("(")) {
+			skipspace();
+			start = p;
+			while (*p && *p != ')')
+				++p;
+			r->attr = strncpy(xalloc(p - start + 1), start, p - start);
+			expect(")");
+		}
+		expect(":");
+		if (!accept("ORIGIN") && !accept("org") && !accept("o"))
+			script_error(line, "expected ORIGIN");
+		expect("=");
+		r->origin = expression();
+		accept(",");
+		if (!accept("LENGTH") && !accept("len") && !accept("l"))
+			script_error(line, "expected LENGTH");
+		expect("=");
+		r->length = expression();
+		accept(",");
+		*regiontail = r;
+		regiontail = &r->next;
+	}
+}
+
+/* the contents of SECTIONS, up to "}" (or the end of an included file) */
+PRIVATE void sections_body(int infile)
 {
 	char *word;
 
-	scriptname = filename;
-	p = text;
-	line = 1;
+	for (;;) {
+		skipspace();
+		if (!*p) {
+			if (infile)
+				return;
+			script_error(line, "expected \"}\"");
+		}
+		if (!infile && accept("}"))
+			return;
+		if (accept("PROVIDE"))
+			addtop(assignment(A_PROVIDE, NULL));
+		else if (accept("HIDDEN"))
+			addtop(assignment(A_HIDDEN, NULL));
+		else if (accept("ASSERT"))
+			addtop(assertion());
+		else if (accept("INCLUDE"))
+			include(1);
+		else {
+			word = name();
+			skipspace();
+			if (*p == '=' && p[1] != '=')
+				addtop(assignment(A_PLAIN, word));
+			else
+				addtop(section(word));
+		}
+	}
+}
+
+/* top-level commands, up to the end of the text */
+PRIVATE void commands(void)
+{
+	char *word;
+
 	for (;;) {
 		skipspace();
 		if (!*p)
@@ -640,32 +893,21 @@ PRIVATE void parse(char *text, char *filename)
 			expect(")");
 		} else if (accept("SECTIONS")) {
 			expect("{");
-			for (;;) {
-				skipspace();
-				if (accept("}"))
-					break;
-				if (!*p)
-					script_error(line, "expected \"}\"");
-				if (accept("PROVIDE"))
-					addtop(assignment(A_PROVIDE, NULL));
-				else if (accept("HIDDEN"))
-					addtop(assignment(A_HIDDEN, NULL));
-				else {
-					word = name();
-					skipspace();
-					if (*p == '=' && p[1] != '=')
-						addtop(assignment(A_PLAIN, word));
-					else
-						addtop(section(word));
-				}
-			}
-		} else if (accept("PROVIDE"))
+			sections_body(0);
+		} else if (accept("MEMORY"))
+			memory();
+		else if (accept("INCLUDE"))
+			include(0);
+		else if (accept("FILL")) {
+			expect("(");
+			globalfill = expression();
+			expect(")");
+		} else if (accept("ASSERT"))
+			addtop(assertion());
+		else if (accept("PROVIDE"))
 			addtop(assignment(A_PROVIDE, NULL));
 		else if (accept("HIDDEN"))
 			addtop(assignment(A_HIDDEN, NULL));
-		else if (accept("MEMORY") || accept("INCLUDE")
-			 || accept("ASSERT") || accept("FILL"))
-			script_error(line, "this command isn't supported yet");
 		else {
 			word = name();
 			skipspace();
@@ -674,6 +916,14 @@ PRIVATE void parse(char *text, char *filename)
 			addtop(assignment(A_PLAIN, word));
 		}
 	}
+}
+
+PRIVATE void parse(char *text, char *filename)
+{
+	scriptname = filename;
+	p = text;
+	line = 1;
+	commands();
 }
 
 /* the default script */
@@ -792,25 +1042,7 @@ int binary;
 PUBLIC void script_read(filename)
 char *filename;
 {
-	FILE *f;
-	char *text;
-	long n;
-
-	if ((f = fopen(filename, "r")) == NULL) {
-		scriptname = filename;
-		script_error(0, "can't open the linker script");
-	}
-	fseek(f, 0, SEEK_END);
-	n = ftell(f);
-	rewind(f);
-	text = xalloc(n + 1);
-	if (n < 0 || fread(text, 1, n, f) != (size_t)n) {
-		scriptname = filename;
-		script_error(0, "can't read the linker script");
-	}
-	text[n] = '\0';
-	fclose(f);
-	parse(text, filename);
+	parse(readfile(filename), filename);
 }
 
 /* -A sym=value: a plain assignment, before the script's own statements */
@@ -995,7 +1227,11 @@ PRIVATE void orphans(void)
 	last[0] = last[1] = NULL;
 	orphan[0] = orphan[1] = NULL;
 	for (sect = sects; sect != NULL; sect = sect->next)
-		last[sect->datapart] = sect;
+		if (!sect->noload)
+			last[sect->datapart] = sect;
+	for (sect = sects; sect != NULL; sect = sect->next)
+		if (last[sect->datapart] == NULL)
+			last[sect->datapart] = sect;
 	if (last[1] == NULL)
 		last[1] = last[0];
 	if (last[0] == NULL)
@@ -1112,6 +1348,10 @@ PRIVATE long func(struct expr *e)
 		return (ss != NULL && ss->assigned)
 		    || moddefined(findsym(e->a->name));
 	}
+	if (strcmp(e->name, "ORIGIN") == 0)
+		return findregion(e->a->name, e->line)->org;
+	if (strcmp(e->name, "LENGTH") == 0)
+		return findregion(e->a->name, e->line)->len;
 	if (strcmp(e->name, "ALIGN") == 0) {
 		if (e->b == NULL)
 			return align(dot, eval(e->a), e->line);
@@ -1193,6 +1433,40 @@ PRIVATE long eval(struct expr *e)
 
 PRIVATE void walk(struct stmt *s, long subalign);
 
+PRIVATE void addextra(long vma, long len, long value, int data)
+{
+	struct extra *x;
+
+	if (nextras == maxextras) {
+		maxextras = maxextras ? 2 * maxextras : 32;
+		extras = realloc(extras, maxextras * sizeof *extras);
+		if (extras == NULL)
+			outofmemory();
+	}
+	x = &extras[nextras++];
+	x->sect = cursect;
+	x->vma = vma;
+	x->len = len;
+	x->value = value;
+	x->data = data;
+}
+
+/* a gap from here to address "to", filled with the current fill byte */
+PRIVATE void gap(long to)
+{
+	if (to > dot && curfill != 0 && cursect != NULL)
+		addextra(dot, to - dot, curfill, 0);
+}
+
+PRIVATE long fillbyte(struct expr *e)
+{
+	long value = eval(e);
+
+	if (value < -128 || value > 255)
+		script_error(e->line, "fill value %ld isn't a byte", value);
+	return value & 0xFF;
+}
+
 PRIVATE void assign_symbol(struct stmt *s)
 {
 	struct ssym *ss = s->sym;
@@ -1221,7 +1495,24 @@ PRIVATE void walk(struct stmt *s, long subalign)
 			if (value < dot)
 				script_error(s->line,
 					     "\".\" can't move backwards in a section");
+			gap(value);
 			dot = value;
+			break;
+		case S_DATA:
+			value = eval(s->e);
+			if (s->size == 1 ? value < -128 || value > 255
+			    : value < -32768 || value > 65535)
+				script_error(s->line, "%s value %ld is too large",
+					     s->size == 1 ? "BYTE" : "WORD", value);
+			addextra(dot, s->size, value, 1);
+			dot += s->size;
+			break;
+		case S_FILL:
+			curfill = fillbyte(s->e);
+			break;
+		case S_ASSERT:
+			if (!eval(s->e) && failed == NULL)
+				failed = s;
 			break;
 		case S_INPUT:
 			for (i = 0; i < s->npieces; ++i) {
@@ -1236,11 +1527,17 @@ PRIVATE void walk(struct stmt *s, long subalign)
 				else {
 					pc->mod->segaddr[pc->seg] = dot;
 					pc->mod->segpad[pc->seg] = pad;
+					pc->mod->segfill[pc->seg] = curfill;
+					pc->mod->segnoload[pc->seg] =
+					    pc->sect->noload;
 				}
 				dot += pc->size + pad;
 			}
 			break;
-		case S_ONEPAGE:
+		case S_ONEPAGE: {
+			int saveextras = nextras;
+			long savefill = curfill;
+
 			start = dot;
 			walk(s->body, subalign);
 			size = dot - start;
@@ -1248,10 +1545,16 @@ PRIVATE void walk(struct stmt *s, long subalign)
 				script_error(s->line,
 					     "ONEPAGE contents are larger than a page");
 			if (((start + size) ^ start) & ~0xFFL) {
+				/* move to the next page and lay it out again */
+				nextras = saveextras;
+				curfill = savefill;
+				dot = start;
+				gap((start + 0xFF) & ~0xFFL);
 				dot = (start + 0xFF) & ~0xFFL;
 				walk(s->body, subalign);
 			}
 			break;
+		}
 		}
 	}
 }
@@ -1261,7 +1564,12 @@ PRIVATE void layout_section(struct osect *sect)
 	long start, subalign = 1;
 
 	cursect = sect;
-	start = sect->addr != NULL ? eval(sect->addr) : dot;
+	if (sect->addr != NULL)
+		start = eval(sect->addr);
+	else if (sect->region != NULL)
+		start = sect->region->cursor;
+	else
+		start = dot;
 	if (text_base_given && strcmp(sect->name, ".text") == 0)
 		start = text_base_value;
 	if (data_base_value && strcmp(sect->name, ".data") == 0)
@@ -1272,10 +1580,22 @@ PRIVATE void layout_section(struct osect *sect)
 		subalign = align(1, eval(sect->subalign), sect->line);
 	sect->sub = subalign;
 	sect->vma = start;
-	sect->lma = sect->at != NULL ? eval(sect->at) : start;
+	if (sect->at != NULL)
+		sect->lma = eval(sect->at);
+	else if (sect->lmaregion != NULL)
+		sect->lma = sect->lmaregion->cursor;
+	else
+		sect->lma = start;
+	curfill = sect->fillexpr != NULL ? fillbyte(sect->fillexpr)
+	    : globalfill != NULL ? fillbyte(globalfill) : 0;
 	dot = start;
 	walk(sect->body, subalign);
 	sect->size = dot - start;
+	if (sect->region != NULL && start + sect->size > sect->region->cursor)
+		sect->region->cursor = start + sect->size;
+	if (sect->lmaregion != NULL
+	    && sect->lma + sect->size > sect->lmaregion->cursor)
+		sect->lmaregion->cursor = sect->lma + sect->size;
 	cursect = NULL;
 	lastsect = sect;
 }
@@ -1285,14 +1605,26 @@ PRIVATE void layout_pass(void)
 	struct stmt *s;
 	struct ssym *ss;
 
+	struct region *r;
+
 	for (ss = ssyms; ss != NULL; ss = ss->next)
 		ss->assigned = 0;
+	nextras = 0;
+	failed = NULL;
 	dot = 0;
+	for (r = regions; r != NULL; r = r->next) {
+		r->org = eval(r->origin);
+		r->len = eval(r->length);
+		r->cursor = r->org;
+	}
 	lastsect = NULL;
 	for (s = top; s != NULL; s = s->next)
 		if (s->kind == S_SECTION)
 			layout_section(s->sect);
-		else if (s->sym != NULL)
+		else if (s->kind == S_ASSERT) {
+			if (!eval(s->e) && failed == NULL)
+				failed = s;
+		} else if (s->sym != NULL)
 			assign_symbol(s);
 		else
 			dot = eval(s->e);
@@ -1369,6 +1701,47 @@ PUBLIC void script_mark_imports()
 			s->sym->class = relative(s->e) ? class : C_ABS;
 	}
 
+	/* __name_start, __name_end and __name_load for each output section,
+	   provided if a loaded module imports them */
+	for (sect = sects; sect != NULL; sect = sect->next) {
+		static const char *suffix[] = { "start", "end", "load" };
+		char sname[80];
+		int k;
+
+		for (k = 0; k < 3; ++k) {
+			struct expr *e;
+
+			snprintf(sname, sizeof sname, "__%s_%s",
+				 sect->name + (sect->name[0] == '.'),
+				 suffix[k]);
+			if (findssym(sname) != NULL || (symptr = findsym(sname))
+			    == NULL || moddefined(symptr))
+				continue;
+			e = newexpr(X_FUNC);
+			e->name = k == 2 ? "LOADADDR" : "ADDR";
+			e->a = newexpr(X_SYM);
+			e->a->name = sect->name;
+			if (k == 1) {
+				struct expr *size = newexpr(X_FUNC);
+
+				size->name = "SIZEOF";
+				size->a = e->a;
+				e = newexpr(X_ADD);
+				e->a = newexpr(X_FUNC);
+				e->a->name = "ADDR";
+				e->a->a = size->a;
+				e->b = size;
+			}
+			s = newstmt(S_ASSIGN);
+			s->akind = A_PROVIDE;
+			s->sym = ssym(sname);
+			s->sym->provide = 1;
+			s->sym->class = sect->datapart ? C_DATA : C_TEXT;
+			s->e = e;
+			addtop(s);
+		}
+	}
+
 	/* imports by loaded modules */
 	for (modptr = modfirst; modptr != NUL_PTR; modptr = modptr->modnext)
 		if (modptr->loadflag)
@@ -1396,6 +1769,17 @@ PUBLIC void script_mark_imports()
 	}
 }
 
+PRIVATE void inregion(struct osect *sect, long addr, struct region *r)
+{
+	if (addr < r->org || addr > r->org + r->len)
+		script_error(sect->line, "section %s isn't in memory region %s",
+			     sect->name, r->name);
+	if (addr + sect->size > r->org + r->len)
+		script_error(sect->line, "section %s doesn't fit in memory region "
+			     "%s: it's %ld bytes too big", sect->name, r->name,
+			     addr + sect->size - (r->org + r->len));
+}
+
 PRIVATE void checks(void)
 {
 	struct osect *a, *b;
@@ -1404,8 +1788,26 @@ PRIVATE void checks(void)
 		if (a->vma < 0 || a->vma + a->size > 0x10000L)
 			script_error(a->line, "section %s goes past $FFFF",
 				     a->name);
+		if (a->lma < 0 || a->lma + a->size > 0x10000L)
+			script_error(a->line, "section %s's load address goes "
+				     "past $FFFF", a->name);
+		if (a->region != NULL)
+			inregion(a, a->vma, a->region);
+		if (a->lmaregion != NULL)
+			inregion(a, a->lma, a->lmaregion);
+		if (a->lma != a->vma && !binary_output)
+			script_error(a->line, "section %s has a separate load "
+				     "address, which needs OUTPUT_FORMAT(binary)",
+				     a->name);
 		if (a->size == 0)
 			continue;
+		for (b = a->next; b != NULL; b = b->next)
+			if (b->size != 0 && binary_output && !a->noload
+			    && !b->noload && a->lma < b->lma + b->size
+			    && b->lma < a->lma + a->size)
+				script_error(b->line, "the load addresses of "
+					     "sections %s and %s overlap",
+					     a->name, b->name);
 		for (b = a->next; b != NULL; b = b->next)
 			if (b->size != 0
 			    && (a->datapart == b->datapart || !sepid_option)
@@ -1426,6 +1828,7 @@ int binary;
 	int i, seg;
 
 	sepid_option = sepid;
+	binary_output = binary;
 
 	/* the input sections of the loaded modules */
 	npieces = 0;
@@ -1472,14 +1875,17 @@ int binary;
 			script_error(0, "the layout doesn't settle: check for "
 				     "symbols that depend on each other");
 	}
+	if (failed != NULL)
+		script_error(failed->line, "%s", failed->message);
 
 	/* the a.out text and data parts */
 	first[0] = first[1] = prev[0] = prev[1] = NULL;
 	for (sect = sects; sect != NULL; sect = sect->next) {
 		int part = sect->datapart;
 
-		if (prev[part] != NULL && sect->vma < prev[part]->vma
-		    + prev[part]->size && sect->size != 0)
+		/* (a binary image is laid out by load address instead) */
+		if (!binary && prev[part] != NULL && sect->vma
+		    < prev[part]->vma + prev[part]->size && sect->size != 0)
 			script_error(sect->line, "section %s must not start "
 				     "below the end of the section before it",
 				     sect->name);
@@ -1499,9 +1905,14 @@ int binary;
 		lay_data_start = lay_bss_end = lay_text_end;
 	/* initialized data ends with the last data input in the data part */
 	lay_data_end = lay_data_start;
+	for (i = 0; i < nextras; ++i)
+		if (extras[i].data && extras[i].sect->datapart
+		    && !extras[i].sect->noload
+		    && extras[i].vma + extras[i].len > lay_data_end)
+			lay_data_end = extras[i].vma + extras[i].len;
 	for (i = 0; i < npieces; ++i)
 		if (!pieces[i].common && pieces[i].size != 0
-		    && pieces[i].sect->datapart) {
+		    && pieces[i].sect->datapart && !pieces[i].sect->noload) {
 			long end = pieces[i].vma + pieces[i].size;
 			long sub = pieces[i].sect->sub;
 
@@ -1514,22 +1925,25 @@ int binary;
 
 	/* where each module's part of each segment goes in the file: an
 	   a.out has the text part followed by the data part, and a binary
-	   image covers the addresses from the lowest used */
+	   image covers the load addresses from the lowest used */
 	{
 		long low = -1;
 
 		for (sect = sects; sect != NULL; sect = sect->next)
-			if (sect->size != 0 && (low < 0 || sect->vma < low))
-				low = sect->vma;
+			if (sect->size != 0 && !sect->noload
+			    && (low < 0 || sect->lma < low))
+				low = sect->lma;
 		if (low < 0)
 			low = lay_text_start;
+		filelow = low;
 		for (i = 0; i < npieces; ++i) {
 			struct piece *pc = &pieces[i];
 
-			if (pc->common)
+			if (pc->common || pc->sect->noload)
 				continue;
 			if (binary)
-				pc->mod->segfadj[pc->seg] = -low;
+				pc->mod->segfadj[pc->seg] = pc->sect->lma
+				    - pc->sect->vma - low;
 			else if (pc->sect->datapart)
 				pc->mod->segfadj[pc->seg] = lay_text_end
 				    - lay_text_start - lay_data_start;
@@ -1537,6 +1951,152 @@ int binary;
 				pc->mod->segfadj[pc->seg] = -lay_text_start;
 		}
 	}
+}
+
+/* output */
+
+/* the file offset (after any header) of an address in a section */
+PRIVATE long fileoff(struct osect *sect, long vma)
+{
+	if (binary_output)
+		return sect->lma + (vma - sect->vma) - filelow;
+	if (sect->datapart)
+		return lay_text_end - lay_text_start + vma - lay_data_start;
+	return vma - lay_text_start;
+}
+
+PRIVATE void outfill(void (*out) P((bin_off_t, char *, unsigned)),
+		     long offset, long len, int byte)
+{
+	char buf[256];
+	unsigned n;
+
+	memset(buf, byte, sizeof buf);
+	while (len > 0) {
+		n = len > (long)sizeof buf ? sizeof buf : (unsigned)len;
+		(*out) ((bin_off_t) offset, buf, n);
+		offset += n;
+		len -= n;
+	}
+}
+
+/* fill bytes for gaps, written before the modules */
+PUBLIC void script_write_fill(out)
+void (*out) P((bin_off_t offset, char *buf, unsigned len));
+{
+	struct osect *sect, *a, *b;
+	long fill, end;
+	int i;
+
+	/* gaps inside sections */
+	for (i = 0; i < nextras; ++i)
+		if (!extras[i].data && !extras[i].sect->noload)
+			outfill(out, fileoff(extras[i].sect, extras[i].vma),
+				extras[i].len, (int)extras[i].value);
+
+	/* gaps between sections, in file order */
+	if (globalfill == NULL || (fill = fillbyte(globalfill)) == 0)
+		return;
+	for (a = sects; a != NULL; a = a->next) {
+		if (a->size == 0 || a->noload)
+			continue;
+		end = fileoff(a, a->vma) + a->size;
+		b = NULL;
+		for (sect = sects; sect != NULL; sect = sect->next)
+			if (sect->size != 0 && !sect->noload
+			    && fileoff(sect, sect->vma) >= end
+			    && (b == NULL || fileoff(sect, sect->vma)
+				< fileoff(b, b->vma)))
+				b = sect;
+		if (b != NULL && fileoff(b, b->vma) > end)
+			outfill(out, end, fileoff(b, b->vma) - end, (int)fill);
+	}
+}
+
+/* BYTE and WORD data, written after the modules */
+PUBLIC void script_write_data(out)
+void (*out) P((bin_off_t offset, char *buf, unsigned len));
+{
+	char buf[2];
+	int i;
+
+	for (i = 0; i < nextras; ++i)
+		if (extras[i].data && !extras[i].sect->noload) {
+			if (extras[i].len == 1)
+				buf[0] = (char)extras[i].value;
+			else {
+				buf[0] = (char)(extras[i].value >> 8);
+				buf[1] = (char)extras[i].value;
+			}
+			(*out) ((bin_off_t) fileoff(extras[i].sect,
+						    extras[i].vma),
+				buf, (unsigned)extras[i].len);
+		}
+}
+
+/* module selection: modules that KEEP patterns match, and those that
+   define symbols an ASSERT uses, are linked like the entry point's */
+PRIVATE void exprroots(struct expr *e, void (*link) P((struct modstruct *)))
+{
+	struct symstruct *symptr;
+
+	if (e == NULL)
+		return;
+	if (e->op == X_SYM && (symptr = findsym(e->name)) != NULL
+	    && !(symptr->flags & I_MASK) && symptr->modptr != NULL
+	    && !symptr->modptr->loadflag)
+		(*link) (symptr->modptr);
+	exprroots(e->a, link);
+	exprroots(e->b, link);
+	exprroots(e->c, link);
+}
+
+PRIVATE void stmtroots(struct stmt *s, void (*link) P((struct modstruct *)))
+{
+	struct modstruct *modptr;
+	int i, seg;
+
+	for (; s != NULL; s = s->next) {
+		if (s->kind == S_SECTION)
+			stmtroots(s->sect->body, link);
+		else if (s->kind == S_ONEPAGE)
+			stmtroots(s->body, link);
+		else if (s->kind == S_ASSERT)
+			exprroots(s->e, link);
+		else if (s->kind == S_INPUT && s->keep)
+			for (modptr = modfirst; modptr != NUL_PTR;
+			     modptr = modptr->modnext) {
+				char *cptr = modptr->segsize;
+				unsigned count;
+				int match = 0;
+
+				if (modptr->loadflag
+				    || !filematch(s->filepat, modptr))
+					continue;
+				for (seg = 0; seg < NSEG; ++seg) {
+					long size = cntooffset(cptr,
+						count = segsizecount(
+						    (unsigned)seg, modptr));
+
+					cptr += count;
+					for (i = 0; i < s->nsecpats; ++i)
+						if ((size != 0
+						     && secmatch(s->secpats[i],
+								 seg, 0))
+						    || secmatch(s->secpats[i],
+								seg, 1))
+							match = 1;
+				}
+				if (match)
+					(*link) (modptr);
+			}
+	}
+}
+
+PUBLIC void script_roots(link)
+void (*link) P((struct modstruct * modptr));
+{
+	stmtroots(top, link);
 }
 
 /* the value of a symbol the script assigns, even if it isn't defined
@@ -1584,6 +2144,23 @@ PUBLIC void script_dump_layout()
 	struct stmt *s, *stack[16];
 	int depth, i;
 
+	struct region *r;
+
+	if (regions != NULL) {
+		putstr("Memory region   Origin   Length   Used\n");
+		for (r = regions; r != NULL; r = r->next) {
+			putstr(r->name);
+			for (i = strlen(r->name); i < 16; ++i)
+				putstr(" ");
+			put08x((bin_off_t) r->org);
+			putstr(" ");
+			put08x((bin_off_t) r->len);
+			putstr(" ");
+			put08x((bin_off_t) (r->cursor - r->org));
+			putstr("\n");
+		}
+		putstr("\n");
+	}
 	putstr("Section         Address  Size     Load\n");
 	for (sect = sects; sect != NULL; sect = sect->next) {
 		putstr(sect->name);
@@ -1596,6 +2173,8 @@ PUBLIC void script_dump_layout()
 			putstr(" ");
 			put08x((bin_off_t) sect->lma);
 		}
+		if (sect->noload)
+			putstr(" (NOLOAD)");
 		putstr("\n");
 		depth = 0;
 		s = sect->body;

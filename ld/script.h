@@ -14,6 +14,13 @@ void script_define_symbols P((void));	/* after symbols are relocated */
 void script_write_symbols P((void (*writesym) (char *name, bin_off_t value,
 					      int sclass)));
 void script_dump_layout P((void));	/* -M */
+void script_write_fill P((void (*out) (bin_off_t offset, char *buf,
+				     unsigned len)));
+void script_write_data P((void (*out) (bin_off_t offset, char *buf,
+				     unsigned len)));
+#ifdef OBJ_H
+void script_roots P((void (*link) (struct modstruct *modptr)));
+#endif
 int script_value P((char *name, bin_off_t *value));	/* if assigned */
 
 extern int script_binary;		/* OUTPUT_FORMAT(binary) */
