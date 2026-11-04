@@ -1,0 +1,5 @@
+ok   crt0.s
+ok   mc10.ld
+ok   prog.s
+ok   rom.ld
+ok   vectors.s

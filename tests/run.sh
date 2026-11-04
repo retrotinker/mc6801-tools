@@ -143,6 +143,38 @@ roundtrip page -m -M -T0
 objs="mainent.o"
 roundtrip mainent -m -M
 
+# the linker script examples in the user's manual, linked as it shows,
+# in a directory of their own since they use the same file names as other
+# tests; their results are then renamed manual-*
+mkdir manual
+cd manual || exit 1
+cp "$tests"/manual/* .
+for f in *.s "$top"/demo/crtstart.s "$top"/demo/main.s "$top"/demo/screen.s \
+    "$top"/demo/one.s "$top"/demo/two.s "$top"/demo/three.s; do
+	assemble "$(basename "$f" .s)" "$f"
+done
+"$AR" rc libnum.a one.o two.o three.o 2> ar.err
+link mc10	-M -S mc10.ld -lnum crtstart.o main.o screen.o
+link rom	-M -S rom.ld crt0.o vectors.o prog.o
+"$OC" -O srec -n MAIN mc10.out mc10.srec > objcopy.err 2>&1
+echo $? > objcopy.rc
+"$AR" t libnum.a > libnum.t
+rm -f libnum.a
+# each example file must appear, word for word, in the manual
+for f in "$tests"/manual/*; do
+	if awk -v RS='\001' 'NR == FNR { m = $0; next }
+	    { exit index(m, $0) ? 0 : 1 }' "$top/doc/manual.md" "$f"; then
+		echo "ok   $(basename "$f")"
+	else
+		echo "DIFF $(basename "$f") isn't in doc/manual.md"
+	fi
+done > insync.result
+cd ..
+for f in manual/*; do
+	mv "$f" "manual-$(basename "$f")"
+done
+rmdir manual
+
 # relocatable output: an archive, compared by its contents since the
 # member headers contain file dates
 "$LD" -r -o rel.a segs.o helper.o > rel.err 2>&1

@@ -1,0 +1,17 @@
+00001                   ; vectors.s - the MC6801 interrupt vectors, for $FFF0 to $FFFF
+00002 0000                      LOC     0
+00003                           IMPORT  reset, ignore
+00004 0000        0000>         fdb     ignore          ; SCI
+00005 0002        0000>         fdb     ignore          ; timer overflow
+00006 0004        0000>         fdb     ignore          ; output compare
+00007 0006        0000>         fdb     ignore          ; input capture
+00008 0008        0000>         fdb     ignore          ; IRQ1
+00009 000A        0000>         fdb     ignore          ; SWI
+00010 000C        0000>         fdb     ignore          ; NMI
+00011 000E        0000>         fdb     reset           ; reset
+
+Symbols:
+ignore                      0 0000 R I reset                       0 0000 R I 
+
+00000 errors
+00000 warnings

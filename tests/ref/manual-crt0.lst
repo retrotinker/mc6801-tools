@@ -1,0 +1,43 @@
+00001                   ; crt0.s - start-up code for a ROM program: sets up the stack, copies
+00002                   ; the initialized data from ROM to RAM, and calls main
+00003 0000                      LOC     0
+00004                           ENTRY   reset
+00005                           EXPORT  ignore
+00006                           IMPORT  __stack_top, __data_load, __data_start, __data_end, main
+00007 0000   8E   0000> reset   lds     #__stack_top
+00008 0003   CE   0000>         ldx     #__data_start   ; any data to copy?
+00009 0006   8C   0000>         cpx     #__data_end
+00010 0009   27     23          beq     run
+00011 000B   CE   0000>         ldx     #__data_load    ; copy it from ROM to RAM
+00012 000E   FF   0000>         stx     src
+00013 0011   CE   0000>         ldx     #__data_start
+00014 0014   FF   0000>         stx     dst
+00015 0017   FE   0000> copy    ldx     src
+00016 001A   A6     00          ldaa    0,x
+00017 001C   08                 inx
+00018 001D   FF   0000>         stx     src
+00019 0020   FE   0000>         ldx     dst
+00020 0023   A7     00          staa    0,x
+00021 0025   08                 inx
+00022 0026   FF   0000>         stx     dst
+00023 0029   8C   0000>         cpx     #__data_end
+00024 002C   26     E9          bne     copy
+00025 002E   BD   0000> run     jsr     main
+00026 0031   20     FE          bra     *
+00027                   
+00028 0033   3B         ignore  rti                     ; for interrupts that aren't used
+00029                   
+00030 0000                      LOC     3
+00031             0002> src     COMM    2               ; copy pointers
+00032             0002> dst     COMM    2
+
+Symbols:
+__data_end                  0 0000 R I __data_load                 0 0000 R I 
+__data_start                0 0000 R I __stack_top                 0 0000 R I 
+copy                        0 0017 R   dst                         3 0002 R C 
+ignore                      0 0033 R E main                        0 0000 R I 
+reset                       0 0000 R N run                         0 002E R   
+src                         3 0002 R C 
+
+00000 errors
+00000 warnings

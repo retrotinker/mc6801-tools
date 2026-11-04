@@ -1,0 +1,23 @@
+00001 0000              LOC 0
+00002                   
+00003                   	IMPORT	prstring
+00004                   
+00005 0000          54  msg_two	fcb	'T,'W,'O,$0d,$00
+00006                   
+00007             0005> two
+00008 0005   CE   0000> 	ldx	#msg_two
+00009 0008   3C         	pshx
+00010 0009   BD   0000> 	jsr	prstring
+00011 000C   31         	ins
+00012 000D   31         	ins
+00013                   
+00014 000E   39         	rts
+00015                   
+00016                   	EXPORT two
+
+Symbols:
+msg_two                     0 0000 R   prstring                    0 0000 R I 
+two                         0 0005 R E 
+
+00000 errors
+00000 warnings

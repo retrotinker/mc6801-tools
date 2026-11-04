@@ -1,0 +1,21 @@
+00001                   ; prog.s - a tiny program: shows a changing pattern on port 1
+00002             0002  PORT1   equ     $02
+00003 0000                      LOC     0
+00004                           EXPORT  main
+00005 0000   B6   0000> main    ldaa    pattern
+00006 0003   97     02  loop    staa    PORT1
+00007 0005   43                 coma
+00008 0006   7C   0000>         inc     count
+00009 0009   20     F8          bra     loop
+00010                   
+00011 0000                      LOC     3
+00012 0000          55  pattern fcb     $55
+00013             0001> count   COMM    1
+
+Symbols:
+PORT1                       0 0002 A   count                       3 0001 R C 
+loop                        0 0003 R   main                        0 0000 R E 
+pattern                     3 0000 R   
+
+00000 errors
+00000 warnings

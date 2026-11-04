@@ -597,10 +597,14 @@ linker moves it to the start of the next page.
 Most MC6801 programs need only counter 0. Start each module with
 `LOC 0` (or `.TEXT`) to make this explicit.
 
+This is the default layout. A linker script can place each module's
+counters anywhere (Chapter \ref{linker-scripts}).
+
 ## Invoking ld01
 
 ```
-ld01 [-dimMrsty] [-o outfile] [-T textaddr] [-D dataaddr] [-H heapsize]
+ld01 [-dimMPrstyZ] [-o outfile] [-S script] [-A symbol=value]
+     [-T textaddr] [-D dataaddr] [-H heapsize]
      [-Ccrt] [-Llibdir] [-llib] [-Olibfile] file ...
 ```
 
@@ -617,13 +621,21 @@ ld01 [-dimMrsty] [-o outfile] [-T textaddr] [-D dataaddr] [-H heapsize]
 | `-d` | Write a raw memory image with no header or symbols |
 | `-s` | Leave out the symbol table |
 | `-m` | List the modules linked |
-| `-M` | List all symbols with their values |
+| `-M` | Show the layout, then all symbols with their values |
+| `-S script` | Link with a linker script (Chapter \ref{linker-scripts}) |
+| `-A sym=value` | Define a symbol for the linker script |
+| `-P` | Print the default linker script and exit |
+| `-Z` | Make input that a linker script doesn't place an error |
 | `-r` | Combine the input objects into an archive instead of linking |
 | `-i` | Mark the executable as having separate instruction and data spaces |
 | `-t` | Trace modules as they are read (must come before the input files) |
 
-The order of objects and libraries on the command line does not matter:
-the linker reads them all before resolving symbols.
+A module is linked only if the program uses it: starting from the
+module with the entry point, the linker includes every module that
+defines a symbol a linked module refers to. The order of objects and
+libraries on the command line doesn't matter for finding symbols,
+since the linker reads them all first, but the modules are placed in
+that order.
 
 Addresses and sizes are read like C numbers: hexadecimal with a `0x`
 or `$` prefix, octal with a leading `0`, and decimal otherwise. So
@@ -644,6 +656,9 @@ segment followed by the data segment, ready to be burned into an EPROM:
 ```
 $ ld01 -d -T0xe000 -o rom.bin start.o main.o
 ```
+
+A linker script can also ask for a memory image, S-records or Intel hex
+with `OUTPUT_FORMAT` (Section \ref{output-formats}).
 
 ## Start-up modules
 
@@ -699,21 +714,38 @@ written to the executable's symbol table (unless `-s` is used), where
 ## Link maps
 
 `-m` prints a line for each module: `+` if it was linked, `-` if it is
-an archive member that was not needed. `-M` prints every symbol with
-the module that defines it, its value and its type:
+an archive member that was not needed. `-M` prints the layout, each
+output section with its address and size and the parts of the modules
+in it, then every symbol with the module that defines it, its value and
+its type:
 
 ```
 $ ld01 -lnum -Cstart -T0x434c -m -M -o main.aout main.o screen.o
 one             +libnum.a(one.o)
+two             +libnum.a(two.o)
+three           +libnum.a(three.o)
 crtstart        +crtstart.o
 main            +main.o
 screen          +screen.o
+Section         Address  Size     Load
+.text           0000434c 0000006c
+    0000434c 0000000f libnum.a:one.o(LOC0)
+    0000435c 0000000f libnum.a:two.o(LOC0)
+    0000436c 00000011 libnum.a:three.o(LOC0)
+    00004380 00000004 crtstart.o(LOC0)
+    00004384 0000000d main.o(LOC0)
+    00004394 00000023 screen.o(LOC0)
+.data           000043b8 00000000
+
+                 one               msg_one  0  0000434c  r
                  one                   one  0  00004351  R
-            crtstart               __start  0  00004380  R N
-              screen                SCREEN  0  00004000  a
 ...
-Total memory used: 000004ff
 ```
+
+The modules are placed in command-line order: `-lnum` comes first, so
+the library members are at the start. Each module's part is padded to a
+multiple of 4 bytes, which is why `two.o` starts at `$435C` rather than
+`$435B`.
 
 # Libraries {#libraries-chapter}
 
@@ -867,7 +899,405 @@ $ objcopy01 -O srec -T 0xe000 -n ROM stripped.aout rom.s19
 The cassette formats require the data segment to follow the text
 segment directly (no `-D`).
 
-# A Worked Example
+`ld01` can also write S-records, Intel hex and memory images itself,
+with `OUTPUT_FORMAT` in a linker script (Section \ref{output-formats}).
+That works for programs that an a.out file can't hold, such as a ROM
+program with its vector table at `$FFF0`.
+
+# Linker Scripts {#linker-scripts}
+
+The default layout, code then data, suits a program that's loaded into
+RAM in one piece, like the MC-10 programs in this manual. Other programs
+need something else: a ROM program has its code in ROM, its variables in
+RAM and its interrupt vectors at the top of memory. A *linker script*,
+given with `-S`, says where everything goes.
+
+This chapter introduces linker scripts by example. The LINKER SCRIPTS
+section of the `ld01` manual page (Appendix \ref{command-reference}) is
+the complete reference.
+
+## Input sections and output sections
+
+A script works with two kinds of section:
+
+* An **input section** is one location counter of one module. Each
+  module has `LOC0` to `LOC15`, its code and data in each counter, and
+  `COMMON0` to `COMMON15`, its common blocks. `.text` is another name
+  for `LOC0`, `.data` for `LOC3`, and `COMMON` means all the common
+  blocks.
+* An **output section** is a named part of the program, such as
+  `.text`, with an address. The script lists the input sections that
+  go into it.
+
+An input section is named by a pattern: the file, then the section
+names in parentheses. `screen.o(LOC0)` is counter 0 of `screen.o`,
+`*(LOC0 LOC1)` is counters 0 and 1 of every module, and
+`libnum.a:one.o(LOC*)` is every counter of one library member. The
+wildcards `*` and `?` work in both parts.
+
+Each input section goes to the first pattern in the script that matches
+it, so specific patterns come before general ones. A pattern adds its
+input sections in module order (the order of the command line), and
+each module's in counter order.
+
+## Starting from the default layout
+
+The default layout is itself a script, built into `ld01`. `-P` prints
+it, with the values of `-T`, `-D` and `-H` filled in:
+
+```
+$ ld01 -P -T0x434c
+/* Default linker script for ld01.
+   Values from the command line: -T 0x434C, no -D, no -H. */
+
+OUTPUT_FORMAT(aout)
+
+SECTIONS
+{
+    .text 0x434C : SUBALIGN(4)
+    {
+        __btext = .;
+        PROVIDE(__segoff = 0);
+        PROVIDE(__seg0DL = .);
+        *(LOC0)
+...
+```
+
+`.text 0x434C` is an output section at `$434C`, and `*(LOC0)` adds
+counter 0 of every module to it. `.` is the current address, so
+`__btext = .` defines `__btext` as the start of the section. Linking
+with this script (`-S`) gives exactly the same output as linking without
+one, so it's a safe starting point for your own.
+
+## A program for the MC-10
+
+This script links the demo program from Chapter \ref{a-worked-example}
+for the MC-10. It puts the start-up code first, then the rest of the
+code, then the data:
+
+```
+/* mc10.ld - a program for the Tandy MC-10, loaded from cassette at
+   $434C: the start-up code first, then the rest of the code, then the
+   data */
+ENTRY(__start)
+
+SECTIONS
+{
+    .text 0x434C :
+    {
+        __btext = .;
+        crtstart.o(LOC0)
+        *(LOC0 LOC1)
+        *(COMMON0 COMMON1)
+        __etext = .;
+    }
+
+    .data :
+    {
+        __bdata = .;
+        *(LOC*)
+        *(COMMON)
+    }
+
+    __stack_top = 0x4FFF;
+}
+```
+
+```
+$ ld01 -S mc10.ld -lnum -o main.aout crtstart.o main.o screen.o
+$ objcopy01 -O wav -n MAIN main.aout main.wav
+```
+
+* `crtstart.o(LOC0)` comes before `*(LOC0 LOC1)`, so the start-up code
+  goes first. `crtstart.o` is named on the command line here, but
+  `-Cstart` would work too.
+* There's no `SUBALIGN`, so the modules aren't padded and the program is
+  9 bytes smaller than with the default layout.
+* `__btext`, `__etext` and `__bdata` are defined so that `objcopy01` can
+  find the load address. The default script defines them; your own
+  script should too if you'll convert its output with `objcopy01`.
+* `__stack_top` is a symbol that a start-up module can import, so the
+  stack's address is set in one place.
+
+`-M` shows the result:
+
+```
+Section         Address  Size     Load
+.text           0000434c 00000063
+    0000434c 00000004 crtstart.o(LOC0)
+    00004350 0000000f libnum.a:one.o(LOC0)
+    0000435f 0000000f libnum.a:two.o(LOC0)
+    0000436e 00000011 libnum.a:three.o(LOC0)
+    0000437f 0000000d main.o(LOC0)
+    0000438c 00000023 screen.o(LOC0)
+.data           000043af 00000000
+```
+
+Each line under a section is one input section: its address, its size,
+and the module and counter it came from.
+
+## A program in ROM
+
+This example is a complete program for a bare MC6801 system with an
+8 KB EPROM at `$E000` and the MC6801's 128 bytes of internal RAM at
+`$0080`. The program shows a changing pattern on port 1:
+
+```
+; prog.s - a tiny program: shows a changing pattern on port 1
+PORT1   equ     $02
+        LOC     0
+        EXPORT  main
+main    ldaa    pattern
+loop    staa    PORT1
+        coma
+        inc     count
+        bra     loop
+
+        LOC     3
+pattern fcb     $55
+count   COMM    1
+```
+
+`pattern` is initialized data, and `count` is an uninitialized
+variable. Both must be in RAM, but RAM is empty when the system starts,
+so the start-up code copies the initialized data from a copy in ROM:
+
+```
+; crt0.s - start-up code for a ROM program: sets up the stack, copies
+; the initialized data from ROM to RAM, and calls main
+        LOC     0
+        ENTRY   reset
+        EXPORT  ignore
+        IMPORT  __stack_top, __data_load, __data_start, __data_end, main
+reset   lds     #__stack_top
+        ldx     #__data_start   ; any data to copy?
+        cpx     #__data_end
+        beq     run
+        ldx     #__data_load    ; copy it from ROM to RAM
+        stx     src
+        ldx     #__data_start
+        stx     dst
+copy    ldx     src
+        ldaa    0,x
+        inx
+        stx     src
+        ldx     dst
+        staa    0,x
+        inx
+        stx     dst
+        cpx     #__data_end
+        bne     copy
+run     jsr     main
+        bra     *
+
+ignore  rti                     ; for interrupts that aren't used
+
+        LOC     3
+src     COMM    2               ; copy pointers
+dst     COMM    2
+```
+
+The MC6801 finds the address of the reset routine, and of each interrupt
+routine, in a table at `$FFF0` to `$FFFF`:
+
+```
+; vectors.s - the MC6801 interrupt vectors, for $FFF0 to $FFFF
+        LOC     0
+        IMPORT  reset, ignore
+        fdb     ignore          ; SCI
+        fdb     ignore          ; timer overflow
+        fdb     ignore          ; output compare
+        fdb     ignore          ; input capture
+        fdb     ignore          ; IRQ1
+        fdb     ignore          ; SWI
+        fdb     ignore          ; NMI
+        fdb     reset           ; reset
+```
+
+The linker script puts each part in the right place:
+
+```
+/* rom.ld - a program in an 8 KB EPROM at $E000, with its variables in
+   the MC6801's internal RAM */
+ENTRY(reset)
+OUTPUT_FORMAT(srec)
+FILL(0xFF)
+
+MEMORY
+{
+    ROM (rx) : ORIGIN = 0xE000, LENGTH = 0x1FF0
+    VEC (r)  : ORIGIN = 0xFFF0, LENGTH = 16
+    RAM (rw) : ORIGIN = 0x0080, LENGTH = 128
+}
+
+SECTIONS
+{
+    .vectors :
+    {
+        KEEP(vectors.o(LOC0))
+    } > VEC
+
+    .text :
+    {
+        crt0.o(LOC0)
+        *(LOC0 LOC1)
+    } > ROM
+
+    .data :
+    {
+        *(LOC2 LOC3 LOC4 LOC5 LOC6 LOC7 LOC8 LOC9 LOC1?)
+    } > RAM AT> ROM
+
+    .bss (NOLOAD) :
+    {
+        *(COMMON)
+    } > RAM
+
+    __stack_top = ORIGIN(RAM) + LENGTH(RAM) - 1;
+
+    ASSERT(SIZEOF(.vectors) == 16, "the vector table must be 16 bytes")
+}
+```
+
+```
+$ as01 -o crt0.o crt0.s
+$ as01 -o vectors.o vectors.s
+$ as01 -o prog.o prog.s
+$ ld01 -S rom.ld -o rom.s19 crt0.o vectors.o prog.o
+```
+
+* **`MEMORY`** describes the system's memory as three regions. A
+  section placed in a region with `> ROM` starts at the region's next
+  free address, and the linker reports an error if it doesn't fit.
+* **`.vectors`** uses `KEEP`, because no module refers to `vectors.o`.
+  Without it, the linker would leave the module out. `.vectors` comes
+  first in the script because `*(LOC0 LOC1)` in `.text` would otherwise
+  match `vectors.o` too.
+* **`.data`** runs in RAM (`> RAM`) but is stored in ROM after the code
+  (`AT> ROM`). The linker provides `__data_load`, `__data_start` and
+  `__data_end`, the ROM and RAM addresses `crt0.s` copies between,
+  because `crt0.s` imports them. Every output section gets such
+  symbols: `__name_start`, `__name_end` and `__name_load`.
+* **`.bss`** holds the common blocks. `NOLOAD` means it isn't written to
+  the output: the variables only need addresses in RAM.
+* **`__stack_top`** is the last byte of RAM, from `ORIGIN` and `LENGTH`.
+* **`ASSERT`** checks that the vector table is exactly 16 bytes.
+* **`FILL(0xFF)`** fills gaps with `$FF`, like an erased EPROM.
+* **`OUTPUT_FORMAT(srec)`** writes Motorola S-records. An a.out file
+  can't hold this program: its parts are at `$E000` and `$FFF0`, and
+  `.data` is stored somewhere other than where it runs.
+
+The layout:
+
+```
+Memory region   Origin   Length   Used
+ROM             0000e000 00001ff0 00000040
+VEC             0000fff0 00000010 00000010
+RAM             00000080 00000080 0000000d
+
+Section         Address  Size     Load
+.vectors        0000fff0 00000010
+    0000fff0 00000010 vectors.o(LOC0)
+.text           0000e000 0000003f
+    0000e000 00000034 crt0.o(LOC0)
+    0000e034 0000000b prog.o(LOC0)
+.data           00000080 00000001 0000e03f
+    00000080 00000001 prog.o(LOC3)
+.bss            00000081 0000000c (NOLOAD)
+    00000081 00000008 crt0.o(COMMON3)
+    00000089 00000004 prog.o(COMMON3)
+```
+
+The **Load** column shows that `.data` runs at `$0080` but is stored at
+`$E03F`, right after the code. The S-records have one run for each
+part written to the output, with the entry point, `reset`, in the last
+record:
+
+```
+S00A0000726F6D2E7331399C
+S113E0008E00FFCE00808C00812723CEE03FFF00EE
+S113E01085CE0080FF0081FE0085A60008FF0085F4
+S113E020FE0081A70008FF00818C008126E9BDE085
+S112E0303420FE3BB600809702437C008920F821
+S104E03F5587
+S113FFF0E033E033E033E033E033E033E033E00098
+S5030006F6
+S903E0001C
+```
+
+## Defining symbols
+
+A script can define symbols that modules import:
+
+* `name = expression;` always defines `name`.
+* `PROVIDE(name = expression);` defines it only if a module imports it
+  and no module defines it.
+* `HIDDEN(name = expression);` defines a symbol for the script's own
+  use, which modules can't see.
+* `-A name=value` on the command line defines a symbol before the
+  script runs. It takes the place of a `PROVIDE` for the same symbol,
+  which makes `PROVIDE` a way to give a default. With this in a script,
+  `__stack_top` is `$4FFF` unless the command line says otherwise:
+
+```
+PROVIDE(__stack_top = 0x4FFF);
+```
+
+```
+$ ld01 -S prog.ld -A __stack_top=0x3FFF -o prog.aout start.o prog.o
+```
+
+Expressions use C operators, `.` for the current address, and functions
+such as `ADDR(.text)`, `SIZEOF(.data)`, `ALIGN(16)` and `ORIGIN(RAM)`.
+Symbols defined by a script are absolute, and satisfy an `IMPORT` from
+any location counter.
+
+## Output formats {#output-formats}
+
+`OUTPUT_FORMAT` chooses the kind of output file:
+
+| Format | Output | Use it for |
+|:-------|:-------|:-----------|
+| `aout` | a.out executable (the default) | Programs to convert with `objcopy01`, for example to cassette |
+| `binary` | Memory image, from the lowest load address to the highest | EPROM programmers and emulators that take raw images |
+| `srec` | Motorola S-records | EPROM programmers and loaders; programs in several parts |
+| `ihex` | Intel hex | The same, for tools that take Intel hex |
+
+An a.out file has just two parts, text and data, so it can't hold a
+program spread over separate areas of memory, or a section stored away
+from where it runs. Use one of the other formats for those.
+
+## Orphans
+
+If the script doesn't place some input, for example because it only
+lists `LOC3` and a module also uses `LOC5`, the linker adds it to the
+last output section of the same kind that takes input from all files
+(a `*` pattern), and warns:
+
+```
+ld01: warning: segs.o(LOC5) isn't placed by the script; adding it to .data
+```
+
+`-Z` makes this an error, for builds where everything must be placed
+deliberately.
+
+## Things to watch for
+
+* **Order matters.** The first matching pattern wins, so put sections
+  that take particular modules, such as a vector table, before sections
+  with catch-all patterns.
+* **`objcopy01` needs `__btext`.** If you convert a script's a.out
+  output with `objcopy01`, define `__btext`, `__etext` and `__bdata` as
+  the default script does, or give `objcopy01` the addresses with `-T`
+  and `-D`.
+* **Page zero.** A script can put variables in page zero
+  (`$0000`–`$00FF`), but `as01` still uses extended addressing for them,
+  because it doesn't know their addresses when it assembles a module.
+  Give fixed addresses with `EQU` to get direct addressing.
+* **Common blocks** are allocated in multiples of 4 bytes, as in the
+  default layout.
+
+# A Worked Example {#a-worked-example}
 
 The `demo` directory contains a small modular program for the MC-10.
 It shows modules, a library and a start-up module working together.
@@ -1005,6 +1435,10 @@ The linker pulls in `crtstart.o` because of `-Cstart`, and `one.o`,
 
 * **Symbol names are cut to 8 characters** in executables.
 * **Warnings are off by default**; use `as01 -w-` or `.WARN 1`.
+* **Linker script patterns can't exclude files**, so a section that
+  takes particular modules must come before catch-all patterns.
+* **Relocatable symbols in page zero** use extended addressing, because
+  `as01` doesn't know their addresses.
 
 \appendix
 
