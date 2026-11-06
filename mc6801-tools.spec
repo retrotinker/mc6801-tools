@@ -1,5 +1,5 @@
 Name:           mc6801-tools
-Version:        1.2.1
+Version:        1.2.2
 Release:        1%{?dist}
 Summary:        Assembler, linker and binary utilities for the Motorola MC6801
 
@@ -66,6 +66,10 @@ test -s demo-check/main.wav
 %{_mandir}/man1/size01.1*
 
 %changelog
+* Fri Nov 06 2026 John W. Linville <linville@tuxdriver.com> - 1.2.2-1
+- Update to 1.2.2: ar01 keeps the .o suffix when truncating a long
+  member name given with a directory, and the build has no -Wall warnings
+
 * Fri Nov 06 2026 John W. Linville <linville@tuxdriver.com> - 1.2.1-1
 - Update to 1.2.1: report failed reads and writes in as01, ar01 and
   objdump01 instead of producing bad output, and build without warnings
