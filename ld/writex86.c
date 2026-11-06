@@ -56,6 +56,7 @@ PRIVATE bool_t stripflag;	/* nonzero to strip symbols */
 PRIVATE bin_off_t spos;		/* position in current seg */
 PRIVATE bool_t xsym;		/* extended symbol table */
 
+FORWARD void copyname P((char *field, char *name, unsigned size));
 FORWARD void linkmod P((struct modstruct * modptr));
 FORWARD void padmod P((struct modstruct * modptr));
 FORWARD void setseg P((fastin_pt newseg));
@@ -268,15 +269,14 @@ PUBLIC void write_elks(char *outfilename, bool_pt argsepid,
 							     i +=
 							     sizeof extsym.
 							     n_name) {
-								strncpy((char *)
-									extsym.
-									n_name,
-									symptr->
-									name +
-									i,
-									sizeof
-									extsym.
-									n_name);
+								copyname(extsym.
+									 n_name,
+									 symptr->
+									 name +
+									 i,
+									 sizeof
+									 extsym.
+									 n_name);
 								writeout((char
 									  *)
 									 &extsym,
@@ -455,7 +455,7 @@ PRIVATE void writescriptsym(char *name, bin_off_t value, int class)
 	else
 		sclass = N_ABS;
 	memset((void *)&extsym, 0, sizeof extsym);
-	strncpy((char *)extsym.n_name, name, sizeof extsym.n_name);
+	copyname(extsym.n_name, name, sizeof extsym.n_name);
 	u4cn((char *)&extsym.n_value, (u4_t) value, sizeof extsym.n_value);
 	extsym.n_sclass = sclass;
 	writeout((char *)&extsym, sizeof extsym);
@@ -522,6 +522,19 @@ PRIVATE void writeat(bin_off_t offset, char *buf, unsigned count)
 {
 	seekout(FILEHEADERLENGTH + (unsigned long)offset);
 	writeout(buf, count);
+}
+
+/* copy a name into an a.out name field, padding it with nulls; a name
+   that fills the field isn't terminated */
+
+PRIVATE void copyname(char *field, char *name, unsigned size)
+{
+	unsigned len = strlen(name);
+
+	if (len > size)
+		len = size;
+	memcpy(field, name, len);
+	memset(field + len, 0, size - len);
 }
 
 PRIVATE void writefill(bin_off_t count, int byte)

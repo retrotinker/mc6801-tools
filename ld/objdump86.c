@@ -188,7 +188,7 @@ long read_arheader(char *archentry)
 
 	if (fread((char *)&arheader, sizeof(arheader), 1, ifd) != 1)
 		return 0;
-	strncpy(archentry, arheader.ar_name, sizeof(arheader.ar_name));
+	memcpy(archentry, arheader.ar_name, sizeof(arheader.ar_name));
 	archentry[sizeof(arheader.ar_name)] = 0;
 	endptr = archentry + sizeof(arheader.ar_name);
 	do {

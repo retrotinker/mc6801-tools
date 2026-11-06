@@ -17,7 +17,6 @@
 FORWARD void mshort2 P((void));
 FORWARD reg_pt regchk P((void));
 FORWARD void reldata P((void));
-FORWARD void segadj P((void));
 
 /* 6801/6803 opcode constants */
 
@@ -33,7 +32,6 @@ PRIVATE opcode_t rrindex[] =	/* register and index bits for indexed adr */
 };
 
 FORWARD void doaltind P((void));
-FORWARD void do1altind P((void));
 FORWARD void fixupind P((void));
 FORWARD void getindexnopost P((void));
 FORWARD void inderror P((char *err_str));
@@ -298,12 +296,4 @@ PRIVATE void reldata(void)
 		}
 	} else			/* same file, segment and relocation */
 		lastexp.data = (lastexp.data | lcdata) & ~(RELBIT | SEGM);
-}
-
-PRIVATE void segadj(void)
-{
-	if ((lastexp.data & UNDBIT) && textseg >= 0) {
-		lastexp.sym->data &= ~SEGM;
-		lastexp.sym->data |= (lcdata & SEGM);
-	}
 }

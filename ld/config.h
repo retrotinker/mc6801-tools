@@ -4,7 +4,7 @@
 
 /* these may need to be defined to suit the source processor */
 
-#define HOST_8BIT		/* enable some 8-bit optimizations */
+/* #define HOST_8BIT */	/* on 8-bit hosts: use char for small counts */
 
 /* Any machine can use long offsets but i386 needs them */
 
