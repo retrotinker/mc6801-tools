@@ -62,9 +62,11 @@ PUBLIC int main(int argc, char **argv)
 
 PUBLIC void as_abort(char *message)
 {
-	write(STDOUT, "as01: ", 6);
-	write(STDOUT, message, strlen(message));
-	write(STDOUT, "\n", 1);
+	if (write(STDOUT, "as01: ", 6) != 6
+	    || write(STDOUT, message, strlen(message)) < 0
+	    || write(STDOUT, "\n", 1) != 1) {
+		/* nowhere left to report that */
+	}
 	exit(1);
 }
 

@@ -158,7 +158,7 @@ PRIVATE void list1(fd_t fd)
 {
 	outfd = fd;
 	listcode();
-	write(outfd, linebuf, (unsigned)(lineptr - linebuf));
+	writebuf(linebuf, (unsigned)(lineptr - linebuf));
 	writenl();
 	if (errcount != 0)
 		listerrors();
@@ -302,13 +302,23 @@ PRIVATE void paderrorline(unsigned nspaces)
 		writec(' ');	/* spaces out to error position */
 }
 
+/* write a buffer, giving up if the output file can't be written */
+
+PUBLIC void writebuf(char *buf, unsigned count)
+{
+	if (write(outfd, buf, count) != (int)count)
+		as_abort(outfd == binfil ? "error writing binary file"
+			 : outfd == symfil ? "error writing symbol file"
+			 : "error writing listing");
+}
+
 /* write 1 character */
 
 PUBLIC void writec(int ch)
 {
 	char c = ch;
 
-	write(outfd, &c, 1);
+	writebuf(&c, 1);
 }
 
 /* write newline */
@@ -329,14 +339,14 @@ PUBLIC void writeoff(offset_t offset)
 #else
 	u2c2(buf, offset);
 #endif
-	write(outfd, buf, sizeof buf);
+	writebuf(buf, sizeof buf);
 }
 
 /* write string */
 
 PUBLIC void writes(char *s)
 {
-	write(outfd, s, strlen(s));
+	writebuf(s, strlen(s));
 }
 
 /* write string followed by newline */
@@ -354,5 +364,5 @@ PUBLIC void writew(unsigned word)
 	char buf[2];
 
 	u2c2(buf, (u16_T) word);
-	write(outfd, buf, sizeof buf);
+	writebuf(buf, sizeof buf);
 }

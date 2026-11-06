@@ -96,7 +96,7 @@ PUBLIC void gensym(void)
 			writec(symptr->type & COMMBIT ? 'C' : '-');
 
 			writec(' ');
-			write(outfd, symptr->name, (unsigned)(symptr->length));
+			writebuf(symptr->name, (unsigned)(symptr->length));
 
 			/* printsym(*copyptr++, 0); */
 			writenl();
@@ -124,8 +124,7 @@ PUBLIC void gensym(void)
 			symptr = *copyptr++;
 			writew((unsigned)symptr->value_reg_or_op.value);
 			writec(symptr->type);
-			write(outfd, symptr->name,
-			      (unsigned)(symptr->length - 1));
+			writebuf(symptr->name, (unsigned)(symptr->length - 1));
 			writec(symptr->name[symptr->length - 1] | 0x80);
 		}
 		sort(symlptr, copyptr, FALSE);

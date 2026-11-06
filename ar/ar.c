@@ -302,7 +302,7 @@ void mywrite(int desc, void *pbuf, int bytes, char *file)
 	while (bytes > 0) {
 		val = write(desc, buf, bytes);
 		if (val <= 0)
-			perror_with_name(file);
+			pfatal_with_name(file);
 		buf += val;
 		bytes -= val;
 	}
@@ -1094,7 +1094,10 @@ void copy_out_member(struct mapelt *mapelt, int archive_indesc, int outdesc,
 			int thistime = tocopy;
 			if (thistime > BUFSIZE)
 				thistime = BUFSIZE;
-			read(indesc, buf, thistime);
+			if (read(indesc, buf, thistime) != thistime)
+				fatal("error reading %s",
+				      mapelt->info.offset != 0 ? archive
+				      : mapelt->info.name);
 			mywrite(outdesc, buf, thistime, outname);
 			tocopy -= thistime;
 		}
@@ -1450,8 +1453,9 @@ void write_symdef_member(struct mapelt *mapelt, struct mapelt *map,
 					    (unsigned char *)mapptr->info.
 					    symdefs);
 #endif
-			write(outdesc, mapptr->info.symdefs,
-			      mapptr->info.nsymdefs * sizeof(struct symdef));
+			mywrite(outdesc, mapptr->info.symdefs,
+				mapptr->info.nsymdefs * sizeof(struct symdef),
+				outname);
 #ifdef HOST_TARGET_ENDIANESS_DIFFERS
 			md_chars_to_symdefs((unsigned char *)mapptr->info.
 					    symdefs,
