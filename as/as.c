@@ -37,9 +37,7 @@ FORWARD void summary P((fd_t fd));
 FORWARD void summ_number P((unsigned num));
 FORWARD void usage P((void));
 
-PUBLIC int main(argc, argv)
-int argc;
-char **argv;
+PUBLIC int main(int argc, char **argv)
 {
 	init_heap();
 	initp1();
@@ -62,8 +60,7 @@ char **argv;
 	return 0;
 }
 
-PUBLIC void as_abort(message)
-char *message;
+PUBLIC void as_abort(char *message)
 {
 	write(STDOUT, "as01: ", 6);
 	write(STDOUT, message, strlen(message));
@@ -71,7 +68,7 @@ char *message;
 	exit(1);
 }
 
-PUBLIC void finishup()
+PUBLIC void finishup(void)
 {
 	bintrailer();
 	objtrailer();
@@ -100,7 +97,7 @@ PUBLIC void finishup()
 
 /* initialise constant nonzero values */
 
-PRIVATE void initp1()
+PRIVATE void initp1(void)
 {
 #if 0
 	idefsize = defsize = sizeof(char *) > 2 ? 4 : 2;
@@ -113,7 +110,7 @@ PRIVATE void initp1()
 
 /* initialise nonzero values which start same each pass */
 
-PUBLIC void initp1p2()
+PUBLIC void initp1p2(void)
 {
 	register struct lc_s *lcp;
 
@@ -131,15 +128,13 @@ PUBLIC void initp1p2()
 	}
 }
 
-PUBLIC void line_zero()
+PUBLIC void line_zero(void)
 {
 	if (textseg >= 0)
 		ptext();
 }
 
-PRIVATE int my_creat(name, message)
-char *name;
-char *message;
+PRIVATE int my_creat(char *name, char *message)
 {
 	int fd;
 
@@ -154,9 +149,7 @@ char *message;
 	return fd;
 }
 
-PRIVATE void process_args(argc, argv)
-int argc;
-char **argv;
+PRIVATE void process_args(int argc, char **argv)
 {
 	char *arg;
 	bool_t isnextarg;
@@ -293,8 +286,7 @@ get_any_list_file:
 	inidata = (~binaryg & inidata) | (RELBIT | UNDBIT);
 }				/* IMPBIT from inidata unless binaryg */
 
-PRIVATE void summary(fd)
-int fd;
+PRIVATE void summary(int fd)
 {
 	outfd = fd;
 	writenl();
@@ -304,8 +296,7 @@ int fd;
 	writesn(" warnings");
 }
 
-PRIVATE void summ_number(num)
-unsigned num;
+PRIVATE void summ_number(unsigned num)
 {
 	/* format number like line numbers */
 	char buf[16];
@@ -313,7 +304,7 @@ unsigned num;
 	writes(buf);
 }
 
-PRIVATE void usage()
+PRIVATE void usage(void)
 {
 	as_abort
 	    ("usage: as01 [-gkuvw] [-b binfile] [-l [listfile]] [-m [listfile]]\n"

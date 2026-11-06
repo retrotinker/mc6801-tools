@@ -294,11 +294,7 @@ extern void write_symdef_member(struct mapelt *mapelt, struct mapelt *map,
 /* Output BYTES of data at BUF to the descriptor DESC.
    FILE is the name of the file (for error messages).  */
 
-void mywrite(desc, pbuf, bytes, file)
-int desc;
-void *pbuf;
-int bytes;
-char *file;
+void mywrite(int desc, void *pbuf, int bytes, char *file)
 {
 	register int val;
 	register char *buf = pbuf;
@@ -312,9 +308,7 @@ char *file;
 	}
 }
 
-int main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
 	int i;
 
@@ -497,18 +491,13 @@ char **argv;
 	exit(0);
 }
 
-void two_operations()
+void two_operations(void)
 {
 	usage("two different operation switches specified", 0);
 }
 
-void scan(function, crflag)
-#ifdef __STDC__
-void (*function) (struct member_desc member, FILE * istream);
-#else
-void (*function) ();
-#endif
-int crflag;
+void scan(void (*function) (struct member_desc member, FILE * istream),
+	  int crflag)
 {
 	FILE *arcstream = fopen(archive, "r");
 
@@ -591,9 +580,7 @@ int crflag;
 	fclose(arcstream);
 }
 
-void print_descr(member, instream)
-struct member_desc member;
-FILE *instream;
+void print_descr(struct member_desc member, FILE *instream)
 {
 	char *timestring;
 	if (!verbose) {
@@ -607,8 +594,7 @@ FILE *instream;
 	       member.size, timestring + 4, timestring + 20, member.name);
 }
 
-void print_modes(modes)
-int modes;
+void print_modes(int modes)
 {
 	putchar(modes & 0400 ? 'r' : '-');
 	putchar(modes & 0200 ? 'w' : '-');
@@ -623,9 +609,7 @@ int modes;
 
 #define BUFSIZE 1024
 
-void extract_member(member, istream)
-struct member_desc member;
-FILE *istream;
+void extract_member(struct member_desc member, FILE *istream)
 {
 	int ncopied = 0;
 	FILE *ostream;
@@ -678,9 +662,7 @@ FILE *istream;
 	}
 }
 
-void print_contents(member, istream)
-struct member_desc member;
-FILE *istream;
+void print_contents(struct member_desc member, FILE *istream)
 {
 	int ncopied = 0;
 
@@ -711,8 +693,7 @@ FILE *istream;
  This will cause the ordinary supersede procedure to
  create a new archive.  */
 
-struct mapelt *make_map(nonexistent_ok)
-int nonexistent_ok;
+struct mapelt *make_map(int nonexistent_ok)
 {
 	struct mapelt mapstart;
 	mapstart.next = 0;
@@ -721,9 +702,7 @@ int nonexistent_ok;
 	return mapstart.next;
 }
 
-void add_to_map(member, istream)
-struct member_desc member;
-FILE *istream;
+void add_to_map(struct member_desc member, FILE *istream)
 {
 	struct mapelt *mapelt = (struct mapelt *)xmalloc(sizeof(struct mapelt));
 	mapelt->info = member;
@@ -735,8 +714,7 @@ FILE *istream;
 
 /* Return the last element of the specified map.  */
 
-struct mapelt *last_mapelt(map)
-struct mapelt *map;
+struct mapelt *last_mapelt(struct mapelt *map)
 {
 	struct mapelt *tail = map;
 	while (tail->next)
@@ -746,8 +724,7 @@ struct mapelt *map;
 
 /* Return the element of the specified map which precedes elt.  */
 
-struct mapelt *prev_mapelt(map, elt)
-struct mapelt *map, *elt;
+struct mapelt *prev_mapelt(struct mapelt *map, struct mapelt *elt)
 {
 	struct mapelt *tail = map;
 	while (tail->next && tail->next != elt)
@@ -759,9 +736,7 @@ struct mapelt *map, *elt;
 
 /* Return the element of the specified map which has the specified name.  */
 
-struct mapelt *find_mapelt_noerror(map, name)
-struct mapelt *map;
-register char *name;
+struct mapelt *find_mapelt_noerror(struct mapelt *map, register char *name)
 {
 	register struct mapelt *tail;
 	unsigned int len;
@@ -794,9 +769,7 @@ register char *name;
 	return 0;
 }
 
-struct mapelt *find_mapelt(map, name)
-struct mapelt *map;
-char *name;
+struct mapelt *find_mapelt(struct mapelt *map, char *name)
 {
 	register struct mapelt *found = find_mapelt_noerror(map, name);
 	if (found == 0)
@@ -808,7 +781,7 @@ char *name;
    based on looking at its current contents, make an exclusive lock on it.
    The lock is released when `write_archive' is called.  */
 
-void lock_for_update()
+void lock_for_update(void)
 {
 	/* Open the existing archive file; if that fails, create an empty one.  */
 
@@ -864,7 +837,7 @@ void lock_for_update()
 
 /* Unlock archive and close the file descriptor.  */
 
-void close_archive()
+void close_archive(void)
 {
 #ifdef LOCKS
 	{
@@ -905,9 +878,7 @@ void close_archive()
  to do any I/O on the archive file.
 */
 
-void write_archive(map, appendflag)
-struct mapelt *map;
-int appendflag;
+void write_archive(struct mapelt *map, int appendflag)
 {
 	char *tempname = make_tempname(archive);
 	int indesc = lock_indesc;
@@ -1022,9 +993,7 @@ int appendflag;
 	close_archive();
 }
 
-void header_from_map(header, mapelt)
-struct ar_hdr *header;
-struct mapelt *mapelt;
+void header_from_map(struct ar_hdr *header, struct mapelt *mapelt)
 {
 	unsigned int namelen;
 	char *p;
@@ -1076,8 +1045,7 @@ struct mapelt *mapelt;
 
 /* gets just the file part of name */
 
-char *basename(path)
-char *path;
+char *basename(char *path)
 {
 	char *save, *start;
 	for (start = save = path; *path; path++)
@@ -1091,11 +1059,8 @@ char *path;
 }
 
 /* writes to file open on OUTDESC with name OUTNAME.  */
-void copy_out_member(mapelt, archive_indesc, outdesc, outname)
-struct mapelt *mapelt;
-int archive_indesc;
-int outdesc;
-char *outname;
+void copy_out_member(struct mapelt *mapelt, int archive_indesc, int outdesc,
+		     char *outname)
 {
 	struct ar_hdr header;
 	int indesc;
@@ -1146,9 +1111,7 @@ char *outname;
    that member, just before we close the new archive file.
    It is open on OUTDESC and its name is OUTNAME.  */
 
-void touch_symdef_member(outdesc, outname)
-int outdesc;
-char *outname;
+void touch_symdef_member(int outdesc, char *outname)
 {
 	struct stat statbuf;
 	int i;
@@ -1168,8 +1131,7 @@ char *outname;
 		mywrite(outdesc, &symdef_header, sizeof symdef_header, outname);
 }
 
-char *make_tempname(name)
-char *name;
+char *make_tempname(char *name)
 {
 #if defined(USG) || defined(SHORT_FILENAME)
 	/* sigh. 14 character filenames are *wonderful*, just *wonderful*. */
@@ -1188,7 +1150,7 @@ char *name;
 		return concat(name, "", "_supersede");
 }
 
-void delete_members()
+void delete_members(void)
 {
 	struct mapelt *map = make_map(0);
 	struct mapelt mapstart;
@@ -1212,9 +1174,7 @@ void delete_members()
 	write_archive(map->next, 0);
 }
 
-void delete_from_map(name, map)
-char *name;
-struct mapelt *map;
+void delete_from_map(char *name, struct mapelt *map)
 {
 	struct mapelt *this = find_mapelt(map, name);
 
@@ -1225,7 +1185,7 @@ struct mapelt *map;
 		printf("d - %s\n", name);
 }
 
-void move_members()
+void move_members(void)
 {
 	struct mapelt *map = make_map(0);
 	char **p;
@@ -1268,9 +1228,7 @@ void move_members()
 	write_archive(map, 0);
 }
 
-int move_in_map(name, map, after)
-char *name;
-struct mapelt *map, *after;
+int move_in_map(char *name, struct mapelt *map, struct mapelt *after)
 {
 	struct mapelt *this = find_mapelt(map, name);
 	struct mapelt *prev;
@@ -1286,7 +1244,7 @@ struct mapelt *map, *after;
 
 /* Insert files into the archive.  */
 
-void replace_members()
+void replace_members(void)
 {
 	struct mapelt *map = make_map(1);
 	struct mapelt mapstart;
@@ -1338,7 +1296,7 @@ void replace_members()
 
 /* Handle the "quick insert" operation.  */
 
-void quick_append()
+void quick_append(void)
 {
 	struct mapelt *map;
 	struct mapelt *after;
@@ -1373,9 +1331,7 @@ void quick_append()
    Return 1 if successful, 0 if did nothing because file NAME doesn't
    exist or (optionally) is older.  */
 
-int insert_in_map(name, map, after)
-char *name;
-struct mapelt *map, *after;
+int insert_in_map(char *name, struct mapelt *map, struct mapelt *after)
 {
 	struct mapelt *old = find_mapelt_noerror(map, name);
 	struct mapelt *this;
@@ -1415,12 +1371,8 @@ struct mapelt *map, *after;
 /* Apply a function to each of the specified members.
 */
 
-void extract_members(function)
-#ifdef __STDC__
-void (*function) (struct member_desc member, FILE * istream);
-#else
-void (*function) ();
-#endif
+void extract_members(void (*function) (struct member_desc member,
+				      FILE * istream))
 {
 	struct mapelt *map;
 	FILE *arcstream;
@@ -1452,11 +1404,8 @@ void (*function) ();
 /* Write the __.SYMDEF member from data in core.  OUTDESC and OUTNAME
    are descriptor and name of file to write to.  */
 
-void write_symdef_member(mapelt, map, outdesc, outname)
-struct mapelt *mapelt;
-struct mapelt *map;
-int outdesc;
-char *outname;
+void write_symdef_member(struct mapelt *mapelt, struct mapelt *map,
+			 int outdesc, char *outname)
 {
 	struct ar_hdr header;
 	struct mapelt *mapptr;
@@ -1530,9 +1479,7 @@ char *outname;
 		mywrite(outdesc, "", 1, outname);
 }
 
-void read_old_symdefs(map, archive_indesc)
-struct mapelt *map;
-int archive_indesc;
+void read_old_symdefs(struct mapelt *map, int archive_indesc)
 {
 	struct mapelt *mapelt;
 	char *data;
@@ -1583,9 +1530,7 @@ int archive_indesc;
 
 static unsigned int obj_sizes[4] = { 0, 1, 2, 4 };
 
-static unsigned long obj_number(p, n)
-unsigned char *p;
-unsigned int n;
+static unsigned long obj_number(unsigned char *p, unsigned int n)
 {
 	unsigned long value = 0;
 
@@ -1598,10 +1543,8 @@ unsigned int n;
    available to other modules: exported symbols and commons.  The names
    point into DATA.  Return 0 if DATA is not an object file.  */
 
-int read_object_symbols(mapelt, data, size)
-struct mapelt *mapelt;
-unsigned char *data;
-unsigned int size;
+int read_object_symbols(struct mapelt *mapelt, unsigned char *data,
+			unsigned int size)
 {
 	unsigned char *p = data;
 	unsigned char *end = data + size;
@@ -1696,9 +1639,7 @@ bad:
 /* Create the info.symdefs for a new member
    by reading the file it is coming from.  */
 
-void make_new_symdefs(mapelt, archive_indesc)
-struct mapelt *mapelt;
-int archive_indesc;
+void make_new_symdefs(struct mapelt *mapelt, int archive_indesc)
 {
 	int indesc;
 	unsigned int size;
@@ -1748,9 +1689,7 @@ int archive_indesc;
 
 /* Update the __.SYMDEF data before writing a new archive.  */
 
-void update_symdefs(map, archive_indesc)
-struct mapelt *map;
-int archive_indesc;
+void update_symdefs(struct mapelt *map, int archive_indesc)
 {
 	struct mapelt *tail;
 	int pos;
@@ -1904,9 +1843,7 @@ int archive_indesc;
 
 /* Print error message and usage message, and exit.  */
 
-void usage(s1, val)
-char *s1;
-int val;
+void usage(char *s1, int val)
 {
 	char vbuf[16];
 	sprintf(vbuf, "%d", val);
@@ -1918,8 +1855,7 @@ Usage: %s [d|m|p|q|r|t|x [[abi [position-name] [cilouv]] archive file...\n", pro
 
 /* Print error message and exit.  */
 
-void fatal(s1, s2)
-char *s1, *s2;
+void fatal(char *s1, char *s2)
 {
 	error(s1, s2);
 	exit(1);
@@ -1927,25 +1863,21 @@ char *s1, *s2;
 
 /* Print error message.  `s1' is printf control string, the rest are args.  */
 
-void error(s1, s2)
-char *s1, *s2;
+void error(char *s1, char *s2)
 {
 	fprintf(stderr, "%s: ", program_name);
 	fprintf(stderr, s1, s2);
 	fprintf(stderr, "\n");
 }
 
-void error3(s1, s2, s3)
-char *s1, *s2, *s3;
+void error3(char *s1, char *s2, char *s3)
 {
 	fprintf(stderr, "%s: ", program_name);
 	fprintf(stderr, s1, s2, s3);
 	fprintf(stderr, "\n");
 }
 
-void error_with_file(string, mapelt)
-char *string;
-struct mapelt *mapelt;
+void error_with_file(char *string, struct mapelt *mapelt)
 {
 	fprintf(stderr, "%s: ", program_name);
 	fprintf(stderr, "%s", string);
@@ -1956,14 +1888,12 @@ struct mapelt *mapelt;
 	fprintf(stderr, "\n");
 }
 
-void perror_with_name(name)
-char *name;
+void perror_with_name(char *name)
 {
 	error(concat("", strerror(errno), " for %s"), name);
 }
 
-void pfatal_with_name(name)
-char *name;
+void pfatal_with_name(char *name)
 {
 	fatal(concat("", strerror(errno), " for %s"), name);
 }
@@ -1971,8 +1901,7 @@ char *name;
 /* Return a newly-allocated string whose contents
    concatenate those of S1, S2, and S3.  */
 
-char *concat(s1, s2, s3)
-const char *s1, *s2, *s3;
+char *concat(const char *s1, const char *s2, const char *s3)
 {
 	int len1 = strlen(s1), len2 = strlen(s2), len3 = strlen(s3);
 	char *result = (char *)xmalloc(len1 + len2 + len3 + 1);
@@ -1987,8 +1916,7 @@ const char *s1, *s2, *s3;
 
 /* Like malloc but get fatal error if memory is exhausted.  */
 
-char *xmalloc(size)
-unsigned int size;
+char *xmalloc(unsigned int size)
 {
 #ifdef MALLOC_0_RETURNS_NULL
 	char *result = malloc(size ? size : 1);
@@ -2000,9 +1928,7 @@ unsigned int size;
 	return result;
 }
 
-char *xrealloc(ptr, size)
-char *ptr;
-unsigned int size;
+char *xrealloc(char *ptr, unsigned int size)
 {
 	char *result = realloc(ptr, size);
 	if (result == 0)

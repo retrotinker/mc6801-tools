@@ -15,7 +15,7 @@ PRIVATE char *heapptr;		/* next free space in symbol list */
 PRIVATE char tempbuf[2048];
 #endif
 
-void init_heap()
+void init_heap(void)
 {
 #ifdef USE_FIXED_HEAP
 #ifndef USERMEM
@@ -29,7 +29,7 @@ void init_heap()
 #endif
 }
 
-void *temp_buf()
+void *temp_buf(void)
 {
 #ifdef USE_FIXED_HEAP
 	return heapptr;
@@ -38,8 +38,7 @@ void *temp_buf()
 #endif
 }
 
-void *asalloc(size)
-unsigned int size;
+void *asalloc(unsigned int size)
 {
 	void *rv;
 #ifdef USE_FIXED_HEAP
@@ -57,9 +56,7 @@ unsigned int size;
 	return rv;
 }
 
-void *asrealloc(oldptr, size)
-void *oldptr;
-unsigned int size;
+void *asrealloc(void *oldptr, unsigned int size)
 {
 	void *rv;
 #ifdef USE_FIXED_HEAP

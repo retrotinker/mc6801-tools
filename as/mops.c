@@ -41,7 +41,7 @@ FORWARD reg_pt indreg P((reg_pt maxindex));
 
 /* common code for all-mode ops, alterable-mode ops, indexed ops */
 
-PRIVATE void doaltind()
+PRIVATE void doaltind(void)
 {
 	bool_t byteflag;	/* set if direct or short indexed adr forced */
 	char *oldlineptr;
@@ -135,7 +135,7 @@ PRIVATE void doaltind()
 	}
 }
 
-PRIVATE void fixupind()
+PRIVATE void fixupind(void)
 {
 	if ((opcode & 0x30) == 0x0) {	/* change all but LEA opcodes */
 		if (opcode < 0x80)
@@ -145,15 +145,14 @@ PRIVATE void fixupind()
 	}
 }
 
-PRIVATE void getindexnopost()
+PRIVATE void getindexnopost(void)
 {
 	getsym();
 	if (indreg(MAXINDREG) != NOREG)
 		fixupind();
 }
 
-PRIVATE void inderror(err_str)
-char *err_str;
+PRIVATE void inderror(char *err_str)
 {
 	error(err_str);
 	if (postb & INDIRECTBIT)
@@ -165,8 +164,7 @@ char *err_str;
 /* if so, modify postbyte RR and INDEXBIT for it, get next sym, return TRUE */
 /* otherwise generate error, return FALSE */
 
-PRIVATE reg_pt indreg(maxindex)
-reg_pt maxindex;
+PRIVATE reg_pt indreg(reg_pt maxindex)
 {
 	reg_pt reg;
 
@@ -184,7 +182,7 @@ reg_pt maxindex;
 
 /* all-mode ops */
 
-PUBLIC void mall()
+PUBLIC void mall(void)
 {
 	if (sym == IMMEDIATE)
 		mimmed();
@@ -194,7 +192,7 @@ PUBLIC void mall()
 
 /* alterable mode ops */
 
-PUBLIC void malter()
+PUBLIC void malter(void)
 {
 	postb = 0x0;		/* not yet indexed or indirect */
 	doaltind();
@@ -202,7 +200,7 @@ PUBLIC void malter()
 
 /* immediate ops */
 
-PUBLIC void mimmed()
+PUBLIC void mimmed(void)
 {
 	opcode_t nybble;
 
@@ -223,7 +221,7 @@ PUBLIC void mimmed()
 
 /* routines common to all processors */
 
-PUBLIC void getcomma()
+PUBLIC void getcomma(void)
 {
 	if (sym != COMMA)
 		error(COMEXP);
@@ -239,20 +237,20 @@ PUBLIC void getcomma()
 /* LAHF, LEAVE, LOCK, LODSB, MOVSB, NOP, OUTSB, REP, REPE, REPNE, REPNZ, */
 /* REPZ, SAHF, SCASB, STC, STD, STI, STOSB, WAIT, WBINVD */
 
-PUBLIC void minher()
+PUBLIC void minher(void)
 {
 	++mcount;
 }
 
 /* short branches */
 
-PUBLIC void mshort()
+PUBLIC void mshort(void)
 {
 	nonimpexpres();
 	mshort2();
 }
 
-PRIVATE void mshort2()
+PRIVATE void mshort2(void)
 {
 	mcount += 0x2;
 	if (pass2) {
@@ -269,7 +267,7 @@ PRIVATE void mshort2()
 
 /* check if current symbol is a register, return register number or NOREG */
 
-PRIVATE reg_pt regchk()
+PRIVATE reg_pt regchk(void)
 {
 	register struct sym_s *symptr;
 
@@ -288,7 +286,7 @@ PRIVATE reg_pt regchk()
 
 /* convert lastexp.data for PC relative */
 
-PRIVATE void reldata()
+PRIVATE void reldata(void)
 {
 	if ((lastexp.data ^ lcdata) & (IMPBIT | RELBIT | SEGM)) {
 		if ((lastexp.data ^ lcdata) & RELBIT)
@@ -302,7 +300,7 @@ PRIVATE void reldata()
 		lastexp.data = (lastexp.data | lcdata) & ~(RELBIT | SEGM);
 }
 
-PRIVATE void segadj()
+PRIVATE void segadj(void)
 {
 	if ((lastexp.data & UNDBIT) && textseg >= 0) {
 		lastexp.sym->data &= ~SEGM;

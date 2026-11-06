@@ -15,7 +15,7 @@ FORWARD void simple P((void));
 FORWARD void term P((void));
 FORWARD void factor2 P((void));
 
-PUBLIC void absexpres()
+PUBLIC void absexpres(void)
 {
 	expres();
 	chkabs();
@@ -23,7 +23,7 @@ PUBLIC void absexpres()
 
 /* check lastexp.data is abs */
 
-PUBLIC void chkabs()
+PUBLIC void chkabs(void)
 {
 	if (lastexp.data & RELBIT) {
 		if (pass == last_pass)
@@ -32,14 +32,13 @@ PUBLIC void chkabs()
 	}
 }
 
-PRIVATE void experror(err_str)
-char *err_str;
+PRIVATE void experror(char *err_str)
 {
 	error(err_str);
 	expundefined();
 }
 
-PRIVATE void expundefined()
+PRIVATE void expundefined(void)
 {
 	if (last_pass == 1)
 		lastexp.data = FORBIT | UNDBIT;
@@ -47,7 +46,7 @@ PRIVATE void expundefined()
 		lastexp.data = UNDBIT;
 }
 
-PUBLIC void nonimpexpres()
+PUBLIC void nonimpexpres(void)
 {
 	expres();
 	if (lastexp.data & IMPBIT)
@@ -56,20 +55,20 @@ PUBLIC void nonimpexpres()
 
 /* generate relocation error if pass 2, make lastexp.data forward&undefined */
 
-PUBLIC void showrelbad()
+PUBLIC void showrelbad(void)
 {
 	if (pass == last_pass)
 		error(RELBAD);
 	expundefined();
 }
 
-PUBLIC void symabsexpres()
+PUBLIC void symabsexpres(void)
 {
 	getsym();
 	absexpres();
 }
 
-PUBLIC void symexpres()
+PUBLIC void symexpres(void)
 {
 	getsym();
 	expres();
@@ -82,7 +81,7 @@ PUBLIC void symexpres()
   Returns value in lastexp.
 */
 
-PUBLIC void expres()
+PUBLIC void expres(void)
 {
 	offset_t leftoffset;
 
@@ -113,7 +112,7 @@ PUBLIC void expres()
 
 /* get symbol and 2nd simple expression, check both rel or both abs */
 
-PRIVATE void simple2()
+PRIVATE void simple2(void)
 {
 	unsigned char leftdata;
 
@@ -132,7 +131,7 @@ PRIVATE void simple2()
   where op is +, -, or \ (OR).
 */
 
-PRIVATE void simple()
+PRIVATE void simple(void)
 {
 	offset_t leftoffset;
 	unsigned char leftdata;
@@ -181,7 +180,7 @@ PRIVATE void simple()
 
 /* term() parses term = factor {op factor}, where op is *, /, &, <<, or >>. */
 
-PRIVATE void term()
+PRIVATE void term(void)
 {
 	offset_t leftoffset;
 
@@ -212,7 +211,7 @@ PRIVATE void term()
 
 /* get symbol and 2nd or later factor, check both abs */
 
-PRIVATE void factor2()
+PRIVATE void factor2(void)
 {
 	unsigned char leftdata;
 
@@ -236,7 +235,7 @@ PRIVATE void factor2()
   taken from the identifier.
 */
 
-PUBLIC void factor()
+PUBLIC void factor(void)
 {
 	switch (sym) {
 	case SLASH:
@@ -331,7 +330,7 @@ PUBLIC void factor()
   returns logical value in lastexp
 */
 
-PUBLIC void scompare()
+PUBLIC void scompare(void)
 {
 	/* prepare flags for OK, lastexp.offset for error */
 	lastexp.data = lastexp.offset = 0;

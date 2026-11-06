@@ -88,13 +88,13 @@ PRIVATE char symofchar[256] =	/* table to convert chars to their symbols */
 
 FORWARD void intconst P((void));
 
-PUBLIC void context_hexconst()
+PUBLIC void context_hexconst(void)
 {
 	numbase = 16;
 	intconst();
 }
 
-PUBLIC void getsym()
+PUBLIC void getsym(void)
 {
 	register char *reglineptr;
 
@@ -174,7 +174,7 @@ advance:
 	return;
 }
 
-PUBLIC void getsym_nolookup()
+PUBLIC void getsym_nolookup(void)
 {
 	bool_t old_ifflag;
 
@@ -184,7 +184,7 @@ PUBLIC void getsym_nolookup()
 	ifflag = old_ifflag;
 }
 
-PRIVATE void intconst()
+PRIVATE void intconst(void)
 {
 	register char *reglineptr;
 
@@ -221,7 +221,7 @@ PRIVATE void intconst()
 	lineptr = reglineptr;
 }
 
-PUBLIC void initscan()
+PUBLIC void initscan(void)
 {
 	lindirect = LBRACKET;
 	rindexp = RBEXP;

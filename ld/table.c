@@ -24,7 +24,7 @@ FORWARD void check_used P((void));
 
 /* initialise symbol table */
 
-PUBLIC void syminit()
+PUBLIC void syminit(void)
 {
 	unsigned i;
 
@@ -45,8 +45,7 @@ PUBLIC void syminit()
 /* add named symbol to end of table - initialise only name and next fields */
 /* caller must not duplicate names of externals for findsym() to work */
 
-PUBLIC struct symstruct *addsym(name)
-char *name;
+PUBLIC struct symstruct *addsym(char *name)
 {
 	struct symstruct **hashptr;
 	struct symstruct *oldsymptr = 0;
@@ -75,8 +74,7 @@ char *name;
 
 /* lookup named symbol */
 
-PUBLIC struct symstruct *findsym(name)
-char *name;
+PUBLIC struct symstruct *findsym(char *name)
 {
 	struct symstruct *symptr;
 
@@ -89,8 +87,7 @@ char *name;
 
 /* convert name to a hash table ptr */
 
-PRIVATE struct symstruct **gethashptr(name)
-register char *name;
+PRIVATE struct symstruct **gethashptr(register char *name)
 {
 	register unsigned hashval;
 
@@ -130,8 +127,7 @@ HASHVAL.EXIT
 
 /* move symbol descriptor entries to top of table (no error checking) */
 
-PUBLIC char *moveup(nbytes)
-unsigned nbytes;
+PUBLIC char *moveup(unsigned nbytes)
 {
 	register char *source;
 	register char *target;
@@ -149,8 +145,7 @@ unsigned nbytes;
 
 /* our version of malloc */
 
-PUBLIC char *ourmalloc(nbytes)
-unsigned nbytes;
+PUBLIC char *ourmalloc(unsigned nbytes)
 {
 	char *allocptr;
 
@@ -163,8 +158,7 @@ unsigned nbytes;
 
 /* our version of free (release from bottom of table) */
 
-PUBLIC void ourfree(cptr)
-char *cptr;
+PUBLIC void ourfree(char *cptr)
 {
 	check_used();
 	tableptr = cptr;
@@ -173,7 +167,7 @@ char *cptr;
 
 /* read string from file into table at offset suitable for next symbol */
 
-PUBLIC char *readstring()
+PUBLIC char *readstring(void)
 {
 	int c;
 	char *s;
@@ -195,8 +189,7 @@ PUBLIC char *readstring()
 
 /* release from top of table */
 
-PUBLIC void release(cptr)
-char *cptr;
+PUBLIC void release(char *cptr)
 {
 	check_used();
 	mainavail += cptr - tableend;
@@ -205,7 +198,7 @@ char *cptr;
 	tableend = cptr;
 }
 
-PRIVATE void check_used()
+PRIVATE void check_used(void)
 {
 	int used;
 
@@ -214,7 +207,7 @@ PRIVATE void check_used()
 		maxused = used;
 }
 
-PUBLIC int memory_used()
+PUBLIC int memory_used(void)
 {
 	check_used();
 	return maxused;
@@ -222,8 +215,7 @@ PUBLIC int memory_used()
 
 /* allocate space for string */
 
-PUBLIC char *stralloc(s)
-char *s;
+PUBLIC char *stralloc(char *s)
 {
 	return strcpy(ourmalloc((unsigned)strlen(s) + 1), s);
 }

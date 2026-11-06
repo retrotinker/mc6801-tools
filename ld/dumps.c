@@ -10,7 +10,7 @@
 
 /* print list of modules and whether they are loaded */
 
-PUBLIC void dumpmods()
+PUBLIC void dumpmods(void)
 {
 	struct modstruct *modptr;
 	char *s, *d;
@@ -40,7 +40,7 @@ PUBLIC void dumpmods()
 
 /* print data about symbols (in loaded modules only) */
 
-PUBLIC void dumpsyms()
+PUBLIC void dumpsyms(void)
 {
 	flags_t flags;
 	struct modstruct *modptr;

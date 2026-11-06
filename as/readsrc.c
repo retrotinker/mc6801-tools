@@ -61,11 +61,11 @@ PRIVATE int inp_line P((int fd, char *buf, int size));
 FORWARD void clearsource P((void));
 FORWARD void line_too_long P((void));
 
-PRIVATE void clearsource()
+PRIVATE void clearsource(void)
 {
 }
 
-PRIVATE void line_too_long()
+PRIVATE void line_too_long(void)
 {
 	symname = linebuf + (LINLEN - 1);	/* spot for the error */
 	error(LINLONG);		/* so error is shown in column LINLEN - 1 */
@@ -73,15 +73,14 @@ PRIVATE void line_too_long()
 
 /* initialise private variables */
 
-PUBLIC void initsource()
+PUBLIC void initsource(void)
 {
 	filnamptr = hid_filnambuf;
 	getstak = hid_getstak;
 	clearsource();		/* sentinel to invoke blank skipping */
 }
 
-PUBLIC fd_t open_input(name)
-char *name;
+PUBLIC fd_t open_input(char *name)
 {
 	fd_t fd;
 #if BIGBUFFER == 1
@@ -165,7 +164,7 @@ cant_do_this:
   file must be seekable for the buffer discard/restore method to work
 */
 
-PUBLIC void pget()
+PUBLIC void pget(void)
 {
 	if (infiln >= MAXGET)
 		error(GETOV);
@@ -205,7 +204,7 @@ PUBLIC void pget()
 /* otherwise switch pass 0 to pass 1 or exit on pass 2 */
 /* end of file may be from phyical end of file or an END statement */
 
-PUBLIC void pproceof()
+PUBLIC void pproceof(void)
 {
 	if (infiln != 0)
 		close(infil);
@@ -282,7 +281,7 @@ PUBLIC void pproceof()
   This is where macro lines are recursively expanded.
 */
 
-PUBLIC void readline()
+PUBLIC void readline(void)
 {
 	int cc = 0;
 
@@ -428,7 +427,7 @@ again:				/* On EOF for main or included files */
 	*eol_ptr = EOLCHAR;
 }
 
-PUBLIC void skipline()
+PUBLIC void skipline(void)
 {
 	if (macflag)
 		lineptr = strchr(hid_linebuf, EOLCHAR);
@@ -442,10 +441,7 @@ PRIVATE int in_start = 0, in_end = 0;
 PRIVATE long ftpos = 0;
 PRIVATE int lastfd = -1;
 
-PRIVATE int inp_line(fd, buf, size)
-int fd;
-char *buf;
-int size;
+PRIVATE int inp_line(int fd, char *buf, int size)
 {
 	int offt = 0;
 	if (fd != lastfd)
@@ -467,8 +463,7 @@ int size;
 	return offt;
 }
 
-PRIVATE long inp_tell(fd)
-int fd;
+PRIVATE long inp_tell(int fd)
 {
 	if (fd != lastfd)
 		return lseek(fd, 0L, 1);
@@ -476,9 +471,7 @@ int fd;
 		return ftpos + in_start;
 }
 
-PRIVATE void inp_seek(fd, posn)
-int fd;
-long posn;
+PRIVATE void inp_seek(int fd, long posn)
 {
 	if (lastfd != -1)
 		lseek(lastfd, ftpos + in_start, 0);

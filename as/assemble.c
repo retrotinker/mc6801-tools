@@ -81,7 +81,7 @@ FORWARD void asline P((void));
   and overflow in CC.
 */
 
-PUBLIC void assemble()
+PUBLIC void assemble(void)
 {
 	while (TRUE) {
 		asline();
@@ -111,7 +111,7 @@ PUBLIC void assemble()
 	}
 }
 
-PRIVATE void asline()
+PRIVATE void asline(void)
 {
 	register struct sym_s *symptr;
 	bool_t indented;	/* set if line starts with blank or tab */

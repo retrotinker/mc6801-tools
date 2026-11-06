@@ -22,15 +22,13 @@ FORWARD void printchain P((void));
 
 FORWARD void install P((register char *keyptr, int data));
 
-PUBLIC void inst_keywords()
+PUBLIC void inst_keywords(void)
 {
 	install(regs, REGBIT);
 	install(ops, 0);
 }
 
-PRIVATE void install(keyptr, data)
-register char *keyptr;
-unsigned char data;
+PRIVATE void install(register char *keyptr, int data)
 {
 	char lowcasebuf[20];
 	unsigned namelength;
@@ -71,7 +69,7 @@ unsigned char data;
  * unless symbol table overflows, when routine aborts.
  */
 
-PUBLIC struct sym_s *lookup()
+PUBLIC struct sym_s *lookup(void)
 {
 	struct sym_s **hashptr;
 	register char *nameptr;
@@ -171,7 +169,7 @@ unsigned hashval;
 
 #endif
 
-PUBLIC void statistics()
+PUBLIC void statistics(void)
 {
 #ifdef DEBUG_HASH
 	int i;
