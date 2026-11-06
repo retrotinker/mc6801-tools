@@ -128,8 +128,10 @@ PUBLIC void executable(void)
 
 PUBLIC void flusherr(void)
 {
-	if (errbufptr != errbuf)
-		write(errfil, errbuf, (unsigned)(errbufptr - errbuf));
+	if (errbufptr != errbuf
+	    && write(errfil, errbuf, (unsigned)(errbufptr - errbuf)) < 0) {
+		/* nowhere left to report that */
+	}
 	errbufptr = errbuf;
 }
 

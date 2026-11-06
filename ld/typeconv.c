@@ -13,7 +13,9 @@
 void xxerr P((char *));
 void xxerr(char *x)
 {
-	write(2, x, strlen(x));
+	if (write(2, x, strlen(x)) < 0) {
+		/* nowhere left to report that */
+	}
 }
 
 static int no_swap = 1;

@@ -237,7 +237,12 @@ void do_module(char *fname, char *archive)
 				break;
 			}
 			str_off = ftell(ifd);
-			fread(strtab, 1, (unsigned int)str_len, ifd);
+			if (fread(strtab, 1, (unsigned int)str_len, ifd)
+			    != (size_t)str_len) {
+				error("Cannot read string table");
+				break;
+			}
+			strtab[str_len] = 0;
 
 			disp_sectheader();
 			disp_syms();
