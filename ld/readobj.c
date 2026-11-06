@@ -106,8 +106,8 @@ PRIVATE long readarheader(char **parchentry)
 
 	if (readineofok((char *)&arheader, sizeof arheader))
 		return 0;
-	strncpy(*parchentry = nameptr = ourmalloc(sizeof arheader.ar_name + 1),
-		arheader.ar_name, sizeof arheader.ar_name);
+	memcpy(*parchentry = nameptr = ourmalloc(sizeof arheader.ar_name + 1),
+	       arheader.ar_name, sizeof arheader.ar_name);
 	endptr = nameptr + sizeof arheader.ar_name;
 	do
 		*endptr-- = 0;
@@ -126,7 +126,7 @@ PRIVATE unsigned readfileheader(void)
 	unsigned char filechecksum;	/* part of fileheader but would unalign */
 
 	readin((char *)&fileheader, sizeof fileheader);
-	readin(&filechecksum, sizeof filechecksum);
+	readin((char *)&filechecksum, sizeof filechecksum);
 	if (filechecksum != checksum((char *)&fileheader, sizeof fileheader))
 		input1error(" is not an object file (checksum failed)");
 	return c2u2(fileheader.count);

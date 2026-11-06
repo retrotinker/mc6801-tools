@@ -154,11 +154,12 @@ void raw_output(FILE *ifd, FILE *ofd, struct exec header)
 		textaddr = textstart;
 	if (!textend)
 		textend = textstart + header.a_text;
-	if (!dataaddr)
+	if (!dataaddr) {
 		if (header.a_flags & A_SEP)
 			dataaddr = datastart;
 		else
 			dataaddr = textend;
+	}
 
 	if (fseek(ifd, A_TEXTPOS(header), 0) < 0)
 		fatal("Cannot seek to start of text");

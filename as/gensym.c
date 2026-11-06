@@ -22,16 +22,18 @@ PUBLIC void gensym(void)
 	struct sym_s **copyptr;
 	struct sym_s **copytop;
 	register struct sym_s **hashptr;
-	unsigned label_count;	/* number of labels */
-	unsigned labels_length;	/* length of all label strings */
 	struct sym_s **symlptr;	/* start of symbol output list */
 	register struct sym_s *symptr;
 #ifdef BINSYM
+	unsigned label_count;	/* number of labels */
+	unsigned labels_length;	/* length of all label strings */
 	unsigned label_stringptr;	/* offset of label str from start of file */
 #endif
 	int symcount = 0;
 
+#ifdef BINSYM
 	labels_length = label_count = 0;
+#endif
 
 	/* make copy of all relavant symbol ptrs on heap */
 	/* original ptrs can now be modified, but need to be an array for sort */
@@ -53,8 +55,10 @@ PUBLIC void gensym(void)
 				    (symptr->
 				     type & (MACBIT | MNREGBIT | VARBIT))) {
 					*copyptr++ = symptr;
+#ifdef BINSYM
 					++label_count;
 					labels_length += symptr->length + 3;	/* 3 for type, value */
+#endif
 				}
 			while ((symptr = symptr->next) != NUL_PTR) ;
 

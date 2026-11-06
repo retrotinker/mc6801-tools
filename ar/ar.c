@@ -1002,11 +1002,11 @@ void header_from_map(struct ar_hdr *header, struct mapelt *mapelt)
 	bzero((char *)header, sizeof(*header));
 
 	p = basename(mapelt->info.name);
-	strncpy(header->ar_name, p, sizeof(header->ar_name));
 	namelen = strlen(p);
+	memcpy(header->ar_name, p, namelen < sizeof(header->ar_name)
+	       ? namelen : sizeof(header->ar_name));
 	if (namelen >= sizeof(header->ar_name)) {
-		if (mapelt->info.name[namelen - 2] == '.' &&
-		    mapelt->info.name[namelen - 1] == 'o') {
+		if (p[namelen - 2] == '.' && p[namelen - 1] == 'o') {
 			header->ar_name[sizeof(header->ar_name) - 3] = '.';
 			header->ar_name[sizeof(header->ar_name) - 2] = 'o';
 		}
@@ -1031,7 +1031,7 @@ void header_from_map(struct ar_hdr *header, struct mapelt *mapelt)
 	sprintf(header->ar_uid, "%d", mapelt->info.uid);
 	sprintf(header->ar_gid, "%d", mapelt->info.gid);
 	sprintf(header->ar_mode, "%o", mapelt->info.mode);
-	strncpy(header->ar_fmag, ARFMAG, sizeof(header->ar_fmag));
+	memcpy(header->ar_fmag, ARFMAG, sizeof(header->ar_fmag));
 
 	/* Change all remaining nulls in the header into spaces.  */
 	{
@@ -1487,7 +1487,6 @@ void read_old_symdefs(struct mapelt *map, int archive_indesc)
 {
 	struct mapelt *mapelt;
 	char *data;
-	int val;
 	unsigned long int symdefs_size;	/* same size as write_symdef_member's */
 
 	mapelt = find_mapelt_noerror(map, "__.SYMDEF");
@@ -1496,7 +1495,8 @@ void read_old_symdefs(struct mapelt *map, int archive_indesc)
 
 	data = (char *)xmalloc(mapelt->info.size);
 	lseek(archive_indesc, mapelt->info.data_offset, 0);
-	val = read(archive_indesc, data, mapelt->info.size);
+	if (read(archive_indesc, data, mapelt->info.size) != mapelt->info.size)
+		fatal("error reading archive %s", archive);
 
 #ifdef HOST_TARGET_ENDIANESS_DIFFERS
 	symdefs_size = md_chars_to_number((unsigned char *)data,
