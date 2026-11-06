@@ -86,9 +86,7 @@ int opt_o;
 long size_text, size_data, size_bss;
 long tot_size_text = 0, tot_size_data = 0, tot_size_bss = 0;
 
-int main(argc, argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
 	int ar;
 	char *p;
@@ -144,8 +142,7 @@ char **argv;
 	return 0;
 }
 
-void do_file(fname)
-char *fname;
+void do_file(char *fname)
 {
 	int c0, c1;
 	long filelength;
@@ -184,8 +181,7 @@ char *fname;
 }
 
 /* read archive header and return length */
-long read_arheader(archentry)
-char *archentry;
+long read_arheader(char *archentry)
 {
 	char *endptr;
 	struct ar_hdr arheader;
@@ -201,9 +197,7 @@ char *archentry;
 	return strtoul(arheader.ar_size, (char **)NULL, 0);
 }
 
-void do_module(fname, archive)
-char *fname;
-char *archive;
+void do_module(char *fname, char *archive)
 {
 	int modno, i;
 
@@ -299,8 +293,7 @@ char *archive;
 	symnames = 0;
 }
 
-int error(str)
-char *str;
+int error(char *str)
 {
 	switch (display_mode) {
 	case 1:
@@ -316,7 +309,7 @@ char *str;
 	return -1;
 }
 
-int read_objheader()
+int read_objheader(void)
 {
 	unsigned char buf[5];
 
@@ -348,7 +341,7 @@ int read_objheader()
 	return 0;
 }
 
-int read_sectheader()
+int read_sectheader(void)
 {
 	unsigned char ssdesc[4];
 	int i;
@@ -373,7 +366,7 @@ int read_sectheader()
 	return 0;
 }
 
-void disp_sectheader()
+void disp_sectheader(void)
 {
 	int i;
 	if (display_mode)
@@ -393,7 +386,7 @@ void disp_sectheader()
 	printf("SYMS %u\n", num_syms);
 }
 
-int read_syms()
+int read_syms(void)
 {
 	int i;
 
@@ -433,7 +426,7 @@ int read_syms()
 	return 0;
 }
 
-int disp_syms()
+int disp_syms(void)
 {
 	int i;
 
@@ -541,9 +534,7 @@ int disp_syms()
 
 /* nm symbol letter for an as01 object file symbol, in the same style as
    for executables: upper case for exported symbols */
-int m6801_symletter(symtype, offset)
-unsigned int symtype;
-long offset;
+int m6801_symletter(unsigned int symtype, long offset)
 {
 	int letter;
 
@@ -562,7 +553,7 @@ long offset;
 	return letter;
 }
 
-void read_databytes()
+void read_databytes(void)
 {
 	static char *relstr[] = { "ERR", "DB", "DW", "DD" };
 	long l, cpos;
@@ -652,8 +643,7 @@ break_break:;
 	fseek(ifd, cpos, 0);
 }
 
-long get_sized(sz)
-int sz;
+long get_sized(int sz)
 {
 	switch (sz) {
 	case 0:
@@ -668,7 +658,7 @@ int sz;
 	return -1;
 }
 
-long get_long()
+long get_long(void)
 {
 	long retv = 0;
 	int i;
@@ -682,7 +672,7 @@ long get_long()
 	return retv;
 }
 
-unsigned int get_word()
+unsigned int get_word(void)
 {
 	long retv = 0;
 	int i;
@@ -699,7 +689,7 @@ unsigned int get_word()
 	return retv;
 }
 
-int get_byte()
+int get_byte(void)
 {
 	int v = getc(ifd);
 	if (v == EOF)
@@ -708,8 +698,7 @@ int get_byte()
 	return v;
 }
 
-void hex_output(ch)
-int ch;
+void hex_output(int ch)
 {
 	static char linebuf[80];
 	static char buf[20];
@@ -743,7 +732,7 @@ int ch;
 long header[12];
 int h_len, h_flgs, h_cpu;
 
-void fetch_aout_hdr()
+void fetch_aout_hdr(void)
 {
 	int i;
 
@@ -763,7 +752,7 @@ void fetch_aout_hdr()
 	}
 }
 
-void dump_aout()
+void dump_aout(void)
 {
 	static char *cpu[] =
 	    { "unknown", "8086", "m68k", "ns16k", "i386", "sparc", "m6809",
@@ -843,7 +832,7 @@ void dump_aout()
 	hex_output(EOF);
 }
 
-void size_aout()
+void size_aout(void)
 {
 	if (display_mode == 0)
 		printf("text\tdata\tbss\tdec\thex\tfilename\n");
@@ -858,7 +847,7 @@ void size_aout()
 	tot_size_bss += header[4];
 }
 
-void nm_aout()
+void nm_aout(void)
 {
 	char n_name[10];
 	long n_value;

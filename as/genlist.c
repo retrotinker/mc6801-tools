@@ -61,9 +61,7 @@ FORWARD void paderrorline P((unsigned nspaces));
 
 /* format 1 byte number as 2 hex digits, return ptr to end */
 
-PRIVATE char *build_1hex_number(num, where)
-opcode_pt num;
-register char *where;
+PRIVATE char *build_1hex_number(opcode_pt num, register char *where)
 {
 	where[0] = hexdigit[((unsigned)num % 256) / 16];
 	where[1] = hexdigit[(unsigned)num % 16];
@@ -72,9 +70,7 @@ register char *where;
 
 /* format 2 byte number as 4 hex digits, return ptr to end */
 
-PUBLIC char *build_2hex_number(num, where)
-unsigned num;
-char *where;
+PUBLIC char *build_2hex_number(unsigned num, char *where)
 {
 	return build_1hex_number((opcode_pt) num,
 				 build_1hex_number((opcode_pt) (num / 256),
@@ -84,10 +80,7 @@ char *where;
 /* format 2 byte number as decimal with given width (pad with leading '0's) */
 /* return ptr to end */
 
-PUBLIC char *build_number(num, width, where)
-unsigned num;
-unsigned width;
-register char *where;
+PUBLIC char *build_number(unsigned num, unsigned width, register char *where)
 {
 	static unsigned powers_of_10[] = { 1, 10, 100, 1000, 10000, };
 	unsigned char digit;
@@ -108,8 +101,7 @@ register char *where;
 
 /* record number and position of error (or error buffer overflow) */
 
-PUBLIC void warning(err_str)
-char *err_str;
+PUBLIC void warning(char *err_str)
 {
 	if (!as_warn.current)
 		return;
@@ -118,8 +110,7 @@ char *err_str;
 	error(err_str);
 }
 
-PUBLIC void error(err_str)
-char *err_str;
+PUBLIC void error(char *err_str)
 {
 	register struct error_s *errptr;
 	register struct error_s *errptrlow;
@@ -146,7 +137,7 @@ char *err_str;
 /* list 1 line to list file if any errors or flags permit */
 /* list line to console as well if any errors and list file is not console */
 
-PUBLIC void listline()
+PUBLIC void listline(void)
 {
 	if (!listpre && lineptr != 0) {
 		if (errcount || (list.current && (!macflag || mcount != 0)) ||
@@ -163,8 +154,7 @@ PUBLIC void listline()
 
 /* list 1 line unconditionally */
 
-PRIVATE void list1(fd)
-fd_t fd;
+PRIVATE void list1(fd_t fd)
 {
 	outfd = fd;
 	listcode();
@@ -178,7 +168,7 @@ fd_t fd;
 
 /* list object code for 1 line */
 
-PRIVATE void listcode()
+PRIVATE void listcode(void)
 {
 	unsigned char count;
 	struct code_listing_s *listptr;
@@ -254,7 +244,7 @@ PRIVATE void listcode()
 
 /* list errors, assuming some */
 
-PRIVATE void listerrors()
+PRIVATE void listerrors(void)
 {
 	unsigned char column;
 	unsigned char errcol;	/* column # in error line */
@@ -302,8 +292,7 @@ PRIVATE void listerrors()
 
 /* pad out error line to begin under 1st char of source listing */
 
-PRIVATE void paderrorline(nspaces)
-unsigned nspaces;
+PRIVATE void paderrorline(unsigned nspaces)
 {
 	int nstars = LINUM_LEN;
 
@@ -315,23 +304,23 @@ unsigned nspaces;
 
 /* write 1 character */
 
-PUBLIC void writec(ch)
-char ch;
+PUBLIC void writec(int ch)
 {
-	write(outfd, &ch, 1);
+	char c = ch;
+
+	write(outfd, &c, 1);
 }
 
 /* write newline */
 
-PUBLIC void writenl()
+PUBLIC void writenl(void)
 {
 	writes(SOS_EOLSTR);
 }
 
 /* write 1 offset_t, order to suit target */
 
-PUBLIC void writeoff(offset)
-offset_t offset;
+PUBLIC void writeoff(offset_t offset)
 {
 	char buf[sizeof offset];
 
@@ -345,16 +334,14 @@ offset_t offset;
 
 /* write string */
 
-PUBLIC void writes(s)
-char *s;
+PUBLIC void writes(char *s)
 {
 	write(outfd, s, strlen(s));
 }
 
 /* write string followed by newline */
 
-PUBLIC void writesn(s)
-char *s;
+PUBLIC void writesn(char *s)
 {
 	writes(s);
 	writenl();
@@ -362,8 +349,7 @@ char *s;
 
 /* write 1 word, order to suit target */
 
-PUBLIC void writew(word)
-unsigned word;
+PUBLIC void writew(unsigned word)
 {
 	char buf[2];
 

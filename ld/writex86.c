@@ -71,11 +71,8 @@ EXTERN bool_t reloc_output;
 
 /* write binary file */
 
-PUBLIC void write_elks(outfilename, argsepid, argstripflag, argxsym)
-char *outfilename;
-bool_pt argsepid;
-bool_pt argstripflag;
-bool_pt argxsym;
+PUBLIC void write_elks(char *outfilename, bool_pt argsepid,
+		       bool_pt argstripflag, bool_pt argxsym)
 {
 	char buf4[4];
 	struct nlist extsym;
@@ -306,8 +303,7 @@ bool_pt argxsym;
 	executable();
 }
 
-PRIVATE void linkmod(modptr)
-struct modstruct *modptr;
+PRIVATE void linkmod(struct modstruct *modptr)
 {
 	char buf[ABS_TEXT_MAX];
 	int command;
@@ -419,8 +415,7 @@ struct modstruct *modptr;
 	}
 }
 
-PRIVATE void padmod(modptr)
-struct modstruct *modptr;
+PRIVATE void padmod(struct modstruct *modptr)
 {
 	bin_off_t count;
 	fastin_t seg;
@@ -448,10 +443,7 @@ struct modstruct *modptr;
 
 /* write a symbol defined by the linker script */
 
-PRIVATE void writescriptsym(name, value, class)
-char *name;
-bin_off_t value;
-int class;
+PRIVATE void writescriptsym(char *name, bin_off_t value, int class)
 {
 	struct nlist extsym;
 	int sclass;
@@ -472,8 +464,7 @@ int class;
 
 /* set new segment */
 
-PRIVATE void setseg(newseg)
-fastin_pt newseg;
+PRIVATE void setseg(fastin_pt newseg)
 {
 	if (newseg != curseg) {
 		segpos[curseg] = spos;
@@ -484,13 +475,12 @@ fastin_pt newseg;
 	}
 }
 
-PRIVATE void skip(countsize)
-unsigned countsize;
+PRIVATE void skip(unsigned countsize)
 {
 	writenulls((bin_off_t) readsize(countsize));
 }
 
-PRIVATE void writeheader()
+PRIVATE void writeheader(void)
 {
 	struct exec header;
 	bin_off_t heaptop;
@@ -521,27 +511,20 @@ PRIVATE void writeheader()
 }
 
 /* write module data, unless its part of the segment is NOLOAD */
-PRIVATE void segwrite(buf, count)
-char *buf;
-unsigned count;
+PRIVATE void segwrite(char *buf, unsigned count)
 {
 	if (!segdiscard[curseg])
 		writeout(buf, count);
 }
 
 /* write bytes for the linker script at an offset after the header */
-PRIVATE void writeat(offset, buf, count)
-bin_off_t offset;
-char *buf;
-unsigned count;
+PRIVATE void writeat(bin_off_t offset, char *buf, unsigned count)
 {
 	seekout(FILEHEADERLENGTH + (unsigned long)offset);
 	writeout(buf, count);
 }
 
-PRIVATE void writefill(count, byte)
-bin_off_t count;
-int byte;
+PRIVATE void writefill(bin_off_t count, int byte)
 {
 	spos += count;
 	if (segdiscard[curseg])
@@ -550,8 +533,7 @@ int byte;
 		writechar(byte);
 }
 
-PRIVATE void writenulls(count)
-bin_off_t count;
+PRIVATE void writenulls(bin_off_t count)
 {
 	long lcount = count;
 	spos += count;

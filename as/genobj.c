@@ -37,8 +37,7 @@ FORWARD void writeobj P((char *buf, unsigned count));
 
 /* accumulate RMB requests into 1 (so + and - requests cancel) */
 
-PUBLIC void accumulate_rmb(offset)
-offset_t offset;
+PUBLIC void accumulate_rmb(offset_t offset)
 {
 	if (objectc) {
 		flushabs();
@@ -48,7 +47,7 @@ offset_t offset;
 
 /* flush absolute object code buffer to object code buffer if necessary */
 
-PRIVATE void flushabs()
+PRIVATE void flushabs(void)
 {
 	if (absbufptr > absbuf) {
 		putobj1((absbufptr - absbuf) | OBJ_ABS);
@@ -66,7 +65,7 @@ PRIVATE void flushabs()
 
 /* flush object code buffer if necessary */
 
-PUBLIC void flushobj()
+PUBLIC void flushobj(void)
 {
 	int ntowrite;
 
@@ -82,7 +81,7 @@ PUBLIC void flushobj()
 
 /* flush RMB count if necessary */
 
-PRIVATE void flushrmb()
+PRIVATE void flushrmb(void)
 {
 	count_t size;
 
@@ -112,7 +111,7 @@ PRIVATE void flushrmb()
   any immediate parameter is (corectly) in immadr
 */
 
-PUBLIC void genobj()
+PUBLIC void genobj(void)
 {
 	struct address_s *adrptr;
 	char *bufptr;
@@ -164,9 +163,7 @@ PUBLIC void genobj()
 
 /* generate object code for current address */
 
-PRIVATE void genobjadr(adrptr, size)
-struct address_s *adrptr;
-smallcount_t size;
+PRIVATE void genobjadr(struct address_s *adrptr, int size)
 {
 	unsigned char byte;
 	unsigned symnum;
@@ -237,7 +234,7 @@ smallcount_t size;
 
 /* initialise private variables */
 
-PUBLIC void initobj()
+PUBLIC void initobj(void)
 {
 	absbufend = (absbufptr = absbuf = hid_absbuf) + sizeof hid_absbuf;
 	objbufend = (objbufptr = objbuf = hid_objbuf) + sizeof hid_objbuf;
@@ -248,7 +245,7 @@ PUBLIC void initobj()
   also build array of imported/exported symbols
 */
 
-PUBLIC void objheader()
+PUBLIC void objheader(void)
 {
 	static char module_header[] = {
 		'S', '1',	/* 2 byte magic number */
@@ -505,7 +502,7 @@ PUBLIC void objheader()
 
 /* write trailer to object file */
 
-PUBLIC void objtrailer()
+PUBLIC void objtrailer(void)
 {
 	if (objectc) {
 		putobj(0);	/* end of object file */
@@ -515,8 +512,7 @@ PUBLIC void objtrailer()
 
 /* write char to absolute object code buffer, flush if necessary */
 
-PUBLIC void putabs(ch)
-opcode_pt ch;
+PUBLIC void putabs(opcode_pt ch)
 {
 	if (objectc) {
 		if (rmbcount != 0)
@@ -529,8 +525,7 @@ opcode_pt ch;
 
 /* write char to object code buffer, flush if necessary */
 
-PUBLIC void putobj(ch)
-opcode_pt ch;
+PUBLIC void putobj(opcode_pt ch)
 {
 	if (objectc) {
 		flushabs();
@@ -541,8 +536,7 @@ opcode_pt ch;
 
 /* write char to object code buffer assuming nothing in absolute & rmb bufs */
 
-PRIVATE void putobj1(ch)
-opcode_pt ch;
+PRIVATE void putobj1(opcode_pt ch)
 {
 	if (objbufptr >= objbufend)
 		flushobj();
@@ -551,8 +545,7 @@ opcode_pt ch;
 
 /* write 32 bit offset to object code buffer assuming ... */
 
-PRIVATE void putobj4(offset)
-u32_T offset;
+PRIVATE void putobj4(u32_T offset)
 {
 	char buf[sizeof offset];
 
@@ -562,9 +555,7 @@ u32_T offset;
 
 /* write sized offset to object code buffer assuming ... */
 
-PRIVATE void putobjoffset(offset, size)
-offset_t offset;
-count_t size;
+PRIVATE void putobjoffset(offset_t offset, count_t size)
 {
 	char buf[sizeof offset];
 
@@ -584,8 +575,7 @@ count_t size;
 
 /* write word to object code buffer assuming ... */
 
-PRIVATE void putobjword(word)
-unsigned word;
+PRIVATE void putobjword(unsigned word)
 {
 	char buf[sizeof word];
 
@@ -596,9 +586,7 @@ unsigned word;
 
 /* write several bytes to object code buffer assuming ... */
 
-PRIVATE void writeobj(buf, count)
-char *buf;
-unsigned count;
+PRIVATE void writeobj(char *buf, unsigned count)
 {
 	do
 		putobj1(*buf++);

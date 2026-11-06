@@ -1033,29 +1033,23 @@ PRIVATE char *default_script(int sepid, int binary)
 	return buf;
 }
 
-PUBLIC void script_print_default(sepid, binary)
-int sepid;
-int binary;
+PUBLIC void script_print_default(int sepid, int binary)
 {
 	fputs(default_script(sepid, binary), stdout);
 }
 
-PUBLIC void script_use_default(sepid, binary)
-int sepid;
-int binary;
+PUBLIC void script_use_default(int sepid, int binary)
 {
 	parse(xstrdup(default_script(sepid, binary)), "<default script>");
 }
 
-PUBLIC void script_read(filename)
-char *filename;
+PUBLIC void script_read(char *filename)
 {
 	parse(readfile(filename), filename);
 }
 
 /* -A sym=value: a plain assignment, before the script's own statements */
-PUBLIC void script_define(arg)
-char *arg;
+PUBLIC void script_define(char *arg)
 {
 	char *text = xalloc(strlen(arg) + 2);
 	struct stmt *s;
@@ -1077,7 +1071,7 @@ char *arg;
 
 /* the entry point */
 
-PUBLIC void script_set_entry()
+PUBLIC void script_set_entry(void)
 {
 	struct symstruct *symptr;
 	struct entrylist *elptr;
@@ -1679,7 +1673,7 @@ PRIVATE int remember(void)
 }
 
 /* which script symbols are defined, and the imports they satisfy */
-PUBLIC void script_mark_imports()
+PUBLIC void script_mark_imports(void)
 {
 	struct modstruct *modptr;
 	struct symstruct **symparray;
@@ -1842,9 +1836,7 @@ PRIVATE void checks(void)
 	}
 }
 
-PUBLIC void script_layout(sepid, binary)
-int sepid;
-int binary;
+PUBLIC void script_layout(int sepid, int binary)
 {
 	struct modstruct *modptr;
 	struct osect *sect, *first[2], *prev[2];
@@ -2004,8 +1996,8 @@ PRIVATE void outfill(void (*out) P((bin_off_t, char *, unsigned)),
 }
 
 /* fill bytes for gaps, written before the modules */
-PUBLIC void script_write_fill(out)
-void (*out) P((bin_off_t offset, char *buf, unsigned len));
+PUBLIC void script_write_fill(void (*out) P((bin_off_t offset, char *buf,
+					     unsigned len)))
 {
 	struct osect *sect, *a, *b;
 	long fill, end;
@@ -2037,8 +2029,8 @@ void (*out) P((bin_off_t offset, char *buf, unsigned len));
 }
 
 /* BYTE and WORD data, written after the modules */
-PUBLIC void script_write_data(out)
-void (*out) P((bin_off_t offset, char *buf, unsigned len));
+PUBLIC void script_write_data(void (*out) P((bin_off_t offset, char *buf,
+					     unsigned len)))
 {
 	char buf[2];
 	int i;
@@ -2116,8 +2108,7 @@ PRIVATE void stmtroots(struct stmt *s, void (*link) P((struct modstruct *)))
 	}
 }
 
-PUBLIC void script_roots(link)
-void (*link) P((struct modstruct * modptr));
+PUBLIC void script_roots(void (*link) P((struct modstruct * modptr)))
 {
 	stmtroots(top, link);
 }
@@ -2125,9 +2116,7 @@ void (*link) P((struct modstruct * modptr));
 /* OUTPUT_FORMAT(srec) or (ihex): the output was written as a binary
    image; rewrite it as records, one run for each loadable section in load
    address order, leaving out the gaps between them */
-PUBLIC void script_convert(outfilename, entry)
-char *outfilename;
-bin_off_t entry;
+PUBLIC void script_convert(char *outfilename, bin_off_t entry)
 {
 	FILE *f;
 	unsigned char *image;
@@ -2182,9 +2171,7 @@ bin_off_t entry;
 
 /* the value of a symbol the script assigns, even if it isn't defined
    for the modules (a PROVIDE that nothing uses) */
-PUBLIC int script_value(name, value)
-char *name;
-bin_off_t *value;
+PUBLIC int script_value(char *name, bin_off_t *value)
 {
 	struct ssym *ss = findssym(name);
 
@@ -2195,7 +2182,7 @@ bin_off_t *value;
 }
 
 /* set the values of the imports the script satisfies */
-PUBLIC void script_define_symbols()
+PUBLIC void script_define_symbols(void)
 {
 	struct ssym *ss;
 
@@ -2205,8 +2192,9 @@ PUBLIC void script_define_symbols()
 }
 
 /* write the script's symbols that no loaded module imports */
-PUBLIC void script_write_symbols(writesym)
-void (*writesym) P((char *name, bin_off_t value, int sclass));
+PUBLIC void script_write_symbols(void (*writesym) P((char *name,
+						     bin_off_t value,
+						     int sclass)))
 {
 	struct ssym *ss;
 	int order;
@@ -2219,7 +2207,7 @@ void (*writesym) P((char *name, bin_off_t value, int sclass));
 
 /* -M: the layout */
 
-PUBLIC void script_dump_layout()
+PUBLIC void script_dump_layout(void)
 {
 	struct osect *sect;
 	struct stmt *s, *stack[16];

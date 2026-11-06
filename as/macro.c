@@ -15,8 +15,7 @@
   next:string. The first string is the macro number in 4 bytes.
 */
 
-PUBLIC void entermac(symptr)
-struct sym_s *symptr;
+PUBLIC void entermac(struct sym_s *symptr)
 {
 	if (maclevel >= MAXMAC)
 		error(MACOV);
@@ -83,7 +82,7 @@ struct sym_s *symptr;
 
 /* MACRO pseudo-op */
 
-PUBLIC void pmacro()
+PUBLIC void pmacro(void)
 {
 	bool_t saving;
 	bool_t savingc;

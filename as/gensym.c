@@ -16,7 +16,7 @@ FORWARD void sort P((struct sym_s ** array, struct sym_s ** top,
 /* if symbol file, write machine-readable tables to it */
 /* pointers become relative to start of file */
 
-PUBLIC void gensym()
+PUBLIC void gensym(void)
 {
 	unsigned column;
 	struct sym_s **copyptr;
@@ -140,9 +140,7 @@ PUBLIC void gensym()
 
 /* print symbol nicely formatted for given column */
 
-PRIVATE int printsym(symptr, column)
-register struct sym_s *symptr;
-unsigned column;
+PRIVATE int printsym(register struct sym_s *symptr, unsigned column)
 {
 	unsigned char length;
 	register struct sym_listing_s *listptr;
@@ -187,10 +185,7 @@ unsigned column;
 
 /* shell sort symbols */
 
-PRIVATE void sort(array, top, nameflag)
-struct sym_s **array;
-struct sym_s **top;
-bool_pt nameflag;
+PRIVATE void sort(struct sym_s **array, struct sym_s **top, bool_pt nameflag)
 {
 	int gap;
 	int i;

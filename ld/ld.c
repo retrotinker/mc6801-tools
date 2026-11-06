@@ -26,10 +26,7 @@ FORWARD char *buildname P((char *pre, char *mid, char *suf));
 FORWARD char *expandlib P((char *fn));
 FORWARD bin_off_t getaddr P((char *str, char *message));
 
-PRIVATE char *buildname(pre, mid, suf)
-char *pre;
-char *mid;
-char *suf;
+PRIVATE char *buildname(char *pre, char *mid, char *suf)
 {
 	char *name;
 
@@ -43,9 +40,7 @@ char *suf;
 /* parse an address like C: 0x (or $) for hex, leading 0 for octal,
    otherwise decimal; anything else, or more than 16 bits, is an error */
 
-PRIVATE bin_off_t getaddr(str, message)
-char *str;
-char *message;
+PRIVATE bin_off_t getaddr(char *str, char *message)
 {
 	char *end;
 	unsigned long value;
@@ -62,8 +57,7 @@ char *message;
 	return (bin_off_t) value;
 }
 
-PRIVATE char *expandlib(fn)
-char *fn;
+PRIVATE char *expandlib(char *fn)
 {
 	char *path, *s;
 	int i;
@@ -83,9 +77,7 @@ char *fn;
 }
 
 void ld86r(int argc, char **argv);
-PUBLIC int main(argc, argv)
-int argc;
-char **argv;
+PUBLIC int main(int argc, char **argv)
 {
 	register char *arg;
 	int argn;

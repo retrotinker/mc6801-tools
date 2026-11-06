@@ -25,9 +25,7 @@ FORWARD struct sym_s *needlabel P((void));
 FORWARD void showredefinedlabel P((void));
 FORWARD void setloc P((unsigned seg));
 
-PRIVATE void bumpsem(flagptr, defval)
-register struct flags_s *flagptr;
-int defval;
+PRIVATE void bumpsem(register struct flags_s *flagptr, int defval)
 {
 	int newcount;
 
@@ -61,8 +59,7 @@ int defval;
 /* check symbol is either undefined */
 /* or has the same segment & relocatability as lc */
 
-PUBLIC bool_pt checksegrel(symptr)
-register struct sym_s *symptr;
+PUBLIC bool_pt checksegrel(register struct sym_s *symptr)
 {
 	if ((symptr->type & LABIT ||
 	     (symptr->data & IMPBIT && !(symptr->data & UNDBIT))) &&
@@ -75,7 +72,7 @@ register struct sym_s *symptr;
 
 /* check address fits in 1 byte (possibly with sign truncated) */
 
-PUBLIC void checkdatabounds()
+PUBLIC void checkdatabounds(void)
 {
 	if (!(lastexp.data & UNDBIT) &&
 	    (offset_t) (lastexp.offset + 0x80) >= 0x180)
@@ -84,8 +81,7 @@ PUBLIC void checkdatabounds()
 
 /* allocate constant data (zero except for size 1), default zero for size 1 */
 
-PRIVATE void constdata(size)
-unsigned size;
+PRIVATE void constdata(unsigned size)
 {
 	offset_t remaining;
 
@@ -106,14 +102,14 @@ unsigned size;
 	}
 }
 
-PUBLIC void datatoobig()
+PUBLIC void datatoobig(void)
 {
 	error(DBOUNDS);
 }
 
 /* common routine for COMM/.COMM */
 
-PRIVATE void docomm()
+PRIVATE void docomm(void)
 {
 	register struct sym_s *labptr;
 
@@ -144,8 +140,7 @@ PRIVATE void docomm()
 
 /* common routine for ELSEIF/ELSEIFC */
 
-PRIVATE void doelseif(func)
-pfv func;
+PRIVATE void doelseif(pfv func)
 {
 	if (iflevel == 0)
 		error(ELSEIFBAD);
@@ -169,8 +164,7 @@ pfv func;
 
 /* common routine for EQU/SET */
 
-PRIVATE void doequset(labits)
-unsigned char labits;
+PRIVATE void doequset(int labits)
 {
 	register struct sym_s *labptr;
 	unsigned char olddata;
@@ -212,9 +206,7 @@ unsigned char labits;
 
 /* common routine for ENTRY/EXPORT */
 
-PRIVATE void doentexp(entbits, impbits)
-unsigned char entbits;
-unsigned char impbits;
+PRIVATE void doentexp(int entbits, int impbits)
 {
 	struct sym_s *symptr;
 
@@ -250,7 +242,7 @@ unsigned char impbits;
 
 /* common routine for FCC (== .ASCII) and .ASCIZ */
 
-PRIVATE void dofcc()
+PRIVATE void dofcc(void)
 {
 	register char *bufptr;
 	char byte;
@@ -364,8 +356,7 @@ PRIVATE void dofcc()
 
 /* common routine for IF/IFC */
 
-PRIVATE void doif(func)
-pfv func;
+PRIVATE void doif(pfv func)
 {
 	if (iflevel >= MAXIF)
 		error(IFOV);
@@ -392,8 +383,7 @@ pfv func;
 	}
 }
 
-PUBLIC void fatalerror(err_str)
-char *err_str;
+PUBLIC void fatalerror(char *err_str)
 {
 	error(err_str);
 	skipline();
@@ -404,8 +394,7 @@ char *err_str;
 /* swap position with label position, do error, put back posn */
 /* also clear label ptr */
 
-PUBLIC void labelerror(err_str)
-char *err_str;
+PUBLIC void labelerror(char *err_str)
 {
 	struct sym_s *oldgsymptr;
 	char *oldlineptr;
@@ -427,7 +416,7 @@ char *err_str;
 	label = NUL_PTR;
 }
 
-PRIVATE struct sym_s *needlabel()
+PRIVATE struct sym_s *needlabel(void)
 {
 	register struct sym_s *symptr;
 
@@ -441,7 +430,7 @@ PRIVATE struct sym_s *needlabel()
 
 /* .ALIGN pseudo-op */
 
-PUBLIC void palign()
+PUBLIC void palign(void)
 {
 	absexpres();
 	if (!((lcdata |= lastexp.data) & UNDBIT)) {
@@ -453,7 +442,7 @@ PUBLIC void palign()
 
 /* .ASCIZ pseudo-op */
 
-PUBLIC void pasciz()
+PUBLIC void pasciz(void)
 {
 	dofcc();
 	databuf.fcbuf[mcount++] = 0;
@@ -463,14 +452,14 @@ PUBLIC void pasciz()
 
 /* .BLKW pseudo-op */
 
-PUBLIC void pblkw()
+PUBLIC void pblkw(void)
 {
 	constdata(2);
 }
 
 /* BLOCK pseudo-op */
 
-PUBLIC void pblock()
+PUBLIC void pblock(void)
 {
 	if (blocklevel >= MAXBLOCK)
 		error(BLOCKOV);
@@ -489,14 +478,14 @@ PUBLIC void pblock()
 
 /* .BSS pseudo-op */
 
-PUBLIC void pbss()
+PUBLIC void pbss(void)
 {
 	setloc(BSSLOC);
 }
 
 /* COMM pseudo-op */
 
-PUBLIC void pcomm()
+PUBLIC void pcomm(void)
 {
 	if (label == NUL_PTR)
 		labelerror(MISLAB);
@@ -508,7 +497,7 @@ PUBLIC void pcomm()
 
 /* .COMM pseudo-op */
 
-PUBLIC void pcomm1()
+PUBLIC void pcomm1(void)
 {
 	unsigned oldseg;
 
@@ -536,14 +525,14 @@ PUBLIC void pcomm1()
 
 /* .DATA pseudo-op */
 
-PUBLIC void pdata()
+PUBLIC void pdata(void)
 {
 	setloc(DATALOC);
 }
 
 /* ELSE pseudo-op */
 
-PUBLIC void pelse()
+PUBLIC void pelse(void)
 {
 	if (iflevel == 0)
 		error(ELSEBAD);
@@ -558,21 +547,21 @@ PUBLIC void pelse()
 
 /* ELSEIF pseudo-op */
 
-PUBLIC void pelseif()
+PUBLIC void pelseif(void)
 {
 	doelseif(absexpres);
 }
 
 /* ELSEIFC pseudo-op */
 
-PUBLIC void pelsifc()
+PUBLIC void pelsifc(void)
 {
 	doelseif(scompare);
 }
 
 /* ENDB pseudo-op */
 
-PUBLIC void pendb()
+PUBLIC void pendb(void)
 {
 	if (label != NUL_PTR)
 		labelerror(ILLAB);
@@ -593,7 +582,7 @@ PUBLIC void pendb()
 
 /* ENDIF pseudo-op */
 
-PUBLIC void pendif()
+PUBLIC void pendif(void)
 {
 	if (iflevel == 0)
 		error(ENDIFBAD);
@@ -607,7 +596,7 @@ PUBLIC void pendif()
 
 /* ENTER pseudo-op */
 
-PUBLIC void penter()
+PUBLIC void penter(void)
 {
 	if (!(pedata & UNDBIT))
 		error(REENTER);
@@ -621,14 +610,14 @@ PUBLIC void penter()
 
 /* ENTRY pseudo-op */
 
-PUBLIC void pentry()
+PUBLIC void pentry(void)
 {
 	doentexp(ENTBIT, 0);
 }
 
 /* EQU pseudo-op */
 
-PUBLIC void pequ()
+PUBLIC void pequ(void)
 {
 	register struct sym_s *labptr;
 
@@ -644,7 +633,7 @@ PUBLIC void pequ()
 
 /* .EVEN pseudo-op */
 
-PUBLIC void peven()
+PUBLIC void peven(void)
 {
 	popflags = POPLONG | POPHI | POPLO | POPLC;
 	accumulate_rmb(lcjump = lastexp.data = lc & 1);
@@ -652,14 +641,14 @@ PUBLIC void peven()
 
 /* EXPORT pseudo-op */
 
-PUBLIC void pexport()
+PUBLIC void pexport(void)
 {
 	doentexp(0, 0);
 }
 
 /* FAIL pseudo-op */
 
-PUBLIC void pfail()
+PUBLIC void pfail(void)
 {
 	if (pass == last_pass)
 		error(FAILERR);
@@ -667,7 +656,7 @@ PUBLIC void pfail()
 
 /* FCB pseudo-op */
 
-PUBLIC void pfcb()
+PUBLIC void pfcb(void)
 {
 	char *bufptr;
 	offset_t firstbyte;
@@ -690,7 +679,7 @@ PUBLIC void pfcb()
 
 /* FCC pseudo-op */
 
-PUBLIC void pfcc()
+PUBLIC void pfcc(void)
 {
 	dofcc();
 	if (mcount != 0) {
@@ -701,7 +690,7 @@ PUBLIC void pfcc()
 
 /* FDB pseudo-op */
 
-PUBLIC void pfdb()
+PUBLIC void pfdb(void)
 {
 	struct address_s *adrptr;
 	unsigned firstdata;
@@ -755,7 +744,7 @@ PUBLIC void pfqb()
 
 /* .GLOBL pseudo-op */
 
-PUBLIC void pglobl()
+PUBLIC void pglobl(void)
 {
 	if (binaryg)
 		error(NOIMPORT);
@@ -764,7 +753,7 @@ PUBLIC void pglobl()
 
 /* IDENT pseudo-op (not complete) */
 
-PUBLIC void pident()
+PUBLIC void pident(void)
 {
 	if (sym != IDENT)
 		error(LABEXP);
@@ -774,21 +763,21 @@ PUBLIC void pident()
 
 /* IF pseudo-op */
 
-PUBLIC void pif()
+PUBLIC void pif(void)
 {
 	doif(absexpres);
 }
 
 /* IFC pseudo-op */
 
-PUBLIC void pifc()
+PUBLIC void pifc(void)
 {
 	doif(scompare);
 }
 
 /* IMPORT pseudo-op */
 
-PUBLIC void pimport()
+PUBLIC void pimport(void)
 {
 	struct sym_s *symptr;
 
@@ -815,7 +804,7 @@ PUBLIC void pimport()
 
 /* LCOMM pseudo-op */
 
-PUBLIC void plcomm()
+PUBLIC void plcomm(void)
 {
 	lcommflag = TRUE;
 	pcomm();
@@ -823,7 +812,7 @@ PUBLIC void plcomm()
 
 /* .LCOMM pseudo-op */
 
-PUBLIC void plcomm1()
+PUBLIC void plcomm1(void)
 {
 	lcommflag = TRUE;
 	pcomm1();
@@ -831,21 +820,21 @@ PUBLIC void plcomm1()
 
 /* .LIST pseudo-op */
 
-PUBLIC void plist()
+PUBLIC void plist(void)
 {
 	bumpsem(&list, 1);
 }
 
 /* .NOLIST pseudo-op */
 
-PUBLIC void pnolist()
+PUBLIC void pnolist(void)
 {
 	bumpsem(&list, -1);
 }
 
 /* LOC pseudo-op */
 
-PUBLIC void ploc()
+PUBLIC void ploc(void)
 {
 	if (label != NUL_PTR)
 		labelerror(ILLAB);
@@ -860,14 +849,14 @@ PUBLIC void ploc()
 
 /* .MACLIST pseudo-op */
 
-PUBLIC void pmaclist()
+PUBLIC void pmaclist(void)
 {
 	bumpsem(&maclist, 1);
 }
 
 /* .MAP pseudo-op */
 
-PUBLIC void pmap()
+PUBLIC void pmap(void)
 {
 	absexpres();
 	if (!(lastexp.data & UNDBIT)) {
@@ -880,7 +869,7 @@ PUBLIC void pmap()
 
 /* ORG pseudo-op */
 
-PUBLIC void porg()
+PUBLIC void porg(void)
 {
 	if (label != NUL_PTR)
 		labelerror(ILLAB);
@@ -895,14 +884,14 @@ PUBLIC void porg()
 
 /* RMB pseudo-op */
 
-PUBLIC void prmb()
+PUBLIC void prmb(void)
 {
 	constdata(1);
 }
 
 /* .SECT pseudo-op */
 
-PUBLIC void psect()
+PUBLIC void psect(void)
 {
 	if (label != NUL_PTR)
 		labelerror(ILLAB);
@@ -932,7 +921,7 @@ PUBLIC void psect()
 
 /* SET pseudo-op */
 
-PUBLIC void pset()
+PUBLIC void pset(void)
 {
 	register struct sym_s *labptr;
 
@@ -946,7 +935,7 @@ PUBLIC void pset()
 
 /* .TEXT pseudo-op */
 
-PUBLIC void ptext()
+PUBLIC void ptext(void)
 {
 	if (textseg <= 0)
 		setloc(TEXTLOC);
@@ -956,14 +945,14 @@ PUBLIC void ptext()
 
 /* .WARN pseudo-op */
 
-PUBLIC void pwarn()
+PUBLIC void pwarn(void)
 {
 	bumpsem(&as_warn, -1);
 }
 
 /* show redefined label and error, and set REDBIT */
 
-PRIVATE void showredefinedlabel()
+PRIVATE void showredefinedlabel(void)
 {
 	register struct sym_s *labptr;
 
@@ -975,7 +964,7 @@ PRIVATE void showredefinedlabel()
 	}
 }
 
-PUBLIC void showlabel()
+PUBLIC void showlabel(void)
 {
 	register struct sym_s *labptr;
 
@@ -988,8 +977,7 @@ PUBLIC void showlabel()
 
 /* set location segment */
 
-PRIVATE void setloc(seg)
-unsigned seg;
+PRIVATE void setloc(unsigned seg)
 {
 	if (pass == last_pass && seg != (lcdata & SEGM))
 		putobj((opcode_pt) (seg | OBJ_SET_SEG));
