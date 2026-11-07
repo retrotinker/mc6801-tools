@@ -122,6 +122,8 @@ void prematureeof P((void));
 void redefined P((char *name, char *message, char *archentry,
 		  char *deffilename, char *defarchentry));
 void interseg P((char *fname, char *aname, char *name));
+void import_counter P((char *name, int iseg, char *ifname, char *ianame,
+		       int dseg, char *dfname, char *daname));
 void byte_reloc_error P((char *fname, char *aname, char *name, int seg,
 			 bin_off_t offset, bin_off_t value, bin_off_t addr,
 			 int pcrel));

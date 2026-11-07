@@ -552,6 +552,16 @@ Undefined symbols are reported as
 \(lqundefined symbol:
 .IR name \(rq.
 .PP
+A symbol imported under a different location counter from the one it is
+defined in is reported with a warning, such as
+\(lqcounter is imported under LOC0 in main.o, but defined in LOC3 in
+vars.o\(rq.
+The link uses the definition, but the importing module chose its
+addressing for the counter it was imported under (see
+.B DPAGE
+in
+.BR as01 (1)).
+.PP
 A one\-byte address, from a direct address forced with
 .B <
 or an indexed offset, must end up in page zero

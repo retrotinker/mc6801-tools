@@ -1,0 +1,1 @@
+ld01: warning: counter is imported under LOC0 in impuse.o, but defined in LOC3 in impdef.o
