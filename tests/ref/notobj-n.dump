@@ -1,1 +1,1 @@
-nm: notobj.txt: Bad magic number
+objdump01: notobj.txt: Bad magic number
