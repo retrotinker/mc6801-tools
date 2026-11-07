@@ -1,5 +1,5 @@
 Name:           mc6801-tools
-Version:        1.3.0
+Version:        1.3.1
 Release:        1%{?dist}
 Summary:        Assembler, linker and binary utilities for the Motorola MC6801
 
@@ -68,6 +68,11 @@ test -s demo-check/main.wav
 %{_mandir}/man1/size01.1*
 
 %changelog
+* Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 1.3.1-1
+- Update to 1.3.1: ld01 links an import to its definition whatever the
+  order of the object files, warning if their location counters differ;
+  as01 lists each error once; nm01 and size01 name themselves in errors
+
 * Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 1.3.0-1
 - Update to 1.3.0: the as01 DPAGE directive gives page-zero variables
   placed by a linker script direct addressing, and allows their
