@@ -20,6 +20,7 @@ AR=$top/ar/ar01
 OD=$top/ld/objdump01
 OC=$top/ld/objcopy01
 SIM=$tests/sim/sim6801
+CASDEC=$tests/sim/casdec
 
 update=0
 if [ "${1:-}" = "-u" ]; then
@@ -275,7 +276,7 @@ echo $? > notobj-n.rc
 rm -f notobj.txt
 
 # conversions of the demo executable
-for f in srec ihex wav; do
+for f in srec ihex cas wav; do
 	"$OC" -O $f -n MAIN demo.out demo.$f > /dev/null 2>&1
 	echo $? > demo.$f.rc
 done
@@ -344,6 +345,51 @@ bss=$((0x$bss))
 	-d $((bss - 1))-$((bss + 6)) bssprog.srec > sim-bssprog.run 2>&1
 echo $? > sim-bssprog.rc
 rm -f bssprog.srec
+
+# the other output formats, run rather than just compared: the demo
+# from objcopy01's Intel hex, and decoded from its cassette file and
+# audio (as the MC-10 would load them), runs as from its S-records; so
+# does castest.s, which takes several cassette blocks; and ld01's Intel
+# hex output loads the same bytes as its S-records
+demo_run() {
+	"$SIM" -s 0x4FFF -r 0xFF00 -w 0xFFDE=0xFF10 -p 0xFF10 \
+		-d 0x4000-0x401F "$@" 2>&1
+}
+same() {	# NAME FILE1 FILE2
+	if cmp -s "$2" "$3"; then
+		echo "ok   $1"
+	else
+		echo "DIFF $1"
+	fi
+}
+{
+	demo_run demo.ihex > run.tmp
+	same "demo.ihex runs as demo.srec" sim-demo.run run.tmp
+	"$CASDEC" demo.cas > dec.srec 2> demo-cas.dec
+	demo_run dec.srec > run.tmp
+	same "demo.cas, decoded, runs as demo.srec" sim-demo.run run.tmp
+	"$CASDEC" -w demo.wav > dec.srec 2> demo-wav.dec
+	demo_run dec.srec > run.tmp
+	same "demo.wav, decoded, runs as demo.srec" sim-demo.run run.tmp
+
+	"$LD" -T 0x1000 -o castest.out castest.o
+	for f in srec cas wav; do
+		"$OC" -O $f -n CASTEST castest.out castest.$f
+	done
+	"$SIM" castest.srec > castest.run 2>&1
+	"$CASDEC" castest.cas > dec.srec 2> castest-cas.dec
+	"$SIM" dec.srec > run.tmp 2>&1
+	same "castest.cas, decoded, runs as castest.srec" castest.run run.tmp
+	"$CASDEC" -w castest.wav > dec.srec 2> castest-wav.dec
+	"$SIM" dec.srec > run.tmp 2>&1
+	same "castest.wav, decoded, runs as castest.srec" castest.run run.tmp
+
+	"$SIM" -L rom-srec.out > rom-srec.list
+	"$SIM" -L rom-ihex.out > run.tmp
+	same "rom-ihex.out loads as rom-srec.out" rom-srec.list run.tmp
+} > formats.result
+rm -f run.tmp dec.srec castest.out castest.srec castest.cas castest.wav \
+	rom-srec.list
 
 # an illegal opcode ($02, after a NOP) is an error
 printf '\001\002' > illegal.bin

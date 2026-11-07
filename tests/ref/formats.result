@@ -1,0 +1,6 @@
+ok   demo.ihex runs as demo.srec
+ok   demo.cas, decoded, runs as demo.srec
+ok   demo.wav, decoded, runs as demo.srec
+ok   castest.cas, decoded, runs as castest.srec
+ok   castest.wav, decoded, runs as castest.srec
+ok   rom-ihex.out loads as rom-srec.out

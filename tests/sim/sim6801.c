@@ -1,7 +1,8 @@
 /*
  * sim6801 - an MC6801 instruction set simulator for the regression tests
  *
- * Loads a program (Motorola S-records, or a raw binary at -a), runs it
+ * Loads a program (Motorola S-records, Intel hex, or a raw binary at
+ * -a), runs it
  * from its entry point until it stops, and prints the registers and any
  * memory ranges asked for with -d.  The tests compare that output with
  * references, so the programs the tools build are run, not just compared
@@ -13,8 +14,8 @@
  *
  * usage: sim6801 [options] file
  *   -a addr       load a raw binary file at addr (default: S-records)
- *   -e addr       start at addr (default: the S9 record's address, or
- *                 the reset vector at $FFFE)
+ *   -e addr       start at addr (default: the S9 record's address, the
+ *                 Intel hex start address, or the reset vector at $FFFE)
  *   -s addr       initial stack pointer (default $00FF)
  *   -r addr       call the program as a subroutine returning to addr:
  *                 push addr as the return address, and stop there
@@ -686,6 +687,63 @@ static int load_srec(FILE *f, const char *name, unsigned *entry)
 	return have_entry;
 }
 
+/* load Intel hex; returns 1 and sets *entry if it gives a start address
+   (a start address record, or the end of file record's address) */
+static int load_ihex(FILE *f, const char *name, unsigned *entry)
+{
+	char line[600];
+	int have_entry = 0;
+
+	while (fgets(line, sizeof line, f)) {
+		unsigned count, addr = 0, type = 0, sum, v = 0, i;
+		size_t len = strcspn(line, "\r\n");
+
+		line[len] = 0;
+		if (len == 0)
+			continue;
+		if (line[0] != ':' || len < 11 || !hexval(line + 1, 2, &count)
+		    || len != 11 + 2 * (size_t)count)
+			fatal("bad Intel hex record", name);
+		for (sum = 0, i = 0; i < count + 5; i++) {
+			if (!hexval(line + 1 + 2 * i, 2, &v))
+				fatal("bad Intel hex record", name);
+			sum += v;
+		}
+		if (sum & 0xFF)
+			fatal("Intel hex checksum error", name);
+		hexval(line + 3, 4, &addr);
+		hexval(line + 7, 2, &type);
+		switch (type) {
+		case 0:		/* data */
+			for (i = 0; i < count; i++) {
+				hexval(line + 9 + 2 * i, 2, &v);
+				mem[(addr + i) & 0xFFFF] = v;
+				loaded[(addr + i) & 0xFFFF] = 1;
+			}
+			break;
+		case 1:		/* end of file, often with the start */
+			*entry = addr;
+			return 1;
+		case 2:		/* extended addresses: only 0 fits */
+		case 4:
+			hexval(line + 9, 4, &v);
+			if (count != 2 || v != 0)
+				fatal("Intel hex address beyond 64K", name);
+			break;
+		case 3:		/* start address: CS:IP or 32 bits */
+		case 5:
+			if (count != 4)
+				fatal("bad Intel hex start address", name);
+			hexval(line + 13, 4, entry);
+			have_entry = 1;
+			break;
+		default:
+			fatal("unsupported Intel hex record type", name);
+		}
+	}
+	return have_entry;
+}
+
 static void load_binary(FILE *f, unsigned addr)
 {
 	int c;
@@ -846,8 +904,15 @@ int main(int argc, char **argv)
 		fatal("cannot open", file);
 	if (raw)
 		load_binary(f, loadaddr);
-	else
-		have_entry = load_srec(f, file, &entry);
+	else {
+		int c = getc(f);
+
+		ungetc(c, f);
+		if (c == ':')
+			have_entry = load_ihex(f, file, &entry);
+		else
+			have_entry = load_srec(f, file, &entry);
+	}
 	fclose(f);
 
 	if (listing) {

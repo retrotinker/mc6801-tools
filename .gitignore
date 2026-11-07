@@ -8,4 +8,5 @@ ld/objdump01
 doc/build/
 tests/out/
 tests/sim/sim6801
+tests/sim/casdec
 !tests/ref/*.o

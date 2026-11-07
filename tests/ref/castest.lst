@@ -1,0 +1,23 @@
+00001                   ; castest.s - a program longer than a cassette block (255 bytes): it adds
+00002                   ; up its 600 data bytes, 200 each of $11, $22 and $33, so A ends as $B0
+00003                   ; (the low byte of 200 * $66)
+00004 0000              	LOC	0
+00005                   	ENTRY	cstart
+00006 0000   CE   000E> cstart	ldx	#data
+00007 0003   4F         	clra
+00008 0004   AB     00  sum	adda	0,x
+00009 0006   08         	inx
+00010 0007   8C   0266> 	cpx	#dend
+00011 000A   26     F8  	bne	sum
+00012 000C   20     FE  	bra	*
+00013 000E        00C8  data	rmb	200,$11
+00014 00D6        00C8  	rmb	200,$22
+00015 019E        00C8  	rmb	200,$33
+00016             0266> dend
+
+Symbols:
+cstart                      0 0000 R N data                        0 000E R   
+dend                        0 0266 R   sum                         0 0004 R   
+
+00000 errors
+00000 warnings
