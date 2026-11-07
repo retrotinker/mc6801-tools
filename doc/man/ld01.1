@@ -551,6 +551,22 @@ Start a linker script from the default layout, edit it, and use it:
 Undefined symbols are reported as
 \(lqundefined symbol:
 .IR name \(rq.
+.PP
+A one\-byte address, from a direct address forced with
+.B <
+or an indexed offset, must end up in page zero
+.RB ( $00 \- $ff ).
+One that doesn\(aqt is an error, naming the module (or library member),
+the symbol, or the location counter and offset in the module, its
+address, and the address of the byte:
+.PP
+.RS
+.nf
+ld01: main.o: count ($5004) is not in page zero ($00\-$ff), at $e001
+ld01: main.o: LOC3+$0002 ($5002) is not in page zero ($00\-$ff), at $e005
+.fi
+.RE
+.PP
 The exit status is 0 on success and non\-zero on error.
 .SH SEE ALSO
 .BR as01 (1),
