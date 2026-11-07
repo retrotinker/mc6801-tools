@@ -325,9 +325,11 @@ are errors.
 
 The assembler chooses between direct and extended addressing on its
 own. It uses direct addressing when the address is known in the first
-pass and is in `$00`–`$FF`. Forward references and relocatable
-addresses always use extended addressing. You can force the choice by
-writing `<` (direct) or `>` (extended) before the operand:
+pass and is in `$00`–`$FF`. Forward references use extended
+addressing, and so do relocatable addresses, unless their location
+counter is declared with `DPAGE` (see [Page-zero
+variables](#page-zero-variables)). You can force the choice by writing
+`<` (direct) or `>` (extended) before the operand:
 
 ```
         ldaa    <port           ; direct, even if port is defined later
@@ -336,8 +338,7 @@ writing `<` (direct) or `>` (extended) before the operand:
 
 A forced direct address must fit in a byte. The assembler reports
 `address out of bounds` for an absolute address, or one in the module,
-that doesn't, and the linker checks imported and relocated addresses
-(see [Page zero](#page-zero-variables)).
+that doesn't, and the linker checks imported and relocated addresses.
 
 The MC6801 has no direct mode for the read-modify-write instructions
 (`NEG`, `COM`, `LSR`, `ROR`, `ASR`, `ASL`/`LSL`, `ROL`, `DEC`, `INC`,
@@ -380,7 +381,7 @@ separated by `/` below.
 
 | Directive | Meaning |
 |:----------|:--------|
-| `FCB`/`.BYTE`/`DB`/`.DATA1` *expr*,... | Bytes |
+| `FCB`/`.BYTE`/`DB`/`.DATA1` *expr*,... | Bytes: numbers, or addresses of page-zero symbols (`DPAGE`) |
 | `FDB`/`.WORD`/`DW`/`.SHORT`/`.DATA2` *expr*,... | 16-bit words, high byte first |
 | `FCC`/`.ASCII` *string* | Characters of a string |
 | `.ASCIZ` *string* | Characters of a string, then a zero byte |
@@ -426,6 +427,7 @@ spaces  rmb     8,$20           ; 8 bytes containing $20
 | `.TEXT` | Switch to location counter 0 |
 | `.DATA`, `.ROM`, `.BSS` | Switch to location counter 3 |
 | `.SECT` *name* | Switch to section `.text`, `.data` or `.bss` |
+| `DPAGE` *n* | Location counter *n* holds page-zero data (see [Page-zero variables](#page-zero-variables)) |
 | `ORG` *expr* | Set the location counter to *expr* |
 | `BLOCK` *expr* ... `ENDB` | Assemble the enclosed lines at *expr*, then return to the previous location |
 | `.ALIGN` *n* | Advance to a multiple of *n* |
@@ -604,6 +606,82 @@ Most MC6801 programs need only counter 0. Start each module with
 
 This is the default layout. A linker script can place each module's
 counters anywhere (Chapter \ref{linker-scripts}).
+
+## Page-zero variables {#page-zero-variables}
+
+The MC6801's page zero (`$0000`–`$00FF`) holds its I/O registers and
+its 128 bytes of internal RAM, at `$0080`–`$00FF`. Instructions reach it
+with *direct* addressing, a one-byte address, which saves a byte and a
+cycle over extended addressing. The assembler can only use direct
+addressing for an address it knows, though, and the address of a
+variable that the linker places isn't known until the program is
+linked.
+
+`DPAGE` *n* tells the assembler that location counter *n* holds
+page-zero data. Put the variables in that counter, and declare it with
+`DPAGE` in every module that uses them, before using them:
+
+```
+; zpvars.s - variables in page zero, in location counter 4
+        DPAGE   4
+        LOC     4
+        EXPORT  count, flags
+count   rmb     1
+flags   rmb     1
+```
+
+```
+; zpmain.s - uses them
+        DPAGE   4
+        LOC     4
+        IMPORT  count, flags    ; imported while counter 4 is current
+        LOC     0
+start   ldaa    count           ; 96 xx: direct
+        staa    flags           ; 97 xx: direct
+        ldab    >count          ; F6 xxxx: extended, forced with >
+        inc     count           ; 7C xxxx: INC has no direct mode
+        ldx     #count          ; CE xxxx: a 16-bit immediate
+        ldab    #flags          ; C6 xx: the address as a byte
+        ldaa    total           ; B6 xxxx: total isn't declared yet
+        rts
+
+        LOC     4
+total   rmb     2
+```
+
+* **Which symbols.** A symbol is in page zero if it is defined in a
+  `DPAGE` counter, imported while that counter is current, or declared
+  `COMM` in it. An `IMPORT` records the current location counter, so
+  import page-zero variables under their counter, as `zpmain.s` does;
+  the module that exports them must use the same counter, or the linker
+  reports them as undefined.
+* **Direct addressing** is used wherever the instruction has a direct
+  mode. `>` still forces extended addressing, and the read-modify-write
+  instructions, such as `INC`, have no direct mode.
+* **Addresses as bytes.** The address of a page-zero symbol also fits
+  where a byte is expected: in 8-bit immediates, such as `ldab #flags`,
+  and in `FCB` data.
+* **Declare before use.** As with `EQU`, a symbol used before it is
+  defined, imported or declared gets extended addressing, as `total`
+  does. Immediates and `FCB` accept it, as their size doesn't depend on
+  it.
+
+The linker script must put the counter, and its common blocks, in page
+zero, for example with
+`.zpage (NOLOAD) : { *(LOC4) *(COMMON4) } > ZP`, where `ZP` is a
+`MEMORY` region at `$0080`. The linker checks every one-byte address:
+if the script puts one outside page zero, the link fails with an error
+such as
+
+```
+ld01: zpmain.o: count ($5004) is not in page zero ($00-$ff), at $e001
+```
+
+A program whose RAM is all in page zero can declare its data counter
+itself, as the ROM example in section \ref{a-program-in-rom} does with
+`DPAGE 3`. On the MC-10, the ROM and BASIC keep their own variables in
+the internal RAM, so a program that returns to BASIC must leave those
+bytes alone.
 
 ## Invoking ld01
 
@@ -1049,7 +1127,11 @@ This example is a complete program for a bare MC6801 system with an
 
 ```
 ; prog.s - a tiny program: shows a changing pattern on port 1
+        DPAGE   3
 PORT1   equ     $02
+        LOC     3
+pattern fcb     $55
+count   COMM    1
         LOC     0
         EXPORT  main
 main    ldaa    pattern
@@ -1057,19 +1139,23 @@ loop    staa    PORT1
         coma
         inc     count
         bra     loop
-
-        LOC     3
-pattern fcb     $55
-count   COMM    1
 ```
 
 `pattern` is initialized data, and `count` is an uninitialized
 variable. Both must be in RAM, but RAM is empty when the system starts,
-so the start-up code copies the initialized data from a copy in ROM:
+so the start-up code copies the initialized data from a copy in ROM.
+All of the program's RAM is the MC6801's internal RAM, in page zero, so
+both modules declare their data counter with `DPAGE 3`, and define their
+variables before the code that uses them. Their references to `src`,
+`dst` and `pattern` then use direct addressing:
 
 ```
 ; crt0.s - start-up code for a ROM program: sets up the stack, copies
 ; the initialized data from ROM to RAM, and calls main
+        DPAGE   3               ; this program's data is all in page zero
+        LOC     3
+src     COMM    2               ; copy pointers
+dst     COMM    2
         LOC     0
         ENTRY   reset
         EXPORT  ignore
@@ -1096,10 +1182,6 @@ run     jsr     main
         bra     *
 
 ignore  rti                     ; for interrupts that aren't used
-
-        LOC     3
-src     COMM    2               ; copy pointers
-dst     COMM    2
 ```
 
 The MC6801 finds the address of the reset routine, and of each interrupt
@@ -1187,6 +1269,11 @@ $ ld01 -S rom.ld -o rom.s19 crt0.o vectors.o prog.o
   the output: the variables only need addresses in RAM.
 * **`__stack_top`** is the last byte of RAM, from `ORIGIN` and `LENGTH`.
 * **`ASSERT`** checks that the vector table is exactly 16 bytes.
+* **`DPAGE 3`** works because the script puts all of counter 3, and
+  its common blocks, in `RAM`, which is in page zero. It makes the code
+  7 bytes smaller (`$38` bytes instead of `$3F`), and the copy loop 4
+  cycles faster for each byte. If the script put `RAM` anywhere else,
+  the link would fail.
 * **`FILL(0xFF)`** fills gaps with `$FF`, like an erased EPROM.
 * **`OUTPUT_FORMAT(srec)`** writes Motorola S-records. An a.out file
   can't hold this program: its parts are at `$E000` and `$FFF0`, and
@@ -1196,17 +1283,17 @@ The layout:
 
 ```
 Memory region   Origin   Length   Used
-ROM             0000e000 00001ff0 00000040
+ROM             0000e000 00001ff0 00000039
 VEC             0000fff0 00000010 00000010
 RAM             00000080 00000080 0000000d
 
 Section         Address  Size     Load
 .vectors        0000fff0 00000010
     0000fff0 00000010 vectors.o(LOC0)
-.text           0000e000 0000003f
-    0000e000 00000034 crt0.o(LOC0)
-    0000e034 0000000b prog.o(LOC0)
-.data           00000080 00000001 0000e03f
+.text           0000e000 00000038
+    0000e000 0000002e crt0.o(LOC0)
+    0000e02e 0000000a prog.o(LOC0)
+.data           00000080 00000001 0000e038
     00000080 00000001 prog.o(LOC3)
 .bss            00000081 0000000c (NOLOAD)
     00000081 00000008 crt0.o(COMMON3)
@@ -1214,18 +1301,18 @@ Section         Address  Size     Load
 ```
 
 The **Load** column shows that `.data` runs at `$0080` but is stored at
-`$E03F`, right after the code. The S-records have one run for each
+`$E038`, right after the code. The S-records have one run for each
 part written to the output, with the entry point, `reset`, in the last
 record:
 
 ```
 S00A0000726F6D2E7331399C
-S113E0008E00FFCE00808C00812723CEE03FFF00EE
-S113E01085CE0080FF0081FE0085A60008FF0085F4
-S113E020FE0081A70008FF00818C008126E9BDE085
-S112E0303420FE3BB600809702437C008920F821
-S104E03F5587
-S113FFF0E033E033E033E033E033E033E033E00098
+S113E0008E00FFCE00808C0081271DCEE038DF8596
+S113E010CE0080DF81DE85A60008DF85DE81A700D3
+S113E02008DF818C008126EDBDE02E20FE3B96802A
+S10BE0309702437C008920F8EB
+S104E038558E
+S113FFF0E02DE02DE02DE02DE02DE02DE02DE000C2
 S5030006F6
 S903E0001C
 ```
@@ -1295,15 +1382,11 @@ deliberately.
   output with `objcopy01`, define `__btext`, `__etext` and `__bdata` as
   the default script does, or give `objcopy01` the addresses with `-T`
   and `-D`.
-* **Page zero.** []{#page-zero-variables}A script can put variables in
-  page zero (`$0000`–`$00FF`), but `as01` still uses extended addressing
-  for them, because it doesn't know their addresses when it assembles a
-  module. To get direct addressing, write `<` before each reference, or
-  give the variables fixed addresses with `EQU`. The linker checks that
-  every `<` address, and every relocatable indexed offset, ends up in
-  page zero; if the script puts one elsewhere, it reports an error such
-  as
-  `main.o: count ($5004) is not in page zero ($00-$ff), at $e001`.
+* **Page zero.** Variables that a script puts in page zero
+  (`$0000`–`$00FF`) get direct addressing only if the modules that use
+  them declare their location counter with `DPAGE`, or write `<` before
+  each reference (see [Page-zero variables](#page-zero-variables)). The
+  linker checks that every such address ends up in page zero.
 * **Common blocks** are allocated in multiples of 4 bytes, as in the
   default layout.
 
@@ -1447,8 +1530,9 @@ The linker pulls in `crtstart.o` because of `-Cstart`, and `one.o`,
 * **Warnings are off by default**; use `as01 -w-` or `.WARN 1`.
 * **Linker script patterns can't exclude files**, so a section that
   takes particular modules must come before catch-all patterns.
-* **Relocatable symbols in page zero** use extended addressing, because
-  `as01` doesn't know their addresses.
+* **Page-zero variables used before they are declared** get extended
+  addressing, as `DPAGE` only applies to symbols the assembler already
+  knows.
 
 \appendix
 

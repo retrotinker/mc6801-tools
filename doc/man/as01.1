@@ -203,6 +203,29 @@ module, that doesn\(aqt, and
 checks imported and relocated addresses when it links.
 Direct addressing is chosen only when the address is known in pass 1,
 so forward references use extended addressing.
+.PP
+A relocatable address, such as a variable that a linker script places,
+uses extended addressing unless its location counter was declared with
+.BR DPAGE .
+An operand that is relocatable in such a counter (a symbol defined in
+it, imported while it was current, or declared
+.B COMM
+in it) uses direct addressing, with a one\-byte address that
+.BR ld01 (1)
+checks is in page zero.
+Its address can also be used where a byte is expected, in 8\-bit
+immediates
+.RB ( "ldaa #count" )
+and
+.B FCB
+data.
+As with
+.BR EQU ,
+a symbol used before it is defined, imported or declared gets extended
+addressing; immediates and
+.BR FCB ,
+whose size doesn\(aqt depend on it, accept it.
+.PP
 The read\-modify\-write instructions
 .RB ( NEG ,
 .BR COM ,
@@ -226,6 +249,8 @@ Alternative spellings are separated by
 .TP
 .BR FCB / .BYTE / DB / .DATA1 " \fIexpr\fP[\fB,\fP\fIexpr\fP...]"
 Define bytes.
+Each value is absolute, or the address of a page\-zero symbol (see
+.BR DPAGE ).
 .TP
 .BR FDB / .WORD / DW / .SHORT / .DATA2 " \fIexpr\fP[\fB,\fP\fIexpr\fP...]"
 Define 16\-bit words (big\-endian).
@@ -298,6 +323,19 @@ Switch to location counter
 (0 to 15).
 The linker places counters 0 and 1 in the text segment and the others in
 the data segment.
+.TP
+.BI DPAGE " n"
+Declare that location counter
+.I n
+(0 to 15) holds page\-zero data
+.RB ( $00 \- $FF ),
+from here to the end of the module.
+References to its symbols then use direct addressing (see
+.BR "Addressing modes" ).
+The linker script must place the counter, and its common blocks, in
+page zero.
+The modules that define and import a counter\(aqs symbols must agree on
+the counter, and declare it before using its symbols.
 .TP
 .BR .TEXT ", " .DATA ", " .ROM ", " .BSS
 Switch to location counter 0

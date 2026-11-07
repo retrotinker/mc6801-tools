@@ -1,5 +1,5 @@
-instruction count reached at E037 after 200 instructions
+instruction count reached at E030 after 200 instructions
 A=AA B=00 X=0081 SP=00FD CC=D1
 0000: 00 00 55 00
-0080: 55 00 81 00 00 E0 40 00 00 2D 00 00 00
-00F8: 00 00 00 00 00 00 E0 31
+0080: 55 00 81 00 00 E0 39 00 00 2D 00 00 00
+00F8: 00 00 00 00 00 00 E0 2B

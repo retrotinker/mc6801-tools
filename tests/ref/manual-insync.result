@@ -3,3 +3,5 @@ ok   mc10.ld
 ok   prog.s
 ok   rom.ld
 ok   vectors.s
+ok   zpmain.s
+ok   zpvars.s
