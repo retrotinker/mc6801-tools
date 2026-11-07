@@ -1,5 +1,5 @@
 Name:           mc6801-tools
-Version:        1.6.0
+Version:        1.6.1
 Release:        1%{?dist}
 Summary:        Assembler, linker and binary utilities for the Motorola MC6801
 
@@ -68,6 +68,10 @@ test -s demo-check/main.wav
 %{_mandir}/man1/size01.1*
 
 %changelog
+* Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 1.6.1-1
+- Update to 1.6.1: ld01 reports initialized data, or BYTE and WORD, in
+  a NOLOAD section instead of silently leaving it out
+
 * Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 1.6.0-1
 - Update to 1.6.0: executables keep symbol names longer than 8
   characters (ld01 -y is the default), and objdump01 -d shows them
