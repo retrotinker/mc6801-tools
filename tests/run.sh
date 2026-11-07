@@ -182,6 +182,14 @@ echo $? > rel.rc
 "$OD" rel.a > rel.dump 2>&1
 rm -f rel.a
 
+# a file that isn't an object file: an error, and exit status 1
+echo "not an object file" > notobj.txt
+"$OD" notobj.txt > notobj.dump 2>&1
+echo $? > notobj.rc
+"$OD" -n notobj.txt > notobj-n.dump 2>&1
+echo $? > notobj-n.rc
+rm -f notobj.txt
+
 # conversions of the demo executable
 for f in srec ihex wav; do
 	"$OC" -O $f -n MAIN demo.out demo.$f > /dev/null 2>&1
