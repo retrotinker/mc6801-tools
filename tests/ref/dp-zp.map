@@ -1,0 +1,12 @@
+dpref           +dpref.o
+dpvars          +dpvars.o
+Section         Address  Size     Load
+.text           0000e000 0000000b
+    0000e000 0000000b dpref.o(LOC0)
+.data           00000080 00000004
+    00000080 00000003 dpref.o(LOC3)
+    00000083 00000001 dpvars.o(LOC3)
+
+               dpref                 local  3  00000080  r
+               dpref                 start  0  0000e000  R N
+              dpvars               counter  3  00000083  R

@@ -1,0 +1,10 @@
+00001                   ; dpcall.s - calls dpref.s, so that it is linked from a library
+00002 0000              	LOC	0
+00003                   	IMPORT	start
+00004 0000   BD   0000> 	jsr	start
+
+Symbols:
+start                       0 0000 R I 
+
+00000 errors
+00000 warnings

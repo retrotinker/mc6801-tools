@@ -113,6 +113,12 @@ PRIVATE void doaltind(void)
 		if (byteflag || (!wordflag && !(lastexp.data & (FORBIT | RELBIT)) && (lastexp.offset >> 0x8) == dirpag)) {	/* direct addressing */
 			if (opcode >= 0x80)
 				opcode |= 0x10;
+			/* the address is written in one byte: an absolute
+			   address, or an offset in one of this module's
+			   counters, must fit (ld01 checks imported ones) */
+			if (pass2 && !(lastexp.data & (IMPBIT | UNDBIT))
+			    && !is8bitadr(lastexp.offset))
+				error(ABOUNDS);
 		} else {	/* extended addressing */
 
 			if (opcode < 0x80)
