@@ -27,8 +27,8 @@ install-man:
 check: all $(SIM)
 	tests/run.sh
 
-$(SIM): tests/sim/sim6801.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ tests/sim/sim6801.c
+$(SIM): tests/sim/sim6801.c ld/m6801ops.c ld/m6801ops.h
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ tests/sim/sim6801.c ld/m6801ops.c
 
 clean-sim:
 	rm -f $(SIM)
