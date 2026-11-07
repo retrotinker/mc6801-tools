@@ -81,7 +81,7 @@ test -s demo-check/main.wav
 * Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 1.2.3-1
 - Update to 1.2.3: fix ar01 corrupting an archive after a failed run,
   as01 crashing on long -n names and rejecting long paths, and objdump01
-  exiting 0 after errors; run the regression tests in %check
+  exiting 0 after errors; run the regression tests in %%check
 
 * Fri Nov 06 2026 John W. Linville <linville@tuxdriver.com> - 1.2.2-1
 - Update to 1.2.2: ar01 keeps the .o suffix when truncating a long
