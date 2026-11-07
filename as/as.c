@@ -273,17 +273,15 @@ get_any_list_file:
 		} else if (infil != 0)
 			usage();	/* no multiple sources */
 		else {
-			if (strlen(arg) > FILNAMLEN)
-				as_abort("source file name too long");
 			infiln = infil0 = 1;
-			infil = open_input(strcpy(filnamptr, arg));
+			infil = open_input(filnamptr = arg);
 			opened_file = 1;
 		}
 	}
 	while (--argc != 1);
 	if (!opened_file) {
 		infiln = infil0 = 1;
-		infil = open_input(strcpy(filnamptr, "-"));
+		infil = open_input(filnamptr = "-");
 	}
 	inidata = (~binaryg & inidata) | (RELBIT | UNDBIT);
 }				/* IMPBIT from inidata unless binaryg */

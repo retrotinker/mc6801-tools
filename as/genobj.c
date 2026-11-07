@@ -263,7 +263,7 @@ PUBLIC void objheader(void)
 	struct sym_s **copytop;
 	struct sym_s **hashptr;
 	struct lc_s *lcp;
-	char module_name[FILNAMLEN + 1];
+	char *module_name;
 	char *nameptr;
 	unsigned offset;
 	unsigned segsizebytes;
@@ -287,7 +287,8 @@ PUBLIC void objheader(void)
 	if (truefilename == NUL_PTR)
 		truefilename = filnamptr;
 	nameptr = strrchr(truefilename, DIRCHAR);
-	strcpy(module_name, nameptr != NUL_PTR ? nameptr + 1 : truefilename);
+	nameptr = nameptr != NUL_PTR ? nameptr + 1 : truefilename;
+	module_name = strcpy(asalloc(strlen(nameptr) + 1), nameptr);
 	if ((nameptr = strrchr(module_name, '.')) != NUL_PTR)
 		*nameptr = 0;
 	strsiz = strlen(module_name) + 1;
