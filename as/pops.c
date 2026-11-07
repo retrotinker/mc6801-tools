@@ -412,6 +412,7 @@ PUBLIC void fatalerror(char *err_str)
 {
 	error(err_str);
 	skipline();
+	fatal_listing = TRUE;	/* as01 stops after this line */
 	listline();
 	finishup();
 }

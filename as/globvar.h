@@ -30,6 +30,7 @@ EXTERN unsigned toterr;		/* total errors */
 EXTERN unsigned totwarn;	/* total warnings */
 
 EXTERN bool_t list_force;	/* Force line to be listed - no error */
+EXTERN bool_t fatal_listing;	/* list this line, whatever the pass */
 
 /* bookeeping for current line */
 
