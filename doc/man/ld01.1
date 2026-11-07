@@ -385,6 +385,13 @@ output format.
 .PP
 .B NOLOAD
 sections take up addresses but aren\(aqt written to the output.
+They may only hold space reserved with
+.B RMB
+and common blocks: a module\(aqs initialized data, or
+.B BYTE
+or
+.BR WORD ,
+in one is an error, since it would be lost.
 .B = fill
 sets the byte for gaps in the section.
 .B ALIGN
@@ -592,6 +599,12 @@ ld01: main.o: count ($5004) is not in page zero ($00\-$ff), at $e001
 ld01: main.o: LOC3+$0002 ($5002) is not in page zero ($00\-$ff), at $e005
 .fi
 .RE
+.PP
+Initialized data in a module\(aqs location counter that the script puts
+in a
+.B NOLOAD
+section is an error, reported once for each module and counter, as in
+\(lqmain.o: LOC4 has initialized data, but .bss is NOLOAD\(rq.
 .PP
 The exit status is 0 on success and non\-zero on error.
 .SH SEE ALSO

@@ -1344,7 +1344,10 @@ $ ld01 -S rom.ld -o rom.s19 crt0.o vectors.o prog.o
   because `crt0.s` imports them. Every output section gets such
   symbols: `__name_start`, `__name_end` and `__name_load`.
 * **`.bss`** holds the common blocks. `NOLOAD` means it isn't written to
-  the output: the variables only need addresses in RAM.
+  the output: the variables only need addresses in RAM. A `NOLOAD`
+  section can only hold common blocks and space reserved with `RMB`:
+  initialized data there would be lost, so the linker reports it as an
+  error.
 * **`__stack_top`** is the last byte of RAM, from `ORIGIN` and `LENGTH`.
 * **`ASSERT`** checks that the vector table is exactly 16 bytes.
 * **`DPAGE 3`** works because the script puts all of counter 3, and
