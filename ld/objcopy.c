@@ -117,6 +117,8 @@ void match_syms(FILE *ifd, struct exec header)
 	while (numsearchsyms && numsyms--) {
 		if (fread(&symbol, sizeof(symbol), 1, ifd) != 1)
 			fatal("Cannot read symbol information!");
+		if (symbol.n_sclass == 0)	/* the rest of a long name */
+			continue;
 
 		for (i = 0; i < NUM_SEARCH_SYMS; i++) {
 			if (!strncmp(symbol.n_name, searchsyms[i].n_name,

@@ -96,6 +96,7 @@ PUBLIC int main(int argc, char **argv)
 	syminit();
 	typeconv_init(INT_BIG_ENDIAN, LONG_BIG_ENDIAN);
 	outfilename = NUL_PTR;
+	flag['y'] = TRUE;	/* long symbol names; -y- for 8 characters */
 	for (argn = 1; argn < argc; ++argn) {
 		arg = argv[argn];
 		if (*arg != '-') {
@@ -116,7 +117,7 @@ PUBLIC int main(int argc, char **argv)
 			case 'm':	/* print modules linked */
 			case 's':	/* strip symbols */
 			case 'd':	/* Make a headerless outfile */
-			case 'y':	/* Use a newer symbol table */
+			case 'y':	/* extended symbol table: long names */
 				if (arg[2] == 0)
 					flag[(int)arg[1]] = TRUE;
 				else if (arg[2] == '-' && arg[3] == 0)
