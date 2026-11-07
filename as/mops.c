@@ -88,7 +88,6 @@ PRIVATE void doaltind(void)
 		wordflag = TRUE;
 		getsym();
 	}
-	expearly = FALSE;
 	expres();
 	if (sym == COMMA) {	/* offset from register */
 		getsym();
@@ -113,12 +112,13 @@ PRIVATE void doaltind(void)
 		}
 		/* direct addressing: forced, or an absolute address in
 		   page zero, or a page-zero address declared with DPAGE;
-		   either known when first used, so every pass agrees */
+		   a forward reference's is known from the second pass, and
+		   the passes go on until the labels stop moving */
 		if (byteflag
 		    || (!wordflag
 			&& ((!(lastexp.data & (FORBIT | RELBIT))
 			     && (lastexp.offset >> 0x8) == dirpag)
-			    || (!expearly && dpagerel())))) {
+			    || dpagerel()))) {
 			if (opcode >= 0x80)
 				opcode |= 0x10;
 			/* the address is written in one byte: an absolute

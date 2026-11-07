@@ -23,7 +23,7 @@ dpstart	lds	#$7F
 	ldx	#count		; 16-bit immediate: CE
 	ldaa	#count		; 8-bit immediate: 86
 	ldab	#shared+1	; 8-bit immediate, imported: C6
-	stx	later		; extended, a forward reference: FF
+	stx	later		; direct, a forward reference: DF
 	ldaa	#later		; 8-bit immediate, a forward reference: 86
 	ldx	#table
 	bra	*

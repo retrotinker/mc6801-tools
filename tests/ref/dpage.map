@@ -1,15 +1,15 @@
 dpage           +dpage.o
 dpshared        +dpshared.o
 Section         Address  Size     Load
-.text           0000e000 0000002a
-    0000e000 0000002a dpage.o(LOC0)
+.text           0000e000 00000029
+    0000e000 00000029 dpage.o(LOC0)
 .zpage          00000080 00000008
     00000080 00000006 dpage.o(LOC5)
     00000086 00000001 dpshared.o(LOC5)
     00000087 00000001 dpage.o(COMMON5)
 
                dpage                 count  5  00000080  r
-               dpage                 table  0  0000e024  r
+               dpage                 table  0  0000e023  r
                dpage                 flags  5  00000087  R C
                dpage               dpstart  0  0000e000  R N
                dpage                 later  5  00000084  r

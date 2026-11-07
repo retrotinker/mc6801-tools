@@ -9,7 +9,7 @@ start   ldaa    count           ; 96 xx: direct
         inc     count           ; 7C xxxx: INC has no direct mode
         ldx     #count          ; CE xxxx: a 16-bit immediate
         ldab    #flags          ; C6 xx: the address as a byte
-        ldaa    total           ; B6 xxxx: total isn't declared yet
+        ldaa    total           ; 96 xx: direct, though total comes later
         rts
 
         LOC     5

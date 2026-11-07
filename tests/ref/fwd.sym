@@ -1,0 +1,6 @@
+0 1234 ---A- FAR
+0 0002 ---A- PORT
+0 0082 ---A- PTR
+0 0080 ---A- RAMVAR
+5 0000 --IR- later
+0 0000 ---R- start

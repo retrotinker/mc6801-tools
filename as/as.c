@@ -49,7 +49,9 @@ PUBLIC int main(int argc, char **argv)
 	typeconv_init(INT_BIG_ENDIAN, LONG_BIG_ENDIAN);
 	as_warn.global = TRUE;	/* constant */
 	as_warn.semaphore = 0;	/* warnings on, unless -w */
-	last_pass = 1;
+	/* at least three passes: a forward reference's size is only known
+	   after the first, and more passes follow while labels move */
+	last_pass = 2;
 	process_args(argc, argv);
 	initscan();
 	line_zero();

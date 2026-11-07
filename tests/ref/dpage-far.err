@@ -5,7 +5,8 @@ ld01: dpage.o: shared ($5006) is not in page zero ($00-$ff), at $e00a
 ld01: dpage.o: flags ($5007) is not in page zero ($00-$ff), at $e00c
 ld01: dpage.o: LOC5 ($5000) is not in page zero ($00-$ff), at $e017
 ld01: dpage.o: shared ($5007) is not in page zero ($00-$ff), at $e019
-ld01: dpage.o: LOC5+$0004 ($5004) is not in page zero ($00-$ff), at $e01e
-ld01: dpage.o: LOC5 ($5000) is not in page zero ($00-$ff), at $e024
-ld01: dpage.o: shared ($5006) is not in page zero ($00-$ff), at $e025
-ld01: dpage.o: LOC5+$0004 ($5004) is not in page zero ($00-$ff), at $e026
+ld01: dpage.o: LOC5+$0004 ($5004) is not in page zero ($00-$ff), at $e01b
+ld01: dpage.o: LOC5+$0004 ($5004) is not in page zero ($00-$ff), at $e01d
+ld01: dpage.o: LOC5 ($5000) is not in page zero ($00-$ff), at $e023
+ld01: dpage.o: shared ($5006) is not in page zero ($00-$ff), at $e024
+ld01: dpage.o: LOC5+$0004 ($5004) is not in page zero ($00-$ff), at $e025

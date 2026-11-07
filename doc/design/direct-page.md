@@ -423,6 +423,10 @@ These questions were settled when the design was reviewed:
 2. **Forward references** are treated like forward references to `EQU`
    symbols: extended addressing for instructions, and accepted where
    the size doesn't depend on the symbol (8-bit immediates and `FCB`).
+   Revised after 2.0: `as01` now makes at least three passes, and more
+   while instructions change size, so forward references to
+   direct-page symbols, and to `EQU` symbols in page zero, get direct
+   addressing too; the "used early" record is gone.
 3. **Byte values:** `fcb count` and `ldaa #count` are allowed for
    direct-page symbols, with one-byte relocations that `ld01` checks.
 4. **The object file** doesn't record `DPAGE`. The format stays as it

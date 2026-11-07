@@ -201,8 +201,9 @@ A forced direct address must fit in a byte: the assembler reports
 module, that doesn\(aqt, and
 .BR ld01 (1)
 checks imported and relocated addresses when it links.
-Direct addressing is chosen only when the address is known in pass 1,
-so forward references use extended addressing.
+Direct addressing is chosen whenever the address is in page zero,
+even for a symbol defined later: the assembler makes at least three
+passes, and more while the sizes of instructions are still changing.
 .PP
 A relocatable address, such as a variable that a linker script places,
 uses extended addressing unless its location counter was declared with
@@ -219,12 +220,8 @@ immediates
 and
 .B FCB
 data.
-As with
-.BR EQU ,
-a symbol used before it is defined, imported or declared gets extended
-addressing; immediates and
-.BR FCB ,
-whose size doesn\(aqt depend on it, accept it.
+This works for a symbol defined, imported or declared later in the
+module too.
 .PP
 The read\-modify\-write instructions
 .RB ( NEG ,

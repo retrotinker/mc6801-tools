@@ -333,7 +333,8 @@ echo $? > sim-dp-zp.rc
 
 # dpage.s linked with counter 5 in page zero: the page-zero data it
 # changed, its registers, and its table of addresses
-"$SIM" -d 0x0080-0x008F -d 0xE024-0xE029 dpage.out > sim-dpage.run 2>&1
+t=$((0x$(awk '$2 == "table" { print $4 }' dpage.map)))	# from the map
+"$SIM" -d 0x0080-0x008F -d $t-$((t + 5)) dpage.out > sim-dpage.run 2>&1
 echo $? > sim-dpage.rc
 
 # bssprog.s: its uninitialized data starts as garbage ($AA), and the

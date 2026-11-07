@@ -1,0 +1,25 @@
+00001                   ; fwd.s - forward references: an address in page zero gets direct
+00002                   ; addressing even when it is defined, or imported, later; as01 makes
+00003                   ; more passes while instructions shrink and labels move
+00004                   	DPAGE	5
+00005 0000              	LOC	0
+00006 0000   96     02  start	ldaa	PORT		; 96 02: an EQU defined later
+00007 0002   97     80  	staa	RAMVAR		; 97 80
+00008 0004   DE     82  	ldx	PTR		; DE 82
+00009 0006   D6     00> 	ldab	later		; D6 00: imported later, in page-zero counter 5
+00010 0008   B6   1234  	ldaa	FAR		; B6 1234: not in page zero, so extended
+00011 000B   20     F3  	bra	start
+00012             0002  PORT	equ	$02
+00013             0080  RAMVAR	equ	$80
+00014             0082  PTR	equ	$82
+00015             1234  FAR	equ	$1234
+00016 0000              	LOC	5
+00017                   	IMPORT	later
+
+Symbols:
+FAR                         0 1234 A   PORT                        0 0002 A   
+PTR                         0 0082 A   RAMVAR                      0 0080 A   
+later                       5 0000 R I start                       0 0000 R   
+
+00000 errors
+00000 warnings
