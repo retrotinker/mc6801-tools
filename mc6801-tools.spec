@@ -1,6 +1,6 @@
 Name:           mc6801-tools
 Version:        2.1.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Assembler, linker and binary utilities for the Motorola MC6801
 
 # ld/objcopy.c is GPL-2.0-only, ar/ar.c is GPL-2.0-or-later,
@@ -29,6 +29,15 @@ MC-10:
 The tools are derived from the 6809 tools of Bruce Evans' C compiler, as
 maintained in the dev86 package.
 
+%package doc
+Summary:        Documentation and a demo program for %{name}
+BuildArch:      noarch
+
+%description doc
+The user's manual for the mc6801-tools assembler, linker and binary
+utilities, as a PDF, and a small modular demo program for the Tandy
+MC-10 that shows how the tools are used together.
+
 %prep
 %autosetup
 
@@ -51,7 +60,7 @@ test -s demo-check/main.wav
 
 %files
 %license COPYING
-%doc README.md doc/mc6801-tools-manual.pdf demo
+%doc README.md
 %{_bindir}/ar01
 %{_bindir}/as01
 %{_bindir}/ld01
@@ -67,7 +76,14 @@ test -s demo-check/main.wav
 %{_mandir}/man1/objdump01.1*
 %{_mandir}/man1/size01.1*
 
+%files doc
+%license COPYING
+%doc doc/mc6801-tools-manual.pdf demo
+
 %changelog
+* Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 2.1.0-2
+- Move the user's manual and the demo program into a -doc subpackage
+
 * Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 2.1.0-1
 - Update to 2.1.0: as01 uses direct addressing for forward references to
   page zero (DPAGE symbols and EQU constants)
