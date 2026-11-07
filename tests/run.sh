@@ -58,6 +58,13 @@ link demo	-m -M -lnum -Cstart -T0x434c main.o screen.o
 link demo-s	-s -lnum -Cstart -T0x434c main.o screen.o
 link demo-d	-d -lnum -Cstart -T0x434c main.o screen.o
 
+# symbol names longer than 8 characters (msg_three) are kept whole,
+# unless -y- asks for the old table, which cuts them
+link demo-short	-y- -lnum -Cstart -T0x434c main.o screen.o
+for f in demo demo-short; do
+	"$OD" -n $f.out > $f.nm
+done
+
 # several location counters, common blocks, relocations between
 # modules and counters
 link segs	-m -M -T0 segs.o helper.o
@@ -83,6 +90,7 @@ cp "$tests"/scripts/*.ld .
 link custom	-m -M -S custom.ld usesym.o segs.o helper.o
 link custom-A	-m -M -S custom.ld -A __heap_top=0x6000 -A extra=7 \
 		usesym.o segs.o helper.o
+"$OD" -n custom.out > custom.nm	# __heap_top: a long script symbol
 link orphan	-m -M -S orphan.ld segs.o helper.o
 link orphan-Z	-Z -S orphan.ld segs.o helper.o
 link orphan2	-m -M -S orphan2.ld segs.o helper.o

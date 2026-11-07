@@ -1071,7 +1071,7 @@ struct dcode {
 int aout_nsyms;
 long *aout_value;
 int *aout_class;
-char (*aout_name)[9];
+char **aout_name;		/* allocated: any length */
 
 /* a name for an address: in an object module, a symbol defined at that
    offset in location counter seg; in an executable (seg -1), a symbol
@@ -1345,6 +1345,9 @@ void load_aout_syms(void)
 
 	free(aout_value);
 	free(aout_class);
+	if (aout_name)
+		for (i = 0; i < aout_nsyms; i++)
+			free(aout_name[i]);
 	free(aout_name);
 	aout_nsyms = 0;
 	n = header[7] / 16;
@@ -1367,8 +1370,23 @@ void load_aout_syms(void)
 		class = getc(ifd);
 		getc(ifd);	/* number of auxiliary entries */
 		get_word();	/* type */
-		if (class == 0)	/* the rest of a long name */
+		if (class == 0) {	/* the rest of the last name */
+			char *longer;
+			size_t len;
+
+			if (aout_nsyms == 0)
+				continue;
+			len = strlen(aout_name[aout_nsyms - 1]);
+			longer = realloc(aout_name[aout_nsyms - 1], len + 9);
+			if (longer == 0)
+				continue;
+			memcpy(longer + len, name, 8);
+			longer[len + 8] = 0;
+			aout_name[aout_nsyms - 1] = longer;
 			continue;
+		}
+		if ((aout_name[aout_nsyms] = malloc(9)) == 0)
+			break;
 		memcpy(aout_name[aout_nsyms], name, 8);
 		aout_name[aout_nsyms][8] = 0;
 		aout_value[aout_nsyms] = value;

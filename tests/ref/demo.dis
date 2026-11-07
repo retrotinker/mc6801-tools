@@ -23,7 +23,7 @@ DISASSEMBLY
 4369  31                 ins
 436a  39                 rts
 436b  00                 fcb    $00
-436c  54        msg_thre lsrb
+436c  54        msg_three lsrb
 436d  48                 asla
 436e  52                 fcb    $52
 436f  45                 fcb    $45

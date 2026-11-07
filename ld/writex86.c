@@ -59,6 +59,7 @@ PRIVATE bool_t xsym;		/* extended symbol table */
 FORWARD void checkbyte P((struct modstruct * modptr, char *name, int seg,
 			  bin_off_t offset, bin_off_t value, int pcrel));
 FORWARD void copyname P((char *field, char *name, unsigned size));
+FORWARD void writenamerest P((struct nlist * extsym, char *name));
 FORWARD void linkmod P((struct modstruct * modptr));
 FORWARD void padmod P((struct modstruct * modptr));
 FORWARD void setseg P((fastin_pt newseg));
@@ -253,41 +254,7 @@ PUBLIC void write_elks(char *outfilename, bool_pt argsepid,
 						writeout((char *)&extsym,
 							 sizeof extsym);
 						++nsym;
-#if !ELF_SYMS
-						if (xsym) {
-							int i;
-							extsym.n_sclass = 0;
-							memset((void *)&extsym.
-							       n_value, 0,
-							       sizeof(extsym.
-								      n_value));
-
-							for (i =
-							     sizeof extsym.
-							     n_name;
-							     i <
-							     strlen(symptr->
-								    name);
-							     i +=
-							     sizeof extsym.
-							     n_name) {
-								copyname(extsym.
-									 n_name,
-									 symptr->
-									 name +
-									 i,
-									 sizeof
-									 extsym.
-									 n_name);
-								writeout((char
-									  *)
-									 &extsym,
-									 sizeof
-									 extsym);
-								++nsym;
-							}
-						}
-#endif
+						writenamerest(&extsym, symptr->name);
 					}
 			}
 		/* script symbols that a module imports were written above;
@@ -469,6 +436,26 @@ PRIVATE void writescriptsym(char *name, bin_off_t value, int class)
 	extsym.n_sclass = sclass;
 	writeout((char *)&extsym, sizeof extsym);
 	++nsym;
+	writenamerest(&extsym, name);
+}
+
+/* in an extended symbol table (-y, the default), the rest of a name
+   longer than a symbol entry's field goes in entries of its own, with
+   class 0, after the symbol's entry */
+
+PRIVATE void writenamerest(struct nlist *extsym, char *name)
+{
+	unsigned i, len = strlen(name);
+
+	if (!xsym)
+		return;
+	extsym->n_sclass = 0;
+	memset((void *)&extsym->n_value, 0, sizeof extsym->n_value);
+	for (i = sizeof extsym->n_name; i < len; i += sizeof extsym->n_name) {
+		copyname(extsym->n_name, name + i, sizeof extsym->n_name);
+		writeout((char *)extsym, sizeof *extsym);
+		++nsym;
+	}
 }
 
 /* set new segment */
