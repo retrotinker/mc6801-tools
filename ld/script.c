@@ -72,6 +72,8 @@ struct stmt {
 	/* S_INPUT */
 	int keep;			/* KEEP(...): load the modules */
 	char *filepat;			/* null for orphans */
+	char **excludes;		/* EXCLUDE_FILE(...) patterns */
+	int nexcludes;
 	char **secpats;
 	int nsecpats;
 	struct piece **pieces;
@@ -586,6 +588,7 @@ PRIVATE struct stmt *assignment(int akind, char *target)
 
 PRIVATE struct stmt *statements(void);
 PRIVATE struct stmt *input(char *word);
+PRIVATE struct stmt *exclinput(void);
 
 /* ASSERT(expression, "message") */
 PRIVATE struct stmt *assertion(void)
@@ -638,12 +641,39 @@ PRIVATE struct stmt *statement(void)
 		return assertion();
 	if (accept("KEEP")) {
 		expect("(");
-		s = input(pattern());
+		s = exclinput();
 		expect(")");
 		s->keep = 1;
 		return s;
 	}
-	return input(pattern());
+	return exclinput();
+}
+
+/* [EXCLUDE_FILE(file ...)] file(sections), or an assignment */
+PRIVATE struct stmt *exclinput(void)
+{
+	struct stmt *s;
+	char **excludes = NULL;
+	int nexcludes = 0, xline = line;
+
+	if (!accept("EXCLUDE_FILE"))
+		return input(pattern());
+	expect("(");
+	while (!accept(")")) {
+		excludes = realloc(excludes, (nexcludes + 1) * sizeof *excludes);
+		if (excludes == NULL)
+			outofmemory();
+		excludes[nexcludes++] = pattern();
+	}
+	if (nexcludes == 0)
+		script_error(xline, "no files in EXCLUDE_FILE()");
+	s = input(pattern());
+	if (s->kind != S_INPUT)
+		script_error(xline, "EXCLUDE_FILE() must come before an input "
+			     "pattern");
+	s->excludes = excludes;
+	s->nexcludes = nexcludes;
+	return s;
 }
 
 /* file(sections), or an assignment to a name read as a pattern */
@@ -1134,6 +1164,20 @@ PRIVATE int filematch(const char *pat, struct modstruct *mod)
 	return glob(pat, name);
 }
 
+/* does an input statement's file pattern match a module that none of
+   its EXCLUDE_FILE patterns match? */
+PRIVATE int stmtfilematch(struct stmt *s, struct modstruct *mod)
+{
+	int i;
+
+	if (!filematch(s->filepat, mod))
+		return 0;
+	for (i = 0; i < s->nexcludes; ++i)
+		if (filematch(s->excludes[i], mod))
+			return 0;
+	return 1;
+}
+
 PRIVATE int secmatch(const char *pat, int seg, int common)
 {
 	char name[16];
@@ -1195,7 +1239,7 @@ PRIVATE void assign(struct stmt *s, struct osect *sect)
 		for (i = 0; i < npieces; ++i) {
 			struct piece *pc = &pieces[i];
 
-			if (pc->sect != NULL || !filematch(s->filepat, pc->mod))
+			if (pc->sect != NULL || !stmtfilematch(s, pc->mod))
 				continue;
 			for (j = 0; j < s->nsecpats; ++j)
 				if (secmatch(s->secpats[j], pc->seg, pc->common)) {
@@ -1217,12 +1261,14 @@ PRIVATE char *piecename(struct piece *pc)
 	return name;
 }
 
-/* does a statement (or any inside it) take input from all files? */
+/* does a statement (or any inside it) take input from all files? (not
+   one with EXCLUDE_FILE, so that orphans don't go where their files
+   were excluded) */
 PRIVATE int allfiles(struct stmt *s)
 {
 	for (; s != NULL; s = s->next)
 		if ((s->kind == S_INPUT && s->filepat != NULL
-		     && strcmp(s->filepat, "*") == 0)
+		     && strcmp(s->filepat, "*") == 0 && s->nexcludes == 0)
 		    || (s->kind == S_ONEPAGE && allfiles(s->body)))
 			return 1;
 	return 0;
@@ -2086,7 +2132,7 @@ PRIVATE void stmtroots(struct stmt *s, void (*link) P((struct modstruct *)))
 				int match = 0;
 
 				if (modptr->loadflag
-				    || !filematch(s->filepat, modptr))
+				    || !stmtfilematch(s, modptr))
 					continue;
 				for (seg = 0; seg < NSEG; ++seg) {
 					long size = cntooffset(cptr,
