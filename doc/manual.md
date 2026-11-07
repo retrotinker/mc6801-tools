@@ -946,6 +946,57 @@ Here `DW clrscn` means that the two bytes after the `jsr` opcode
 location counters 0 and 1 count as text and the others as data, as
 they are linked by `ld01`.
 
+## Disassembly
+
+`objdump01 -d` also disassembles the code. In an object file, each
+operand that the linker fills in is shown by name: the imported symbol,
+or the label nearest before the address in the module:
+
+```
+$ objdump01 -d one.o
+...
+DISASSEMBLY
+SEG 0
+0000  4f        msg_one  clra
+0001  4e                 fcb    $4e
+0002  45                 fcb    $45
+0003  0d                 sec
+0004  00                 fcb    $00
+0005  ce 00 00  one      ldx    #msg_one
+0008  3c                 pshx
+0009  bd 00 00           jsr    prstring
+000c  31                 ins
+000d  31                 ins
+000e  39                 rts
+```
+
+The disassembler can't tell data from code, so the string `ONE` at
+`msg_one` comes out partly as instructions (`4f` is `clra`), and
+partly as `fcb` where its bytes aren't opcodes. In an executable, the
+code is at its linked addresses, with labels from the symbol table, and
+calls and branches are shown by name:
+
+```
+$ objdump01 -d main.aout
+...
+4380  bd 43 84  __start  jsr    main
+4383  39                 rts
+...
+4394  ce 40 00  clrscn   ldx    #$4000
+4397  86 60              ldaa   #$60
+4399  c6 60              ldab   #$60
+439b  ed 00     clrsc.1  std    $00,x
+439d  08                 inx
+439e  08                 inx
+439f  8c 42 00           cpx    #$4200
+43a2  2d f7              blt    clrsc.1
+43a4  39                 rts
+```
+
+A direct address that the linker fills in is shown with `<`, such as
+`ldaa <count` for a page-zero variable, and an extended address in page
+zero with `>`, as you would write them for `as01`.
+
 # Converting Executables {#converting-executables}
 
 `objcopy01` turns an a.out file into a format that a loader, EPROM
@@ -1535,6 +1586,9 @@ The linker pulls in `crtstart.o` because of `-Cstart`, and `one.o`,
 * **Page-zero variables used before they are declared** get extended
   addressing, as `DPAGE` only applies to symbols the assembler already
   knows.
+* **`objdump01 -d` can't tell data from code**, so data in a code
+  segment, such as a string, is shown as instructions where its bytes
+  happen to be opcodes.
 
 \appendix
 
