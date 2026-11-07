@@ -1,5 +1,5 @@
 Name:           mc6801-tools
-Version:        1.3.1
+Version:        1.4.0
 Release:        1%{?dist}
 Summary:        Assembler, linker and binary utilities for the Motorola MC6801
 
@@ -68,6 +68,10 @@ test -s demo-check/main.wav
 %{_mandir}/man1/size01.1*
 
 %changelog
+* Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 1.4.0-1
+- Update to 1.4.0: objdump01 -d disassembles executables and object
+  modules, showing relocated operands by name
+
 * Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 1.3.1-1
 - Update to 1.3.1: ld01 links an import to its definition whatever the
   order of the object files, warning if their location counters differ;
