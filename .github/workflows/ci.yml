@@ -8,13 +8,18 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [gcc, clang]
+    name: check (${{ matrix.cc }})
     steps:
       - uses: actions/checkout@v7
       - name: Build and run the regression tests
-        run: make check
+        run: make CC=${{ matrix.cc }} check
       - name: Keep the test outputs if they differ
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: test-outputs
+          name: test-outputs-${{ matrix.cc }}
           path: tests/out/
