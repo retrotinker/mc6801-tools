@@ -1,0 +1,42 @@
+00001                   ; dpage.s - DPAGE: references to page-zero data in location counter 4
+00002                   ;
+00003                   ; Linked with dpshared.s and dpage.ld, which put counter 4 at $80; run on
+00004                   ; the simulator, the values it loads show that each reference reached
+00005                   ; the right byte.  The comments give the expected opcodes.
+00006                   	DPAGE	4
+00007 0000              	LOC	4
+00008                   	IMPORT	shared		; another module's page-zero variable
+00009 0000          11  count	fcb	$11		; this module's: $80
+00010 0001          22  	fcb	$22
+00011 0002        0002  result	RMB	2
+00012             0001> flags	COMM	1		; a common block
+00013 0000              	LOC	0
+00014                   	ENTRY	dpstart
+00015 0000   8E   007F  dpstart	lds	#$7F
+00016 0003   96     00> 	ldaa	count		; direct: 96
+00017 0005   D6     01> 	ldab	count+1		; direct, an expression: D6
+00018 0007   DD     02> 	std	result		; direct: DD
+00019 0009   96     00> 	ldaa	shared		; direct, imported: 96
+00020 000B   97     00> 	staa	flags		; direct, common: 97
+00021 000D   F6   0000> 	ldab	>count		; extended, forced: F6
+00022 0010   7C   0000> 	inc	count		; extended, no direct INC: 7C
+00023 0013   CE   0000> 	ldx	#count		; 16-bit immediate: CE
+00024 0016   86     00> 	ldaa	#count		; 8-bit immediate: 86
+00025 0018   C6     01> 	ldab	#shared+1	; 8-bit immediate, imported: C6
+00026 001A   FF   0004> 	stx	later		; extended, a forward reference: FF
+00027 001D   86     04> 	ldaa	#later		; 8-bit immediate, a forward reference: 86
+00028 001F   CE   0024> 	ldx	#table
+00029 0022   20     FE  	bra	*
+00030 0024          00> table	fcb	count, shared, later, 7	; three addresses and a number
+00031 0028        0000> 	fdb	count
+00032 0004              	LOC	4
+00033 0004        0002  later	RMB	2
+
+Symbols:
+count                       4 0000 R   dpstart                     0 0000 R N 
+flags                       4 0001 R C later                       4 0004 R   
+result                      4 0002 R   shared                      4 0000 R I 
+table                       0 0024 R   
+
+00000 errors
+00000 warnings

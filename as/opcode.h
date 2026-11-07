@@ -21,6 +21,7 @@ enum
     COMMOP,
     COMMOP1,
     DATAOP,
+    DPAGEOP,
     ENDBOP,
     ENTEROP,
     ENTRYOP,

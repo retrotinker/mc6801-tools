@@ -11,6 +11,11 @@ EXTERN union
 				/* buffer for fdb data */
 				/* data can be of any 2-byte adr type */
 				/* limited by FDB\t and commas on line */
+    struct address_s fbbuf[(LINLEN - 4) / 2];
+				/* buffer for fcb data */
+				/* data is absolute, or relocatable in a
+				   DPAGE counter, in 1-byte pieces */
+				/* limited by FCB\t and commas on line */
 #if SIZEOF_OFFSET_T > 2
     struct address_s fqbuf[(LINLEN - 4) / 4];
 				/* buffer for fqb data */
@@ -21,6 +26,7 @@ EXTERN union
     databuf;
 
 EXTERN bool_t fcflag;
+EXTERN bool_t fbflag;
 EXTERN bool_t fdflag;
 #if SIZEOF_OFFSET_T > 2
 EXTERN bool_t fqflag;

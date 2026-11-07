@@ -47,6 +47,7 @@ PUBLIC char ops[] = {
 	4, 'C', 'O', 'M', 'M', COMMOP, 0,
 	5, '.', 'C', 'O', 'M', 'M', COMMOP1, 0,
 	5, '.', 'D', 'A', 'T', 'A', DATAOP, 0,
+	5, 'D', 'P', 'A', 'G', 'E', DPAGEOP, 0,
 	6, '.', 'D', 'A', 'T', 'A', '1', FCBOP, 0,
 	6, '.', 'D', 'A', 'T', 'A', '2', FDBOP, 0,
 #if SIZEOF_OFFSET_T > 2

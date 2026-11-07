@@ -1,0 +1,11 @@
+ld01: dpage.o: LOC4 ($5000) is not in page zero ($00-$ff), at $e004
+ld01: dpage.o: LOC4+$0001 ($5001) is not in page zero ($00-$ff), at $e006
+ld01: dpage.o: LOC4+$0002 ($5002) is not in page zero ($00-$ff), at $e008
+ld01: dpage.o: shared ($5008) is not in page zero ($00-$ff), at $e00a
+ld01: dpage.o: flags ($500c) is not in page zero ($00-$ff), at $e00c
+ld01: dpage.o: LOC4 ($5000) is not in page zero ($00-$ff), at $e017
+ld01: dpage.o: shared ($5009) is not in page zero ($00-$ff), at $e019
+ld01: dpage.o: LOC4+$0004 ($5004) is not in page zero ($00-$ff), at $e01e
+ld01: dpage.o: LOC4 ($5000) is not in page zero ($00-$ff), at $e024
+ld01: dpage.o: shared ($5008) is not in page zero ($00-$ff), at $e025
+ld01: dpage.o: LOC4+$0004 ($5004) is not in page zero ($00-$ff), at $e026

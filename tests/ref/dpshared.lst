@@ -1,0 +1,10 @@
+00001                   ; dpshared.s - a page-zero variable for dpage.s
+00002 0000              	LOC	4
+00003                   	EXPORT	shared
+00004 0000          5A  shared	fcb	$5A
+
+Symbols:
+shared                      4 0000 R E 
+
+00000 errors
+00000 warnings

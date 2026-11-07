@@ -1,0 +1,34 @@
+00002                   	DPAGE	16		; no such location counter
+*****                                                   ^data out of bounds
+00003                   here	DPAGE	4		; a label isn't allowed
+*****                   ^illegal label
+00014 0007          00> 	fcb	far
+*****                                      ^data out of bounds
+00001                   ; dpagerr.s - DPAGE errors
+00002                   	DPAGE	16		; no such location counter
+*****                                                   ^data out of bounds
+00003                   here	DPAGE	4		; a label isn't allowed
+*****                   ^illegal label
+00004 0000              	LOC	3
+00005 0000          01  data3	fcb	1
+00006 0000              	LOC	4
+00007 0000        0100  	RMB	$100
+00008 0100          01  far	fcb	1		; 256 bytes into page-zero counter 4
+00009 0000              	LOC	0
+00010 0000   86     00  	ldaa	#data3		; relocatable, but not in a DPAGE counter
+*****                                                   ^absolute expression required
+00011 0002          00  	fcb	data3
+*****                                        ^absolute expression required
+00012 0003   96     00> 	ldaa	far		; too far into its counter
+*****                                                   ^address out of bounds
+00013 0005   86     00> 	ldaa	#far
+*****                                       ^data out of bounds
+00014 0007          00> 	fcb	far
+*****                                      ^data out of bounds
+
+Symbols:
+data3                       3 0000 R   far                         4 0100 R   
+here                        0 0000 R   
+
+00007 errors
+00000 warnings

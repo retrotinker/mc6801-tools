@@ -79,6 +79,31 @@ PUBLIC void checkdatabounds(void)
 		datatoobig();
 }
 
+/* is lastexp relocatable in a DPAGE counter, so a page-zero address? */
+
+PUBLIC bool_pt dpagerel(void)
+{
+	return (lastexp.data & (RELBIT | UNDBIT)) == RELBIT
+	    && (dpagemask >> (lastexp.data & SEGM)) & 1;
+}
+
+/* check a byte value: absolute and fitting in a byte, or a page-zero
+   address; one in this module is written as a one-byte offset in its
+   counter, so it must be in the counter's first 256 bytes (ld01 checks
+   the final address) */
+
+PUBLIC void checkbyte(void)
+{
+	if (dpagerel()) {
+		if (!(lastexp.data & IMPBIT)
+		    && (offset_t) lastexp.offset >= 0x100)
+			datatoobig();
+	} else {
+		chkabs();
+		checkdatabounds();
+	}
+}
+
 /* allocate constant data (zero except for size 1), default zero for size 1 */
 
 PRIVATE void constdata(unsigned size)
@@ -658,23 +683,27 @@ PUBLIC void pfail(void)
 
 PUBLIC void pfcb(void)
 {
-	char *bufptr;
+	struct address_s *adrptr;
 	offset_t firstbyte;
+	unsigned firstdata;
 
-	bufptr = databuf.fcbuf;
-	absexpres();
+	adrptr = databuf.fbbuf;
+	expres();
+	checkbyte();
 	firstbyte = lastexp.offset;
+	firstdata = lastexp.data;
 	while (TRUE) {
-		checkdatabounds();
-		*bufptr++ = lastexp.offset;
+		*adrptr++ = lastexp;
 		++mcount;	/* won't overflow, line length limits it */
 		if (sym != COMMA)
 			break;
-		symabsexpres();
+		symexpres();
+		checkbyte();
 	}
 	lastexp.offset = firstbyte;
+	lastexp.data = firstdata;
 	popflags = POPLO | POPLC;
-	fcflag = TRUE;
+	fbflag = TRUE;
 }
 
 /* FCC pseudo-op */
@@ -844,6 +873,21 @@ PUBLIC void ploc(void)
 			datatoobig();
 		else
 			setloc((unsigned)lastexp.offset);
+	}
+}
+
+/* DPAGE pseudo-op: location counter n holds page-zero data */
+
+PUBLIC void pdpage(void)
+{
+	if (label != NUL_PTR)
+		labelerror(ILLAB);
+	absexpres();
+	if (!(lastexp.data & UNDBIT)) {
+		if (lastexp.offset >= NLOC)
+			datatoobig();
+		else
+			dpagemask |= 1 << (unsigned)lastexp.offset;
 	}
 }
 

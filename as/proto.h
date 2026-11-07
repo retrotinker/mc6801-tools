@@ -72,6 +72,8 @@ void mshort P((void));
 /* pops.c */
 bool_pt checksegrel P((struct sym_s *symptr));
 void checkdatabounds P((void));
+void checkbyte P((void));
+bool_pt dpagerel P((void));
 void datatoobig P((void));
 void fatalerror P((char * errorstr));
 void labelerror P((char * errorstr));
@@ -110,6 +112,7 @@ void plcomm1 P((void));
 void plist P((void));
 void pnolist P((void));
 void ploc P((void));
+void pdpage P((void));
 void pmaclist P((void));
 void pmap P((void));
 void porg P((void));

@@ -8,6 +8,8 @@ EXTERN offset_t binmbuf;	/* offset in binary code buffer for memory */
 EXTERN bool_t binmbuf_set;	/* set to 1 when binmbuf set by org */
 
 EXTERN unsigned char dirpag;	/* direct page */
+EXTERN unsigned dpagemask;	/* location counters declared by DPAGE */
+EXTERN bool_t expearly;		/* the expression used a symbol early */
 
 EXTERN bool_t globals_only_in_obj;	/* global symbols only in object file */
 
