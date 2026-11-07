@@ -1,0 +1,15 @@
+00001                   ; impuse.s - imports a variable under counter 0, though impdef.s defines
+00002                   ; it in counter 3, and a constant defined with EQU
+00003 0000              	LOC	0
+00004                   	ENTRY	impstart
+00005                   	IMPORT	counter, SIZE
+00006 0000   B6   0000> impstart ldaa	counter
+00007 0003   CE   0000> 	ldx	#SIZE
+00008 0006   39         	rts
+
+Symbols:
+SIZE                        0 0000 R I counter                     0 0000 R I 
+impstart                    0 0000 R N 
+
+00000 errors
+00000 warnings

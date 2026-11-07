@@ -10,6 +10,9 @@
 #include "type.h"
 #include "globvar.h"
 
+/* imported, and not exported or a common block's size */
+#define PLAINIMPORT(flags) (((flags) & (E_MASK | I_MASK | SA_MASK)) == I_MASK)
+
 /*
    Linking takes 2 passes. The 1st pass reads through all files specified
 in the command line, and all libraries. All public symbols are extracted
@@ -184,6 +187,37 @@ PRIVATE void readmodule(char *filename, char *archentry)
 				flags &=
 				    ~(flags_t) SEGM_MASK | (symptr->
 							    flags & SEGM_MASK);
+			if ((flags ^ symptr->flags) & (A_MASK | SEGM_MASK)
+			    && ((PLAINIMPORT(flags) && symptr->flags & E_MASK)
+				|| (PLAINIMPORT(symptr->flags) && flags & E_MASK))) {
+				/*
+				   an import and the definition, in different
+				   counters or one absolute: an import's counter,
+				   and its being relocatable, are only what the
+				   importing module assumed, so the definition
+				   wins, whichever module comes first; a
+				   relocatable definition in another counter is
+				   worth a warning, since the importer may have
+				   chosen its addressing (DPAGE) on the assumption
+				 */
+				if (flags & E_MASK) {
+					if (!(flags & A_MASK))
+						import_counter(symname,
+						    symptr->flags & SEGM_MASK,
+						    symptr->modptr->filename,
+						    symptr->modptr->archentry,
+						    flags & SEGM_MASK, filename,
+						    archentry);
+					goto define;	/* replace the import */
+				}
+				if (!(symptr->flags & A_MASK))
+					import_counter(symname, flags & SEGM_MASK,
+					    filename, archentry,
+					    symptr->flags & SEGM_MASK,
+					    symptr->modptr->filename,
+					    symptr->modptr->archentry);
+				continue;	/* keep the definition */
+			}
 			if ((flags ^ symptr->flags) & (A_MASK | SEGM_MASK)) {
 				redefined(symname,
 					  " with different segment or relocatability",
@@ -203,6 +237,7 @@ PRIVATE void readmodule(char *filename, char *archentry)
 				continue;
 		} else
 			symptr = addsym(symname);
+	      define:
 		symptr->modptr = modlast;
 		symptr->value = symdptr->dvalue;
 		symptr->flags = flags;

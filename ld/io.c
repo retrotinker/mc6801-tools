@@ -514,6 +514,48 @@ PUBLIC void interseg(char *fname, char *aname, char *name)
 	putstrn("");
 }
 
+/* a location counter, named as in linker scripts: LOC0 to LOC15 */
+
+PRIVATE void putloc(int seg)
+{
+	putstr("LOC");
+	if (seg >= 10)
+		putbyte('1');
+	putbyte('0' + seg % 10);
+}
+
+PRIVATE void putmodule(char *fname, char *aname)
+{
+	putstr(fname);
+	if (aname) {
+		putstr("(");
+		putstr(aname);
+		putstr(")");
+	}
+}
+
+/* a symbol imported under a different counter from the one it is
+   defined in: the link uses the definition, but the importing module
+   assumed the other counter (for DPAGE, say) */
+
+PUBLIC void import_counter(char *name, int iseg, char *ifname, char *ianame,
+			   int dseg, char *dfname, char *daname)
+{
+	++warncount;
+	refer();
+	putstr("warning: ");
+	putstr(name);
+	putstr(" is imported under ");
+	putloc(iseg);
+	putstr(" in ");
+	putmodule(ifname, ianame);
+	putstr(", but defined in ");
+	putloc(dseg);
+	putstr(" in ");
+	putmodule(dfname, daname);
+	putstrn("");
+}
+
 /* a one-byte relocation that doesn't fit: a direct address or indexed
    offset outside $00-$FF, or a branch out of range; name is the symbol,
    or null for offset in this module's counter seg */
@@ -524,20 +566,12 @@ PUBLIC void byte_reloc_error(char *fname, char *aname, char *name, int seg,
 {
 	++errcount;
 	refer();
-	putstr(fname);
-	if (aname) {
-		putstr("(");
-		putstr(aname);
-		putstr(")");
-	}
+	putmodule(fname, aname);
 	putstr(": ");
 	if (name)
 		putstr(name);
 	else {
-		putstr("LOC");
-		if (seg >= 10)
-			putbyte('1');
-		putbyte('0' + seg % 10);
+		putloc(seg);
 		if (offset != 0) {
 			putstr("+$");
 			put04x((unsigned)offset & 0xFFFF);

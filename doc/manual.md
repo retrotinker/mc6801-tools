@@ -652,9 +652,11 @@ total   rmb     2
 * **Which symbols.** A symbol is in page zero if it is defined in a
   `DPAGE` counter, imported while that counter is current, or declared
   `COMM` in it. An `IMPORT` records the current location counter, so
-  import page-zero variables under their counter, as `zpmain.s` does;
-  the module that exports them must use the same counter, or the linker
-  reports them as undefined.
+  import page-zero variables under their counter, as `zpmain.s` does.
+  If the module that defines a variable uses a different counter, the
+  linker warns, as in
+  `counter is imported under LOC0 in main.o, but defined in LOC4 in vars.o`,
+  and the importing module doesn't get direct addressing for it.
 * **Direct addressing** is used wherever the instruction has a direct
   mode. `>` still forces extended addressing, and the read-modify-write
   instructions, such as `INC`, have no direct mode.

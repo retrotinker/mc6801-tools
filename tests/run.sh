@@ -112,6 +112,13 @@ link dp-far	-T 0xE000 -D 0x5000 dpref.o dpvars.o
 link dp-lib	-T 0xE000 -D 0x5000 dpcall.o libdp.a dpvars.o
 rm -f libdp.a
 
+# an import under a different counter from its definition, and of an
+# EQU constant: the definition wins, whichever module comes first, with
+# a warning naming both counters (only for the variable); before, with
+# the import first, the symbol ended up undefined
+link imp-ab	-m -T 0x1000 impuse.o impdef.o
+link imp-ba	-m -T 0x1000 impdef.o impuse.o
+
 # DPAGE: direct addresses, 8-bit immediates and FCB data with page-zero
 # addresses; with counter 4 in page zero they link, elsewhere each is
 # an error

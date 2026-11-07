@@ -1,0 +1,11 @@
+00001                   ; impdef.s - the definitions for impuse.s
+00002 0000              	LOC	3
+00003                   	EXPORT	counter, SIZE
+00004 0000          01  counter	fcb	1
+00005             0020  SIZE	equ	$20
+
+Symbols:
+SIZE                        0 0020 A E counter                     3 0000 R E 
+
+00000 errors
+00000 warnings
