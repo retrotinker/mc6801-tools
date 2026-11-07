@@ -1,5 +1,5 @@
 Name:           mc6801-tools
-Version:        1.2.4
+Version:        1.3.0
 Release:        1%{?dist}
 Summary:        Assembler, linker and binary utilities for the Motorola MC6801
 
@@ -68,6 +68,11 @@ test -s demo-check/main.wav
 %{_mandir}/man1/size01.1*
 
 %changelog
+* Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 1.3.0-1
+- Update to 1.3.0: the as01 DPAGE directive gives page-zero variables
+  placed by a linker script direct addressing, and allows their
+  addresses in 8-bit immediates and FCB data
+
 * Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 1.2.4-1
 - Update to 1.2.4: as01 and ld01 report one-byte addresses that don't
   fit in a byte, instead of silently truncating them; the regression
