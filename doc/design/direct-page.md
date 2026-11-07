@@ -350,10 +350,18 @@ This phase stands alone as a bug fix, and could be released first.
   sets a bit in a 16-bit mask. Clear the mask at the start of each pass,
   so every pass sees the same declarations.
 * In `doaltind()` (`as/mops.c`), choose direct addressing also when the
-  operand is relocatable (`RELBIT`), not a forward reference (`FORBIT`),
-  and its counter (`data & SEGM`) is in the mask, for instructions that
-  have a direct mode and no `>`. `genobjadr()` already emits the
-  one-byte relocation for a direct operand.
+  operand is relocatable (`RELBIT`), not a forward reference, and its
+  counter (`data & SEGM`) is in the mask, for instructions that have a
+  direct mode and no `>`. `genobjadr()` already emits the one-byte
+  relocation for a direct operand.
+* A forward reference can't be recognized by `FORBIT`: in the normal
+  two passes, `IMPORT` and `COMM` set it on every symbol they declare,
+  and every reference sets it on a symbol that isn't a label. Instead,
+  each symbol records whether it was used in the first pass before it
+  was defined, imported or declared `COMM` (a new `early` field in
+  `struct sym_s`), and an operand is a forward reference if any symbol
+  in it was. The record is made in the first pass and never cleared, so
+  every pass makes the same choice.
 * In `mimmed()`, accept an 8-bit immediate that is relocatable in a
   direct-page counter instead of requiring it to be absolute
   (`chkabs()`). The operand is already written with `genobjadr()`, so it
