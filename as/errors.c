@@ -86,6 +86,7 @@ PUBLIC char INDEX_REG_EXP[] = "index register expected";
 PUBLIC char IND_REQ[] = "indirect expression required";
 PUBLIC char MISMATCHED_SIZE[] = "mismatched size";
 PUBLIC char NOIMPORT[] = "no imports with binary file output";
+PUBLIC char ORGREL[] = "ORG or BLOCK in relocatable module (needs -b)";
 PUBLIC char REENTER[] = "multiple ENTER pseudo-ops";
 PUBLIC char REL_REQ[] = "relative expression required";
 PUBLIC char REPEATED_DISPL[] = "repeated displacement";
