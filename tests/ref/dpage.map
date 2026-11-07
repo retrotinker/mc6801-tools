@@ -1,0 +1,17 @@
+dpage           +dpage.o
+dpshared        +dpshared.o
+Section         Address  Size     Load
+.text           0000e000 0000002a
+    0000e000 0000002a dpage.o(LOC0)
+.zpage          00000080 0000000b
+    00000080 00000006 dpage.o(LOC4)
+    00000086 00000001 dpshared.o(LOC4)
+    00000087 00000004 dpage.o(COMMON4)
+
+               dpage                 count  4  00000080  r
+               dpage                 table  0  0000e024  r
+               dpage                 flags  4  00000087  R C
+               dpage               dpstart  0  0000e000  R N
+               dpage                 later  4  00000084  r
+               dpage                result  4  00000082  r
+            dpshared                shared  4  00000086  R

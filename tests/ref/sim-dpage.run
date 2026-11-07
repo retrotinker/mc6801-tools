@@ -1,0 +1,4 @@
+branch to itself at E022 after 14 instructions
+A=84 B=87 X=E024 SP=007F CC=D8
+0080: 12 22 11 22 00 80 5A 5A 00 00 00 00 00 00 00 00
+E024: 80 86 84 07 00 80

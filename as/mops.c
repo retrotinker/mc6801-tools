@@ -88,6 +88,7 @@ PRIVATE void doaltind(void)
 		wordflag = TRUE;
 		getsym();
 	}
+	expearly = FALSE;
 	expres();
 	if (sym == COMMA) {	/* offset from register */
 		getsym();
@@ -110,7 +111,14 @@ PRIVATE void doaltind(void)
 			byteflag = FALSE;
 			wordflag = TRUE;
 		}
-		if (byteflag || (!wordflag && !(lastexp.data & (FORBIT | RELBIT)) && (lastexp.offset >> 0x8) == dirpag)) {	/* direct addressing */
+		/* direct addressing: forced, or an absolute address in
+		   page zero, or a page-zero address declared with DPAGE;
+		   either known when first used, so every pass agrees */
+		if (byteflag
+		    || (!wordflag
+			&& ((!(lastexp.data & (FORBIT | RELBIT))
+			     && (lastexp.offset >> 0x8) == dirpag)
+			    || (!expearly && dpagerel())))) {
 			if (opcode >= 0x80)
 				opcode |= 0x10;
 			/* the address is written in one byte: an absolute
@@ -216,10 +224,8 @@ PUBLIC void mimmed(void)
 				       nybble == 0xC || nybble >= 0xE))
 			++mcount;	/* magic for long immediate */
 		symexpres();
-		if (pass2 && mcount <= 0x2) {
-			chkabs();
-			checkdatabounds();
-		}
+		if (pass2 && mcount <= 0x2)
+			checkbyte();	/* or a page-zero address */
 	}
 }
 

@@ -27,6 +27,7 @@ PRIVATE pfv rout_table[] = {
 	pcomm,
 	pcomm1,
 	pdata,
+	pdpage,
 	pendb,
 	penter,
 	pentry,
@@ -120,7 +121,7 @@ PRIVATE void asline(void)
 #if SIZEOF_OFFSET_T > 2
 	fqflag =
 #endif
-	    fdflag = fcflag = FALSE;
+	    fdflag = fcflag = fbflag = FALSE;
 	cpuwarn();
 	readline();
 	indented = (*lineptr == ' ' || *lineptr == '\t');

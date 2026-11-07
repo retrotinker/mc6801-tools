@@ -126,6 +126,13 @@ PUBLIC void genobj(void)
 					putabs(*bufptr++);
 				while (--remaining != 0);
 			}
+			if (fbflag) {
+				adrptr = databuf.fbbuf;
+				remaining = mcount;
+				do
+					genobjadr(adrptr++, 1);
+				while (--remaining != 0);
+			}
 			if (fdflag) {
 				adrptr = databuf.fdbuf;
 				remaining = mcount;

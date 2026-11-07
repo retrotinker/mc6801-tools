@@ -256,6 +256,13 @@ PUBLIC void factor(void)
 					 symptr->
 					 data & REGBIT ? REGUID : MNUID);
 			else {
+				/* a forward reference, for DPAGE: the same
+				   in every pass, as it is decided in the
+				   first */
+				if (pass == 0 && symptr->data & UNDBIT)
+					symptr->early = TRUE;
+				if (symptr->early)
+					expearly = TRUE;
 				if (!(symptr->type & (LABIT | VARBIT))) {
 					if (last_pass == 1)
 						symptr->data |= FORBIT;

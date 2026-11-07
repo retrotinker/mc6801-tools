@@ -117,6 +117,7 @@ PUBLIC void initp1p2(void)
 	register struct lc_s *lcp;
 
 	dirty_pass = 0;
+	dpagemask = 0;		/* DPAGE applies from where it appears */
 	ifflag = TRUE;
 	pedata = UNDBIT;	/* program entry point not defined */
 	blockstak = hid_blockstak + MAXBLOCK;

@@ -94,6 +94,13 @@ PUBLIC void genbin(void)
 					putbin(*bufptr++);
 				while (--remaining != 0x0);
 			}
+			if (fbflag) {
+				adrptr = databuf.fbbuf;
+				remaining = mcount;
+				do
+					putbin((opcode_pt) (adrptr++)->offset);
+				while (--remaining != 0x0);
+			}
 			if (fdflag) {
 				adrptr = databuf.fdbuf;
 				remaining = mcount;

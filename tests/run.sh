@@ -112,6 +112,12 @@ link dp-far	-T 0xE000 -D 0x5000 dpref.o dpvars.o
 link dp-lib	-T 0xE000 -D 0x5000 dpcall.o libdp.a dpvars.o
 rm -f libdp.a
 
+# DPAGE: direct addresses, 8-bit immediates and FCB data with page-zero
+# addresses; with counter 4 in page zero they link, elsewhere each is
+# an error
+link dpage	-m -M -S dpage.ld dpage.o dpshared.o
+link dpage-far	-T 0xE000 -D 0x5000 dpage.o dpshared.o
+
 # the default script, as printed by -P, and linking with it: the output
 # must be the same as without a script, with or without the options
 "$LD" -P > default.ld 2> default.err
@@ -247,6 +253,11 @@ echo $? > sim-manual-rom.rc
 # reads the right byte (A=$99 from local+2, after $17 and B=$42)
 "$SIM" -n 4 dp-zp.out > sim-dp-zp.run 2>&1
 echo $? > sim-dp-zp.rc
+
+# dpage.s linked with counter 4 in page zero: the page-zero data it
+# changed, its registers, and its table of addresses
+"$SIM" -d 0x0080-0x008F -d 0xE024-0xE029 dpage.out > sim-dpage.run 2>&1
+echo $? > sim-dpage.rc
 
 # an illegal opcode ($02, after a NOP) is an error
 printf '\001\002' > illegal.bin
