@@ -1,5 +1,5 @@
 Name:           mc6801-tools
-Version:        1.6.1
+Version:        2.0.0
 Release:        1%{?dist}
 Summary:        Assembler, linker and binary utilities for the Motorola MC6801
 
@@ -68,6 +68,11 @@ test -s demo-check/main.wav
 %{_mandir}/man1/size01.1*
 
 %changelog
+* Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 2.0.0-1
+- Update to 2.0.0: .BSS uses location counter 4 and is left out of the
+  executable, with the common blocks; no padding between modules and no
+  rounding of common blocks; as01 warnings on by default
+
 * Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 1.6.1-1
 - Update to 1.6.1: ld01 reports initialized data, or BYTE and WORD, in
   a NOLOAD section instead of silently leaving it out
