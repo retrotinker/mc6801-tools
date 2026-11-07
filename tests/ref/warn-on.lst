@@ -1,0 +1,11 @@
+00001                   ; warn.s - a source with a warning, which as01 reports unless -w is given
+00002 0000              	LOC	0
+00003 0000   BD   0003> start	jsr	near		; short branch would do
+*****                                                   ^short branch would do
+00004 0003   39         near	rts
+
+Symbols:
+near                        0 0003 R   start                       0 0000 R   
+
+00000 errors
+00001 warnings

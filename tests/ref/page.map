@@ -2,8 +2,9 @@ page            +page.o
 Section         Address  Size     Load
 .text           00000000 000000f4
     00000000 000000f4 page.o(LOC0)
-.data           000000f4 00000030
+.data           000000f4 0000002d
     00000100 00000021 page.o(LOC2)
+.bss            00000121 00000000 (NOLOAD)
 
                 page                pstart  0  00000000  R N
                 page                    dp  2  00000100  r

@@ -1,3 +1,3 @@
-ld01: dpref.o: counter ($5004) is not in page zero ($00-$ff), at $e001
+ld01: dpref.o: counter ($5003) is not in page zero ($00-$ff), at $e001
 ld01: dpref.o: LOC3 ($5000) is not in page zero ($00-$ff), at $e003
 ld01: dpref.o: LOC3+$0002 ($5002) is not in page zero ($00-$ff), at $e008

@@ -988,23 +988,20 @@ PRIVATE void add(const char *format, ...)
 	buflen += n;
 }
 
-/* the PROVIDEs and input statements for one location counter */
-PRIVATE void addcounter(int seg, int indent, int data)
+/* the PROVIDEs and input statement for one location counter's code
+   and data, or (common) its common blocks */
+PRIVATE void addcounter(int seg, int indent, int common)
 {
 	const char *in = indent ? "            " : "        ";
+	char kind = common ? 'C' : 'D';
 
-	add("%sPROVIDE(__seg%XDL = .);\n", in, seg);
-	if (data)
-		add("%sHIDDEN(__dpos = .);\n", in);
-	add("%s*(LOC%d)\n", in, seg);
-	if (data)
-		add("%sHIDDEN(__dend = . != __dpos ? . : __dend);\n", in);
-	add("%sPROVIDE(__seg%XDH = .);\n", in, seg);
-	add("%sPROVIDE(__seg%XCL = .);\n", in, seg);
-	add("%s*(COMMON%d)\n", in, seg);
-	add("%sPROVIDE(__seg%XCH = .);\n", in, seg);
+	add("%sPROVIDE(__seg%X%cL = .);\n", in, seg, kind);
+	add("%s*(%s%d)\n", in, common ? "COMMON" : "LOC", seg);
+	add("%sPROVIDE(__seg%X%cH = .);\n", in, seg, kind);
 }
 
+/* .BSS (location counter 4) and the common blocks are uninitialized
+   data, in a NOLOAD section after the data; modules aren't padded */
 PRIVATE char *default_script(int sepid, int binary)
 {
 	char dataaddr[24], dvalue[24], hvalue[24];
@@ -1034,8 +1031,7 @@ PRIVATE char *default_script(int sepid, int binary)
 	    (unsigned long)text_base_value, dvalue, hvalue);
 	add("OUTPUT_FORMAT(%s)\n\n", binary ? "binary" : "aout");
 	add("SECTIONS\n{\n");
-	add("    .text 0x%04lX : SUBALIGN(4)\n    {\n",
-	    (unsigned long)text_base_value);
+	add("    .text 0x%04lX :\n    {\n", (unsigned long)text_base_value);
 	add("        __btext = .;\n");
 	add("        PROVIDE(__segoff = 0);\n");
 	addcounter(0, 0, 0);
@@ -1044,17 +1040,20 @@ PRIVATE char *default_script(int sepid, int binary)
 	if (sepid)
 		add("        . = ALIGN(16);\n");
 	add("    }\n\n");
-	add("    .data %s : SUBALIGN(4)\n    {\n", dataaddr);
+	add("    .data %s :\n    {\n", dataaddr);
 	add("        __bdata = .;\n");
-	add("        HIDDEN(__dend = .);\n\n");
 	add("        ONEPAGE\n        {\n");
-	addcounter(2, 1, 1);
+	addcounter(2, 1, 0);
 	add("        }\n");
-	for (seg = 3; seg < NSEG; ++seg) {
-		add("\n");
+	for (seg = 3; seg < NSEG; ++seg)
+		if (seg != 4)
+			addcounter(seg, 0, 0);
+	add("        __edata = .;\n");
+	add("    }\n\n");
+	add("    .bss (NOLOAD) :\n    {\n");
+	addcounter(4, 0, 0);
+	for (seg = 0; seg < NSEG; ++seg)
 		addcounter(seg, 0, 1);
-	}
-	add("\n        __edata = __dend;\n");
 	add("        __end = .;\n");
 	add("    }\n\n");
 	add("    PROVIDE(__heap_top = __end + 0x%04lX);\n",
@@ -1188,7 +1187,8 @@ PRIVATE int secmatch(const char *pat, int seg, int common)
 		snprintf(name, sizeof name, "COMMON%d", seg);
 	} else {
 		if ((strcmp(pat, ".text") == 0 && seg == 0)
-		    || (strcmp(pat, ".data") == 0 && seg == 3))
+		    || (strcmp(pat, ".data") == 0 && seg == 3)
+		    || (strcmp(pat, ".bss") == 0 && seg == 4))
 			return 1;
 		snprintf(name, sizeof name, "LOC%d", seg);
 	}

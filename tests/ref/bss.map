@@ -11,8 +11,8 @@ Section         Address  Size     Load
     0000103d 00000003 segs.o(LOC5)
     00001040 00000005 segs.o(LOC15)
     00001045 00000007 helper.o(LOC3)
-.bss            0000104c 00000014 (NOLOAD)
-    0000104c 00000014 helper.o(COMMON3)
+.bss            0000104c 00000012 (NOLOAD)
+    0000104c 00000012 helper.o(COMMON3)
 
                 segs                  far5  5  0000103d  r
                 segs               message  3  0000102d  r

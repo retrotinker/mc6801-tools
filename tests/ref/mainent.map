@@ -1,7 +1,8 @@
 mainent         +mainent.o
 Section         Address  Size     Load
-.text           00000000 00000004
+.text           00000000 00000001
     00000000 00000001 mainent.o(LOC0)
-.data           00000004 00000000
+.data           00000001 00000000
+.bss            00000001 00000000 (NOLOAD)
 
              mainent                 _main  0  00000000  R

@@ -5,26 +5,27 @@ crtstart        +crtstart.o
 main            +main.o
 screen          +screen.o
 Section         Address  Size     Load
-.text           0000434c 0000006c
+.text           0000434c 00000063
     0000434c 0000000f libnum.a:one.o(LOC0)
-    0000435c 0000000f libnum.a:two.o(LOC0)
-    0000436c 00000011 libnum.a:three.o(LOC0)
-    00004380 00000004 crtstart.o(LOC0)
-    00004384 0000000d main.o(LOC0)
-    00004394 00000023 screen.o(LOC0)
-.data           000043b8 00000000
+    0000435b 0000000f libnum.a:two.o(LOC0)
+    0000436a 00000011 libnum.a:three.o(LOC0)
+    0000437b 00000004 crtstart.o(LOC0)
+    0000437f 0000000d main.o(LOC0)
+    0000438c 00000023 screen.o(LOC0)
+.data           000043af 00000000
+.bss            000043af 00000000 (NOLOAD)
 
                  one               msg_one  0  0000434c  r
                  one                   one  0  00004351  R
-                 two                   two  0  00004361  R
-                 two               msg_two  0  0000435c  r
-               three                 three  0  00004373  R
-               three             msg_three  0  0000436c  r
-            crtstart               __start  0  00004380  R N
-                main                  main  0  00004384  R
+                 two                   two  0  00004360  R
+                 two               msg_two  0  0000435b  r
+               three                 three  0  00004371  R
+               three             msg_three  0  0000436a  r
+            crtstart               __start  0  0000437b  R N
+                main                  main  0  0000437f  R
               screen                SCREEN  0  00004000  a
-              screen               clrsc.1  0  0000439b  r
-              screen               prstlop  0  000043a8  r
-              screen               prstxit  0  000043b6  r
-              screen                clrscn  0  00004394  R
-              screen              prstring  0  000043a5  R
+              screen               clrsc.1  0  00004393  r
+              screen               prstlop  0  000043a0  r
+              screen               prstxit  0  000043ae  r
+              screen                clrscn  0  0000438c  R
+              screen              prstring  0  0000439d  R

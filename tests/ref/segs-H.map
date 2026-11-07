@@ -1,27 +1,28 @@
 segs            +segs.o
 helper          +helper.o
 Section         Address  Size     Load
-.text           0000e000 00000030
+.text           0000e000 00000029
     0000e000 00000020 segs.o(LOC0)
     0000e020 00000006 helper.o(LOC0)
-    0000e028 00000004 helper.o(COMMON0)
-    0000e02c 00000003 segs.o(LOC1)
-.data           0000e030 00000038
-    0000e030 00000010 segs.o(LOC3)
-    0000e040 00000007 helper.o(LOC3)
-    0000e048 00000014 helper.o(COMMON3)
-    0000e05c 00000003 segs.o(LOC5)
-    0000e060 00000005 segs.o(LOC15)
+    0000e026 00000003 segs.o(LOC1)
+.data           0000e029 0000001f
+    0000e029 00000010 segs.o(LOC3)
+    0000e039 00000007 helper.o(LOC3)
+    0000e040 00000003 segs.o(LOC5)
+    0000e043 00000005 segs.o(LOC15)
+.bss            0000e048 00000016 (NOLOAD)
+    0000e048 00000004 helper.o(COMMON0)
+    0000e04c 00000012 helper.o(COMMON3)
 
-                segs                  far5  5  0000e05c  r
-                segs               message  3  0000e030  r
+                segs                  far5  5  0000e040  r
+                segs               message  3  0000e029  r
                 segs                 local  0  0000e01e  r
                 segs                 start  0  0000e000  R N
-                segs                  last  f  0000e060  r
-                segs                  fast  1  0000e02c  r
+                segs                  last  f  0000e043  r
+                segs                  fast  1  0000e026  r
               helper                 help2  0  0000e025  r
               helper                helper  0  0000e020  R
-              helper                 table  3  0000e040  R
-              helper               codecom  0  0000e028  R C
-              helper                   buf  3  0000e048  R C
-              helper               counter  3  0000e058  R C
+              helper                 table  3  0000e039  R
+              helper               codecom  0  0000e048  R C
+              helper                   buf  3  0000e04c  R C
+              helper               counter  3  0000e05c  R C

@@ -1,13 +1,13 @@
 00001                   ; dpagerr.s - DPAGE errors
 00002                   	DPAGE	16		; no such location counter
 *****                                                   ^data out of bounds
-00003                   here	DPAGE	4		; a label isn't allowed
+00003                   here	DPAGE	5		; a label isn't allowed
 *****                   ^illegal label
 00004 0000              	LOC	3
 00005 0000          01  data3	fcb	1
-00006 0000              	LOC	4
+00006 0000              	LOC	5
 00007 0000        0100  	RMB	$100
-00008 0100          01  far	fcb	1		; 256 bytes into page-zero counter 4
+00008 0100          01  far	fcb	1		; 256 bytes into page-zero counter 5
 00009 0000              	LOC	0
 00010 0000   86     00  	ldaa	#data3		; relocatable, but not in a DPAGE counter
 *****                                                   ^absolute expression required
@@ -21,7 +21,7 @@
 *****                                      ^data out of bounds
 
 Symbols:
-data3                       3 0000 R   far                         4 0100 R   
+data3                       3 0000 R   far                         5 0100 R   
 here                        0 0000 R   
 
 00007 errors

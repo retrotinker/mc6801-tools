@@ -1,1 +1,1 @@
-ld01: err-region.ld:4: section .text doesn't fit in memory region SMALL: it's 80 bytes too big
+ld01: err-region.ld:4: section .text doesn't fit in memory region SMALL: it's 78 bytes too big

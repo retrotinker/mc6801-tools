@@ -1,0 +1,19 @@
+bssprog         +bssprog.o
+Section         Address  Size     Load
+.text           00001000 00000020
+    00001000 00000020 bssprog.o(LOC0)
+.data           00001020 00000001
+    00001020 00000001 bssprog.o(LOC3)
+.bss            00001021 00000006 (NOLOAD)
+    00001021 00000005 bssprog.o(LOC4)
+    00001026 00000001 bssprog.o(COMMON4)
+
+             bssprog                  var1  4  00001021  r
+             bssprog             __bss_end  3  00001027  R
+             bssprog                  copy  4  00001026  R C
+             bssprog                  init  3  00001020  r
+             bssprog                 table  4  00001022  r
+             bssprog                bstart  0  00001000  R N
+             bssprog                 clear  0  00001003  r
+             bssprog               cleared  0  0000100d  r
+             bssprog           __bss_start  3  00001021  R

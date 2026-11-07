@@ -114,8 +114,7 @@ PUBLIC void write_elks(char *outfilename, bool_pt argsepid,
 						undefined(symptr->name);
 						continue;
 					}
-					tempoffset =
-					    ld_roundup(symptr->value, 4, bin_off_t);
+					tempoffset = symptr->value;	/* size */
 					seg = symptr->flags & SEGM_MASK;
 					symptr->value = modptr->comsize[seg];
 					modptr->comsize[seg] += tempoffset;

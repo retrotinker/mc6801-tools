@@ -5,7 +5,7 @@ helper          +helper.o
 Memory region   Origin   Length   Used
 ROM             0000e000 00001ff0 0000006a
 VEC             0000fff0 00000010 00000010
-RAM             00000080 00000080 00000040
+RAM             00000080 00000080 0000003e
 
 Section         Address  Size     Load
 .vectors        0000fff0 00000010
@@ -21,9 +21,9 @@ Section         Address  Size     Load
     00000093 00000003 segs.o(LOC5)
     00000096 00000005 segs.o(LOC15)
     0000009b 00000007 helper.o(LOC3)
-.bss            000000a8 00000018 (NOLOAD)
+.bss            000000a8 00000016 (NOLOAD)
     000000a8 00000004 helper.o(COMMON0)
-    000000ac 00000014 helper.o(COMMON3)
+    000000ac 00000012 helper.o(COMMON3)
 
               romcrt          __data_start  3  00000080  R
               romcrt           __data_load  3  0000e042  R

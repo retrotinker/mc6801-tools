@@ -111,6 +111,22 @@ for f in at-aout region noregion lmaoverlap; do
 	link err-$f -S err-$f.ld segs.o helper.o
 done
 
+# 2.0's default layout: .BSS (counter 4) and the common blocks are
+# uninitialized data, not in the file; .bss in a pattern means the same
+# as the default layout; initialized data under .BSS is an error; and
+# 1.6's default script still gives 1.6's layout (demo-1.6.out is the
+# same as 1.6's demo.out)
+link bssprog	-m -M -T 0x1000 bssprog.o
+link bss-pat	-S bss-pat.ld bssprog.o
+if cmp -s bssprog.out bss-pat.out; then
+	echo "ok   bss-pat.out is the same as bssprog.out"
+else
+	echo "DIFF bss-pat.out and bssprog.out"
+fi > bss-pat.result
+rm -f bss-pat.out
+link bssinit	-T 0x1000 bssinit.o
+link demo-1.6	-S default-1.6.ld -lnum -Cstart main.o screen.o
+
 # initialized data in a NOLOAD section, which isn't written, is an
 # error (once for each module and counter); reserved space isn't, and
 # BYTE or WORD there is a script error
@@ -150,7 +166,7 @@ link imp-ab	-m -T 0x1000 impuse.o impdef.o
 link imp-ba	-m -T 0x1000 impdef.o impuse.o
 
 # DPAGE: direct addresses, 8-bit immediates and FCB data with page-zero
-# addresses; with counter 4 in page zero they link, elsewhere each is
+# addresses; with counter 5 in page zero they link, elsewhere each is
 # an error
 link dpage	-m -M -S dpage.ld dpage.o dpshared.o
 link dpage-far	-T 0xE000 -D 0x5000 dpage.o dpshared.o
@@ -235,6 +251,14 @@ for f in disasm dpage romcrt one; do
 done
 "$OD" -d demo.out | sed -n '/^DISASSEMBLY/,$p' > demo.dis
 
+# warnings are on by default, and -w turns them off; either way the
+# exit status is the same
+"$AS" -o warn-on.o -l warn-on.lst "$tests"/src/warn.s > warn-on.out 2>&1
+echo $? > warn-on.rc
+"$AS" -w -o warn-off.o -l warn-off.lst "$tests"/src/warn.s > warn-off.out 2>&1
+echo $? > warn-off.rc
+rm -f warn-on.o warn-off.o
+
 # relocatable output: an archive, compared by its contents since the
 # member headers contain file dates
 "$LD" -r -o rel.a segs.o helper.o > rel.err 2>&1
@@ -306,10 +330,20 @@ echo $? > sim-manual-rom.rc
 "$SIM" -n 4 dp-zp.out > sim-dp-zp.run 2>&1
 echo $? > sim-dp-zp.rc
 
-# dpage.s linked with counter 4 in page zero: the page-zero data it
+# dpage.s linked with counter 5 in page zero: the page-zero data it
 # changed, its registers, and its table of addresses
 "$SIM" -d 0x0080-0x008F -d 0xE024-0xE029 dpage.out > sim-dpage.run 2>&1
 echo $? > sim-dpage.rc
+
+# bssprog.s: its uninitialized data starts as garbage ($AA), and the
+# start-up code clears it before the program stores its values
+"$OC" -O srec bssprog.out bssprog.srec > /dev/null 2>&1
+bss=$("$OD" -n bssprog.out | awk '$3 == "__bss_start" { print $1 }')
+bss=$((0x$bss))
+"$SIM" -w $bss=0xAAAA -w $((bss + 2))=0xAAAA -w $((bss + 4))=0xAAAA \
+	-d $((bss - 1))-$((bss + 6)) bssprog.srec > sim-bssprog.run 2>&1
+echo $? > sim-bssprog.rc
+rm -f bssprog.srec
 
 # an illegal opcode ($02, after a NOP) is an error
 printf '\001\002' > illegal.bin

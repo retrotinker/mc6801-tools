@@ -1,0 +1,5 @@
+00003 0000   BD   0003> start	jsr	near		; short branch would do
+*****                                                   ^short branch would do
+
+00000 errors
+00001 warnings

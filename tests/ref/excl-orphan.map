@@ -6,13 +6,13 @@ Section         Address  Size     Load
 .text2          00002000 00000009
     00002000 00000003 segs.o(LOC1)
     00002003 00000006 helper.o(LOC0)
-.data           00008000 00000037
+.data           00008000 00000035
     00008000 00000010 segs.o(LOC3)
     00008010 00000003 segs.o(LOC5)
     00008013 00000005 segs.o(LOC15)
     00008018 00000007 helper.o(LOC3)
     0000801f 00000004 helper.o(COMMON0)
-    00008023 00000014 helper.o(COMMON3)
+    00008023 00000012 helper.o(COMMON3)
 
                 segs                  far5  5  00008010  r
                 segs               message  3  00008000  r

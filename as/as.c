@@ -48,7 +48,7 @@ PUBLIC int main(int argc, char **argv)
 	initsource();
 	typeconv_init(INT_BIG_ENDIAN, LONG_BIG_ENDIAN);
 	as_warn.global = TRUE;	/* constant */
-	as_warn.semaphore = -1;
+	as_warn.semaphore = 0;	/* warnings on, unless -w */
 	last_pass = 1;
 	process_args(argc, argv);
 	initscan();
@@ -249,7 +249,7 @@ get_any_list_file:
 					usage();
 				textseg = atoi(nextarg);
 				if (textseg > 0)
-					textseg += BSSLOC;
+					textseg += DATALOC;
 				--argc;
 				++argv;
 				break;
