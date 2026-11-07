@@ -140,6 +140,15 @@ PUBLIC void error(char *err_str)
 PUBLIC void listline(void)
 {
 	if (!listpre && lineptr != 0) {
+		/* only the last pass is listed; an error found in an
+		   earlier pass is found again then (and only then
+		   counted), unless it is fatal and as01 stops now */
+		if (pass != last_pass && !fatal_listing) {
+			errcount = 0;
+			erroverflow = FALSE;
+			list_force = FALSE;
+			return;
+		}
 		if (errcount || (list.current && (!macflag || mcount != 0)) ||
 		    (macflag && maclist.current) || list_force)
 			list1(lstfil);

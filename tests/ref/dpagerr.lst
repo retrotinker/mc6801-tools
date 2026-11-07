@@ -1,9 +1,3 @@
-00002                   	DPAGE	16		; no such location counter
-*****                                                   ^data out of bounds
-00003                   here	DPAGE	4		; a label isn't allowed
-*****                   ^illegal label
-00014 0007          00> 	fcb	far
-*****                                      ^data out of bounds
 00001                   ; dpagerr.s - DPAGE errors
 00002                   	DPAGE	16		; no such location counter
 *****                                                   ^data out of bounds
