@@ -1,0 +1,11 @@
+noload          +noload.o
+Section         Address  Size     Load
+.text           00001000 00000001
+    00001000 00000001 noload.o(LOC0)
+.data           00001001 00000003
+    00001001 00000003 noload.o(LOC4)
+.bss            00001004 00000004 (NOLOAD)
+    00001004 00000004 noload.o(LOC5)
+
+              noload                  init  4  00001001  r
+              noload               nlstart  0  00001000  R N

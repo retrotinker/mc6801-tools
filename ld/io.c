@@ -556,6 +556,21 @@ PUBLIC void import_counter(char *name, int iseg, char *ifname, char *ianame,
 	putstrn("");
 }
 
+/* initialized data (bytes or relocations) in a module's counter that a
+   linker script puts in a NOLOAD section, which isn't written */
+
+PUBLIC void noload_data(char *fname, char *aname, int seg, char *sectname)
+{
+	++errcount;
+	refer();
+	putmodule(fname, aname);
+	putstr(": ");
+	putloc(seg);
+	putstr(" has initialized data, but ");
+	putstr(sectname ? sectname : "its section");
+	putstrn(" is NOLOAD");
+}
+
 /* a one-byte relocation that doesn't fit: a direct address or indexed
    offset outside $00-$FF, or a branch out of range; name is the symbol,
    or null for offset in this module's counter seg */

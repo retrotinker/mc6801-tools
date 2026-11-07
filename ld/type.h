@@ -54,6 +54,7 @@ struct modstruct		/* module table entry format */
     bin_off_t segpad[NSEG];	/* padding after its part of each seg */
     char segfill[NSEG];		/* byte for that padding */
     char segnoload[NSEG];	/* its part of the seg isn't written */
+    char *segsect[NSEG];	/* the output section it is in (script) */
     char segsize[1];		/* up to 64 size bytes begin here */
 };				/* careful with sizeof( struct modstruct )!! */
 
@@ -124,6 +125,7 @@ void redefined P((char *name, char *message, char *archentry,
 void interseg P((char *fname, char *aname, char *name));
 void import_counter P((char *name, int iseg, char *ifname, char *ianame,
 		       int dseg, char *dfname, char *daname));
+void noload_data P((char *fname, char *aname, int seg, char *sectname));
 void byte_reloc_error P((char *fname, char *aname, char *name, int seg,
 			 bin_off_t offset, bin_off_t value, bin_off_t addr,
 			 int pcrel));
