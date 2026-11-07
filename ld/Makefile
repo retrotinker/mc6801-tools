@@ -27,8 +27,8 @@ all: ld01 objdump01 objcopy01
 ld01: $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $@
 
-objdump01: objdump86.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) $< -o $@
+objdump01: objdump86.c m6801ops.c m6801ops.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) objdump86.c m6801ops.c -o $@
 
 objcopy01: objcopy.c srec.c srec.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) objcopy.c srec.c -o $@

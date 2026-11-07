@@ -1,0 +1,9 @@
+DISASSEMBLY
+SEG 0
+0000  8e 00 00  reset    lds    #__stack_top
+0003  ce 00 00           ldx    #__data_load
+0006  cc 00 00           ldd    #__data_start
+0009  cc 00 00           ldd    #__data_end
+000c  bd 00 00           jsr    start
+000f  20 fe              bra    *
+

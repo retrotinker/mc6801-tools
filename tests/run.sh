@@ -198,6 +198,13 @@ for f in manual/*; do
 done
 rmdir manual
 
+# objdump01 -d: object modules (relocated operands by name, data in
+# code) and an executable (labels, calls and branches by name)
+for f in disasm dpage romcrt one; do
+	"$OD" -d $f.o | sed -n '/^DISASSEMBLY/,$p' > $f.dis
+done
+"$OD" -d demo.out | sed -n '/^DISASSEMBLY/,$p' > demo.dis
+
 # relocatable output: an archive, compared by its contents since the
 # member headers contain file dates
 "$LD" -r -o rel.a segs.o helper.o > rel.err 2>&1
@@ -231,7 +238,15 @@ awk -F'\t' '/^[0-9][0-9][0-9][0-9][0-9] [0-9A-F][0-9A-F][0-9A-F][0-9A-F] / {
 "$SIM" -L -a 0 allops.bin | awk '{ print $1, $2, $3 }' > allops.sim
 diff allops.as allops.sim > sim-allops.diff
 wc -l < allops.as | tr -d ' ' > sim-allops.count
-rm -f allops.bin allops.lst allops.as allops.sim
+# objdump01 -d uses the same table, on an object file: it must agree too
+"$AS" -w- -o allops.o "$tests"/sim/allops.s > /dev/null 2>&1
+"$OD" -d allops.o | sed -n '/^DISASSEMBLY/,$p' | awk '
+	/^[0-9a-f][0-9a-f][0-9a-f][0-9a-f]  / {
+		m = substr($0, 26, 6); sub(/ +$/, "", m)
+		print toupper(substr($0, 1, 4)), toupper(substr($0, 7, 2)), toupper(m) }' \
+	> allops.od
+diff allops.as allops.od > od-allops.diff
+rm -f allops.bin allops.lst allops.as allops.sim allops.o allops.od
 
 # instructions and their condition codes, worked out from the data sheet
 # (the sources' "expect" comments)

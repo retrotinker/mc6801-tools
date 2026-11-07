@@ -1,0 +1,23 @@
+DISASSEMBLY
+SEG 0
+0000  8e 00 7f  dpstart  lds    #$007f
+0003  96 00              ldaa   <count
+0005  d6 00              ldab   <count+$1
+0007  dd 00              std    <result
+0009  96 00              ldaa   <shared
+000b  97 00              staa   <flags
+000d  f6 00 00           ldab   count
+0010  7c 00 00           inc    count
+0013  ce 00 00           ldx    #count
+0016  86 00              ldaa   #count
+0018  c6 00              ldab   #shared+$1
+001a  ff 00 00           stx    later
+001d  86 00              ldaa   #later
+001f  ce 00 00           ldx    #table
+0022  20 fe              bra    *
+0024  00        table    fcb    count
+0025  00                 fcb    shared
+0026  00                 fcb    later
+0027  07                 tpa
+0028  00 00              fdb    count
+
