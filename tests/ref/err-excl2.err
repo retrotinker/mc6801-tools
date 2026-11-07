@@ -1,0 +1,1 @@
+ld01: err-excl2.ld:4: EXCLUDE_FILE() must come before an input pattern

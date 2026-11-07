@@ -1,0 +1,1 @@
+ld01: warning: helper.o(LOC0) isn't placed by the script; adding it to .text2

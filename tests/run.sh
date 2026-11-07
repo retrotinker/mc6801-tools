@@ -103,6 +103,21 @@ for f in at-aout region noregion lmaoverlap; do
 	link err-$f -S err-$f.ld segs.o helper.o
 done
 
+# EXCLUDE_FILE: the ROM layout with the vector table's section after
+# .text, which excludes it, gives the same output as rom.ld; input that a
+# section excludes and nothing else takes is an orphan, placed after a
+# section that takes all files; and two syntax errors
+link rom-excl	-m -M -S rom-excl.ld romcrt.o romvec.o segs.o helper.o
+if cmp -s rom.out rom-excl.out; then
+	echo "ok   rom-excl.out is the same as rom.out"
+else
+	echo "DIFF rom-excl.out and rom.out"
+fi > excl.result
+link excl-orphan	-m -M -S excl-orphan.ld segs.o helper.o
+for f in excl1 excl2; do
+	link err-$f -S err-$f.ld segs.o helper.o
+done
+
 # one-byte relocations (forced direct addresses, indexed offsets): in
 # page zero they link; elsewhere each is an error naming the module, or
 # the library member, the target and the address
