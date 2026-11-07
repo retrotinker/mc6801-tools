@@ -1,0 +1,22 @@
+00001                   ; disasm.s - code with data in it, for objdump01 -d: an illegal opcode,
+00002                   ; a skipped area, a relocated word that isn't an operand, branches, and
+00003                   ; an instruction cut short at the end of the counter
+00004 0000              	LOC	0
+00005 0000   86     01  start	ldaa	#1
+00006 0002          02  	fcb	$02		; not an instruction
+00007 0003        0003  	rmb	3		; skipped
+00008 0006        0000> 	fdb	start		; a relocated word
+00009 0008   20     F6  loop	bra	start
+00010 000A   8D     FE  	bsr	*
+00011 000C   96     80  	ldaa	$80		; direct
+00012 000E   B6   0080  	ldaa	>$80		; extended, forced
+00013 0011          B6  	fcb	$b6		; LDAA extended, cut short
+00014 0000              	LOC	1
+00015 0000   39         sub1	rts
+
+Symbols:
+loop                        0 0008 R   start                       0 0000 R   
+sub1                        1 0000 R   
+
+00000 errors
+00000 warnings

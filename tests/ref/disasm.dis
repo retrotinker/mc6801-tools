@@ -1,0 +1,14 @@
+DISASSEMBLY
+SEG 0
+0000  86 01     start    ldaa   #$01
+0002  02                 fcb    $02
+0003                     rmb    3
+0006  00 00              fdb    start
+0008  20 f6     loop     bra    start
+000a  8d fe              bsr    *
+000c  96 80              ldaa   $80
+000e  b6 00 80           ldaa   >$0080
+0011  b6                 fcb    $b6
+SEG 1
+0000  39        sub1     rts
+

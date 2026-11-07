@@ -1,0 +1,73 @@
+DISASSEMBLY
+434c  4f        msg_one  clra
+434d  4e                 fcb    $4e
+434e  45                 fcb    $45
+434f  0d                 sec
+4350  00                 fcb    $00
+4351  ce 43 4c  one      ldx    #$434c
+4354  3c                 pshx
+4355  bd 43 a5           jsr    prstring
+4358  31                 ins
+4359  31                 ins
+435a  39                 rts
+435b  00                 fcb    $00
+435c  54        msg_two  lsrb
+435d  57                 asrb
+435e  4f                 clra
+435f  0d                 sec
+4360  00                 fcb    $00
+4361  ce 43 5c  two      ldx    #$435c
+4364  3c                 pshx
+4365  bd 43 a5           jsr    prstring
+4368  31                 ins
+4369  31                 ins
+436a  39                 rts
+436b  00                 fcb    $00
+436c  54        msg_thre lsrb
+436d  48                 asla
+436e  52                 fcb    $52
+436f  45                 fcb    $45
+4370  45                 fcb    $45
+4371  0d                 sec
+4372  00                 fcb    $00
+4373  ce 43 6c  three    ldx    #$436c
+4376  3c                 pshx
+4377  bd 43 a5           jsr    prstring
+437a  31                 ins
+437b  31                 ins
+437c  39                 rts
+437d  00                 fcb    $00
+437e  00                 fcb    $00
+437f  00                 fcb    $00
+4380  bd 43 84  __start  jsr    main
+4383  39                 rts
+4384  bd 43 94  main     jsr    clrscn
+4387  bd 43 51           jsr    one
+438a  bd 43 61           jsr    two
+438d  bd 43 73           jsr    three
+4390  39                 rts
+4391  00                 fcb    $00
+4392  00                 fcb    $00
+4393  00                 fcb    $00
+4394  ce 40 00  clrscn   ldx    #$4000
+4397  86 60              ldaa   #$60
+4399  c6 60              ldab   #$60
+439b  ed 00     clrsc.1  std    $00,x
+439d  08                 inx
+439e  08                 inx
+439f  8c 42 00           cpx    #$4200
+43a2  2d f7              blt    clrsc.1
+43a4  39                 rts
+43a5  30        prstring tsx
+43a6  ee 02              ldx    $02,x
+43a8  a6 00     prstlop  ldaa   $00,x
+43aa  27 0a              beq    prstxit
+43ac  08                 inx
+43ad  3c                 pshx
+43ae  fe ff de           ldx    $ffde
+43b1  ad 00              jsr    $00,x
+43b3  38                 pulx
+43b4  20 f2              bra    prstlop
+43b6  39        prstxit  rts
+43b7  00                 fcb    $00
+

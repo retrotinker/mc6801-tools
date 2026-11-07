@@ -1,0 +1,14 @@
+DISASSEMBLY
+SEG 0
+0000  4f        msg_one  clra
+0001  4e                 fcb    $4e
+0002  45                 fcb    $45
+0003  0d                 sec
+0004  00                 fcb    $00
+0005  ce 00 00  one      ldx    #msg_one
+0008  3c                 pshx
+0009  bd 00 00           jsr    prstring
+000c  31                 ins
+000d  31                 ins
+000e  39                 rts
+
