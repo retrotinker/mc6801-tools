@@ -213,7 +213,11 @@ Trace the modules as they are read.
 Must come before the input files.
 .TP
 .B \-y
-Write an extended symbol table.
+Write an extended symbol table, in which a name longer than 8
+characters continues in extra entries.
+This is the default;
+.B \-y\-
+writes the old table, with names cut to 8 characters.
 .TP
 .B \-v
 Print a version message and exit.
@@ -598,8 +602,6 @@ The exit status is 0 on success and non\-zero on error.
 .PP
 The mc6801\-tools User\(aqs Manual
 .RI ( mc6801\-tools\-manual.pdf ).
-.SH BUGS
-Symbol names in the a.out symbol table are cut to 8 characters.
 .SH HISTORY
 Derived from
 .B ld86
