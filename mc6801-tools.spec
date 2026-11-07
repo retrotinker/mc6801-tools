@@ -1,5 +1,5 @@
 Name:           mc6801-tools
-Version:        1.2.3
+Version:        1.2.4
 Release:        1%{?dist}
 Summary:        Assembler, linker and binary utilities for the Motorola MC6801
 
@@ -68,6 +68,11 @@ test -s demo-check/main.wav
 %{_mandir}/man1/size01.1*
 
 %changelog
+* Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 1.2.4-1
+- Update to 1.2.4: as01 and ld01 report one-byte addresses that don't
+  fit in a byte, instead of silently truncating them; the regression
+  tests run programs on an MC6801 simulator
+
 * Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 1.2.3-1
 - Update to 1.2.3: fix ar01 corrupting an archive after a failed run,
   as01 crashing on long -n names and rejecting long paths, and objdump01
