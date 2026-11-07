@@ -26,11 +26,12 @@ SECTIONS
 
     .data :
     {
-        *(LOC2 LOC3 LOC4 LOC5 LOC6 LOC7 LOC8 LOC9 LOC1?)
+        *(LOC2 LOC3 LOC5 LOC6 LOC7 LOC8 LOC9 LOC1?)
     } > RAM AT> ROM
 
     .bss (NOLOAD) :
     {
+        *(.bss)
         *(COMMON)
     } > RAM
 

@@ -1,7 +1,7 @@
 ; zpmain.s - uses them
-        DPAGE   4
-        LOC     4
-        IMPORT  count, flags    ; imported while counter 4 is current
+        DPAGE   5
+        LOC     5
+        IMPORT  count, flags    ; imported while counter 5 is current
         LOC     0
 start   ldaa    count           ; 96 xx: direct
         staa    flags           ; 97 xx: direct
@@ -12,5 +12,5 @@ start   ldaa    count           ; 96 xx: direct
         ldaa    total           ; B6 xxxx: total isn't declared yet
         rts
 
-        LOC     4
+        LOC     5
 total   rmb     2

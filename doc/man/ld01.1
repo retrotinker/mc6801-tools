@@ -246,7 +246,12 @@ Start and end of the text segment.
 Start and end of the data segment.
 .TP
 .B __end
-End of all data, including uninitialized data and common blocks.
+End of all data, including the uninitialized data (\fB.BSS\fP and the
+common blocks).
+.TP
+.BR __bss_start ", " __bss_end
+Start and end of the uninitialized data, for start\-up code that clears
+it (as for any output section, if a module imports them).
 .TP
 .B __heap_top
 End of the program plus the
@@ -450,6 +455,9 @@ means
 .B .data
 means
 .BR LOC3 ,
+.B .bss
+means
+.BR LOC4 ,
 and
 .B COMMON
 means all the common blocks.
@@ -532,23 +540,40 @@ location counters 2 to 15 form the a.out text part, and the rest the
 data part.
 The output is marked as having separate instruction and data spaces if
 the data part doesn\(aqt start where the text part ends.
-Common blocks at the end of the data part are its uninitialized data.
+Uninitialized data at the end of the data part, such as a
+.B NOLOAD
+section, is the a.out header\(aqs bss: it isn\(aqt written to the file.
 The header\(aqs total memory size reaches
 .B __heap_top
 if the script sets it.
 .SH SEGMENTS
 This is the layout of the default script.
 The assembler has 16 location counters.
-Counters 0 and 1 are linked into the text segment, and counters 2
-through 15 into the data segment.
+Counters 0 and 1 are linked into the text segment, and counters 2, 3
+and 5 through 15 into the data segment.
+Counter 4 and all common blocks are the uninitialized data, after the
+data: a
+.B NOLOAD
+section,
+.BR .bss ,
+which isn\(aqt written to the file.
+Each module\(aqs part of a segment follows the one before it, with no
+padding.
 If counter 2 would cross a 256\-byte page boundary, it is moved to
 the start of the next page.
 .B .TEXT
-selects counter 0, and
+selects counter 0,
 .B .DATA
-and
+counter 3, and
 .B .BSS
-select counter 3.
+counter 4.
+.PP
+Before version 2.0,
+.B .BSS
+was counter 3, each module was padded to a multiple of 4 bytes, and
+common blocks were rounded up to 4 bytes; the default script that
+.B ld01 \-P
+printed then still gives that layout.
 .SH EXAMPLES
 Link a start\-up module, two objects and a library, loading at $434C:
 .PP
