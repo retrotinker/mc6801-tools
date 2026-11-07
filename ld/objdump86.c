@@ -78,6 +78,7 @@ struct {
 
 int display_mode = 0;
 int multiple_files = 0;
+int exit_status = 0;		/* 1 once any error has been reported */
 int byte_order = 0;
 int m6801 = 0;			/* object file is from as01, not as86 */
 
@@ -139,7 +140,7 @@ int main(int argc, char **argv)
 		       tot_size_text + tot_size_data + tot_size_bss,
 		       tot_size_text + tot_size_data + tot_size_bss);
 
-	return 0;
+	return exit_status;
 }
 
 void do_file(char *fname)
@@ -300,6 +301,7 @@ void do_module(char *fname, char *archive)
 
 int error(char *str)
 {
+	exit_status = 1;
 	switch (display_mode) {
 	case 1:
 		fprintf(stderr, "size: %s: %s\n", ifname, str);
@@ -863,7 +865,7 @@ void nm_aout(void)
 	fseek(ifd, h_len + header[2] + header[3] + header[8] + header[9], 0);
 
 	if (h_flgs & 4) {
-		error("Executable has new format symbol table.\n");
+		error("Executable has new format symbol table");
 		return;
 	}
 

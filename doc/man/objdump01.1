@@ -129,6 +129,19 @@ text	data	bss	dec	hex	filename
          U one
 \&...
 .fi
+.SH DIAGNOSTICS
+Errors, such as a file that can\(aqt be opened or isn\(aqt an object
+file or executable, are reported and the next file is examined.
+In the default mode they are printed on standard output, as
+.BI "Error: " message\fR,
+among the rest of the output;
+.B nm01
+and
+.B size01
+print them on standard error.
+.PP
+The exit status is 0 if every file could be read, and 1 if there was
+an error or no file was given.
 .SH SEE ALSO
 .BR ld01 (1),
 .BR objcopy01 (1),
