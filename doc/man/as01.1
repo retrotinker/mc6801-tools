@@ -196,6 +196,11 @@ A
 before an operand forces direct addressing and a
 .B >
 forces extended.
+A forced direct address must fit in a byte: the assembler reports
+\(lqaddress out of bounds\(rq for an absolute address, or one in the
+module, that doesn\(aqt, and
+.BR ld01 (1)
+checks imported and relocated addresses when it links.
 Direct addressing is chosen only when the address is known in pass 1,
 so forward references use extended addressing.
 The read\-modify\-write instructions

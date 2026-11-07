@@ -240,8 +240,8 @@ Otherwise the link fails, as for an undefined symbol, with a message
 that names the module, the target and the address of the byte:
 
 ```
-ld01: main.o: count ($5004) is not in page zero ($00-$FF), at $E001
-ld01: crt0.o: LOC3+$0002 ($5002) is not in page zero ($00-$FF), at $E00C
+ld01: main.o: count ($5004) is not in page zero ($00-$ff), at $e001
+ld01: crt0.o: LOC3+$0002 ($5002) is not in page zero ($00-$ff), at $e00c
 ```
 
 The check needs no new information: `ld01` already knows the relocation
@@ -331,6 +331,15 @@ Report errors with a new function in `ld/io.c`, alongside `size_error()`
 and `interseg()`, that names the module (and archive member), the symbol
 or counter, the value and the address. Relocatable output (`-r`) has no
 final addresses and isn't checked.
+
+`as01` must check too. For an address in one of the module's own
+counters, the object file holds the offset in the counter, written in
+one byte for a direct address, so an offset over `$FF` would be
+truncated before `ld01` sees it; and a forced direct absolute address
+(`ldaa <$1234`) is truncated the same way. So when `as01` uses direct
+addressing for an operand that is absolute or relocatable in the module
+(not imported), the value must fit in a byte, or it reports `address out
+of bounds`, as it already does for indexed offsets.
 
 This phase stands alone as a bug fix, and could be released first.
 

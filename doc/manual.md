@@ -334,6 +334,11 @@ writing `<` (direct) or `>` (extended) before the operand:
         ldaa    >$0080          ; extended, even though $80 fits in a byte
 ```
 
+A forced direct address must fit in a byte. The assembler reports
+`address out of bounds` for an absolute address, or one in the module,
+that doesn't, and the linker checks imported and relocated addresses
+(see [Page zero](#page-zero-variables)).
+
 The MC6801 has no direct mode for the read-modify-write instructions
 (`NEG`, `COM`, `LSR`, `ROR`, `ASR`, `ASL`/`LSL`, `ROL`, `DEC`, `INC`,
 `TST`, `CLR`) or for `JMP`. These always use extended addressing for
@@ -540,7 +545,7 @@ common messages:
 | `undefined label` | A symbol is used but never defined or imported |
 | `redefined label` | The same label is defined twice |
 | `illegal address mode` | The instruction has no such addressing mode, such as `staa #1` or `clr <$80` |
-| `address out of bounds` | Branch target too far away, or indexed offset outside 0–255 |
+| `address out of bounds` | Branch target too far away, indexed offset outside 0–255, or a `<` address that doesn't fit in a byte |
 | `data out of bounds` | Value too large for a byte |
 | `junk after operands` | Extra text after the operands; comments must start with `;` |
 | `register used as identifier` | `A`, `B`, `D` or `X` used as a label |
@@ -1290,10 +1295,15 @@ deliberately.
   output with `objcopy01`, define `__btext`, `__etext` and `__bdata` as
   the default script does, or give `objcopy01` the addresses with `-T`
   and `-D`.
-* **Page zero.** A script can put variables in page zero
-  (`$0000`–`$00FF`), but `as01` still uses extended addressing for them,
-  because it doesn't know their addresses when it assembles a module.
-  Give fixed addresses with `EQU` to get direct addressing.
+* **Page zero.** []{#page-zero-variables}A script can put variables in
+  page zero (`$0000`–`$00FF`), but `as01` still uses extended addressing
+  for them, because it doesn't know their addresses when it assembles a
+  module. To get direct addressing, write `<` before each reference, or
+  give the variables fixed addresses with `EQU`. The linker checks that
+  every `<` address, and every relocatable indexed offset, ends up in
+  page zero; if the script puts one elsewhere, it reports an error such
+  as
+  `main.o: count ($5004) is not in page zero ($00-$ff), at $e001`.
 * **Common blocks** are allocated in multiples of 4 bytes, as in the
   default layout.
 
