@@ -1562,6 +1562,10 @@ PRIVATE void walk(struct stmt *s, long subalign)
 			dot = value;
 			break;
 		case S_DATA:
+			if (cursect != NULL && cursect->noload)
+				script_error(s->line, "%s in NOLOAD section %s",
+					     s->size == 1 ? "BYTE" : "WORD",
+					     cursect->name);
 			value = eval(s->e);
 			if (s->size == 1 ? value < -128 || value > 255
 			    : value < -32768 || value > 65535)
@@ -1593,6 +1597,8 @@ PRIVATE void walk(struct stmt *s, long subalign)
 					pc->mod->segfill[pc->seg] = curfill;
 					pc->mod->segnoload[pc->seg] =
 					    pc->sect->noload;
+					pc->mod->segsect[pc->seg] =
+					    pc->sect->name;
 				}
 				dot += pc->size + pad;
 			}

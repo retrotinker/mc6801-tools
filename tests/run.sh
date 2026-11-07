@@ -111,6 +111,13 @@ for f in at-aout region noregion lmaoverlap; do
 	link err-$f -S err-$f.ld segs.o helper.o
 done
 
+# initialized data in a NOLOAD section, which isn't written, is an
+# error (once for each module and counter); reserved space isn't, and
+# BYTE or WORD there is a script error
+link err-noload	-S err-noload.ld noload.o
+link noload-ok	-m -M -S noload-ok.ld noload.o
+link err-noload-byte	-S err-noload-byte.ld noload.o
+
 # EXCLUDE_FILE: the ROM layout with the vector table's section after
 # .text, which excludes it, gives the same output as rom.ld; input that a
 # section excludes and nothing else takes is an orphan, placed after a

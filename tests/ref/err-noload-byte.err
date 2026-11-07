@@ -1,0 +1,1 @@
+ld01: err-noload-byte.ld:6: BYTE in NOLOAD section .bss

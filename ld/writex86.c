@@ -56,6 +56,7 @@ PRIVATE bool_t stripflag;	/* nonzero to strip symbols */
 PRIVATE bin_off_t spos;		/* position in current seg */
 PRIVATE bool_t xsym;		/* extended symbol table */
 
+FORWARD void noloadcheck P((struct modstruct * modptr, unsigned *reported));
 FORWARD void checkbyte P((struct modstruct * modptr, char *name, int seg,
 			  bin_off_t offset, bin_off_t value, int pcrel));
 FORWARD void copyname P((char *field, char *name, unsigned size));
@@ -279,6 +280,7 @@ PRIVATE void linkmod(struct modstruct *modptr)
 	unsigned char modify;
 	bin_off_t offset;
 	bin_off_t reloffset;
+	unsigned reported = 0;	/* counters with NOLOAD data reported */
 	int symbolnum;
 	struct symstruct **symparray;
 	struct symstruct *symptr;
@@ -339,6 +341,7 @@ PRIVATE void linkmod(struct modstruct *modptr)
 			}
 			break;
 		case CM_ABSOLUTE:
+			noloadcheck(modptr, &reported);
 			if (modify == 0)
 				modify = ABS_TEXT_MAX;
 			readin(buf, (unsigned)modify);
@@ -346,6 +349,7 @@ PRIVATE void linkmod(struct modstruct *modptr)
 			spos += (int)modify;
 			break;
 		case CM_OFFSET_RELOC:
+			noloadcheck(modptr, &reported);
 			offset = reloffset = readsize(relocsize);
 			if (modify & R_MASK) {
 #ifndef DATASEGS
@@ -365,6 +369,7 @@ PRIVATE void linkmod(struct modstruct *modptr)
 			spos += relocsize;
 			break;
 		case CM_SYMBOL_RELOC:
+			noloadcheck(modptr, &reported);
 			symptr = symparray[symbolnum = readconvsize((unsigned)
 								    (modify &
 								     S_MASK ? 2
@@ -518,6 +523,18 @@ PRIVATE void writeat(bin_off_t offset, char *buf, unsigned count)
 {
 	seekout(FILEHEADERLENGTH + (unsigned long)offset);
 	writeout(buf, count);
+}
+
+/* initialized data in the current counter, if a script puts it in a
+   NOLOAD section, would be lost: report it, once per counter */
+
+PRIVATE void noloadcheck(struct modstruct *modptr, unsigned *reported)
+{
+	if (segdiscard[curseg] && !(*reported & (1U << curseg))) {
+		*reported |= 1U << curseg;
+		noload_data(modptr->filename, modptr->archentry, curseg,
+			    modptr->segsect[curseg]);
+	}
 }
 
 /* check that a one-byte relocation at spos fits: a direct address or

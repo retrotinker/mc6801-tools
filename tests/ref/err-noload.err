@@ -1,0 +1,1 @@
+ld01: noload.o: LOC4 has initialized data, but .bss is NOLOAD

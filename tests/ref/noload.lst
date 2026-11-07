@@ -1,0 +1,16 @@
+00001                   ; noload.s - initialized data in counter 4, and only reserved space in
+00002                   ; counter 5, for the NOLOAD tests
+00003 0000              	LOC	0
+00004                   	ENTRY	nlstart
+00005 0000   39         nlstart	rts
+00006 0000              	LOC	4
+00007 0000          01  init	fcb	1		; initialized: lost in a NOLOAD section
+00008 0001        0000> 	fdb	init		; and a relocation
+00009 0000              	LOC	5
+00010 0000        0004  	rmb	4		; only reserved: fine in a NOLOAD section
+
+Symbols:
+init                        4 0000 R   nlstart                     0 0000 R N 
+
+00000 errors
+00000 warnings
