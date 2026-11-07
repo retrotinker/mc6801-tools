@@ -41,6 +41,8 @@ maintained in the dev86 package.
 %check
 test "$(as/as01 -v)" = "as01 version: v%{version}"
 test "$(ld/ld01 -v)" = "ld01 version: v%{version}"
+# The regression tests.
+%make_build check
 # Build the demo program with the new tools, in a copy so that the
 # packaged demo stays clean.
 cp -a demo demo-check
