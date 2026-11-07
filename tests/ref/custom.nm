@@ -8,11 +8,11 @@
 0000402e t local
 00004010 T start
 0000411b d last
-00004030 d fast
+00004030 t fast
 00004005 t help2
 00004000 T helper
 00004114 D table
-00004033 T codecom
+00004033 C codecom
 00004122 C buf
 00004132 C counter
 00004037 T text_end

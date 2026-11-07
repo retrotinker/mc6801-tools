@@ -80,8 +80,9 @@ uses to fill in addresses, such as
 for a 2\-byte reference to the symbol
 .BR clrscn .
 .PP
-In object files, location counters 0 and 1 count as text and the
-others as data, as they are linked by
+In object files, location counters 0 and 1 count as text, counter 4
+.RB ( .BSS )
+as bss, and the others as data, as they are linked by
 .BR ld01 (1).
 .PP
 With
