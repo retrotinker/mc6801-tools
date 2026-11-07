@@ -56,6 +56,8 @@ PRIVATE bool_t stripflag;	/* nonzero to strip symbols */
 PRIVATE bin_off_t spos;		/* position in current seg */
 PRIVATE bool_t xsym;		/* extended symbol table */
 
+FORWARD void checkbyte P((struct modstruct * modptr, char *name, int seg,
+			  bin_off_t offset, bin_off_t value, int pcrel));
 FORWARD void copyname P((char *field, char *name, unsigned size));
 FORWARD void linkmod P((struct modstruct * modptr));
 FORWARD void padmod P((struct modstruct * modptr));
@@ -309,6 +311,7 @@ PRIVATE void linkmod(struct modstruct *modptr)
 	int command;
 	unsigned char modify;
 	bin_off_t offset;
+	bin_off_t reloffset;
 	int symbolnum;
 	struct symstruct **symparray;
 	struct symstruct *symptr;
@@ -376,7 +379,7 @@ PRIVATE void linkmod(struct modstruct *modptr)
 			spos += (int)modify;
 			break;
 		case CM_OFFSET_RELOC:
-			offset = readsize(relocsize);
+			offset = reloffset = readsize(relocsize);
 			if (modify & R_MASK) {
 #ifndef DATASEGS
 				int m = (modify & SEGM_MASK);
@@ -386,8 +389,11 @@ PRIVATE void linkmod(struct modstruct *modptr)
 #endif
 				offset -= (spos + relocsize);
 			}
-			offtocn(buf, modptr->segaddr[modify & SEGM_MASK] + offset,
-				relocsize);
+			offset += modptr->segaddr[modify & SEGM_MASK];
+			if (relocsize == 1)
+				checkbyte(modptr, (char *)0, modify & SEGM_MASK,
+					  reloffset, offset, modify & R_MASK);
+			offtocn(buf, offset, relocsize);
 			segwrite(buf, relocsize);
 			spos += relocsize;
 			break;
@@ -408,6 +414,9 @@ PRIVATE void linkmod(struct modstruct *modptr)
 				offset -= (spos + relocsize);
 			}
 			offset += symptr->value;
+			if (relocsize == 1)
+				checkbyte(modptr, symptr->name, 0, 0, offset,
+					  modify & R_MASK);
 			offtocn(buf, offset, relocsize);
 			segwrite(buf, relocsize);
 			spos += relocsize;
@@ -522,6 +531,17 @@ PRIVATE void writeat(bin_off_t offset, char *buf, unsigned count)
 {
 	seekout(FILEHEADERLENGTH + (unsigned long)offset);
 	writeout(buf, count);
+}
+
+/* check that a one-byte relocation at spos fits: a direct address or
+   indexed offset in $00-$FF, or a branch within -128 to +127 */
+
+PRIVATE void checkbyte(struct modstruct *modptr, char *name, int seg,
+		       bin_off_t offset, bin_off_t value, int pcrel)
+{
+	if (pcrel ? value < -0x80 || value > 0x7F : value < 0 || value > 0xFF)
+		byte_reloc_error(modptr->filename, modptr->archentry, name, seg,
+				 offset, value, spos, pcrel);
 }
 
 /* copy a name into an a.out name field, padding it with nulls; a name

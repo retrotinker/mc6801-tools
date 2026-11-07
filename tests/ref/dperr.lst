@@ -1,0 +1,16 @@
+00001                   ; dperr.s - forced direct addresses that don't fit in a byte
+00002 0000              	LOC	0
+00003 0000   96     34  	ldaa	<$1234		; an absolute address
+*****                                                   ^address out of bounds
+00004 0002   96     23> 	ldaa	<far		; $123 bytes into this module's counter 3
+*****                                                   ^address out of bounds
+00005 0004   96     80  	ldaa	<$80		; fits
+00006 0000              	LOC	3
+00007 0000        0123  	RMB	$123
+00008 0123          01  far	fcb	1
+
+Symbols:
+far                         3 0123 R   
+
+00002 errors
+00000 warnings

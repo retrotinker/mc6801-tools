@@ -514,6 +514,47 @@ PUBLIC void interseg(char *fname, char *aname, char *name)
 	putstrn("");
 }
 
+/* a one-byte relocation that doesn't fit: a direct address or indexed
+   offset outside $00-$FF, or a branch out of range; name is the symbol,
+   or null for offset in this module's counter seg */
+
+PUBLIC void byte_reloc_error(char *fname, char *aname, char *name, int seg,
+			     bin_off_t offset, bin_off_t value, bin_off_t addr,
+			     int pcrel)
+{
+	++errcount;
+	refer();
+	putstr(fname);
+	if (aname) {
+		putstr("(");
+		putstr(aname);
+		putstr(")");
+	}
+	putstr(": ");
+	if (name)
+		putstr(name);
+	else {
+		putstr("LOC");
+		if (seg >= 10)
+			putbyte('1');
+		putbyte('0' + seg % 10);
+		if (offset != 0) {
+			putstr("+$");
+			put04x((unsigned)offset & 0xFFFF);
+		}
+	}
+	if (pcrel)
+		putstr(" is out of branch range");
+	else {
+		putstr(" ($");
+		put04x((unsigned)value & 0xFFFF);
+		putstr(") is not in page zero ($00-$ff)");
+	}
+	putstr(", at $");
+	put04x((unsigned)addr & 0xFFFF);
+	putstrn("");
+}
+
 PRIVATE void refer(void)
 {
 	stderr_out();

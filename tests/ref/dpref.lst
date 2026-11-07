@@ -1,0 +1,23 @@
+00001                   ; dpref.s - one-byte references to page-zero data: a forced direct
+00002                   ; address of an imported symbol and of this module's own data, and an
+00003                   ; indexed offset; ld01 checks that each fits in a byte
+00004 0000              	LOC	3
+00005                   	IMPORT	counter
+00006 0000              	LOC	0
+00007                   	ENTRY	start
+00008                   	EXPORT	start
+00009 0000   96     00> start	ldaa	<counter
+00010 0002   D6     00> 	ldab	<local
+00011 0004   CE   0000  	ldx	#0
+00012 0007   A6     02> 	ldaa	local+2,x
+00013 0009   20     FE  	bra	*
+00014 0000              	LOC	3
+00015 0000          42  local	fcb	$42
+00016 0001          00  	fcb	0, $99
+
+Symbols:
+counter                     3 0000 R I local                       3 0000 R   
+start                       0 0000 R N 
+
+00000 errors
+00000 warnings

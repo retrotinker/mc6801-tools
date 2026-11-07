@@ -1,0 +1,10 @@
+00001                   ; dpvars.s - a variable for dpref.s
+00002 0000              	LOC	3
+00003                   	EXPORT	counter
+00004 0000          17  counter	fcb	$17
+
+Symbols:
+counter                     3 0000 R E 
+
+00000 errors
+00000 warnings

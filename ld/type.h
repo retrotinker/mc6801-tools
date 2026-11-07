@@ -122,6 +122,9 @@ void prematureeof P((void));
 void redefined P((char *name, char *message, char *archentry,
 		  char *deffilename, char *defarchentry));
 void interseg P((char *fname, char *aname, char *name));
+void byte_reloc_error P((char *fname, char *aname, char *name, int seg,
+			 bin_off_t offset, bin_off_t value, bin_off_t addr,
+			 int pcrel));
 void reserved P((char *name));
 void size_error P((int seg, bin_off_t count, bin_off_t size));
 void undefined P((char *name));

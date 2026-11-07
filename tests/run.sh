@@ -103,6 +103,15 @@ for f in at-aout region noregion lmaoverlap; do
 	link err-$f -S err-$f.ld segs.o helper.o
 done
 
+# one-byte relocations (forced direct addresses, indexed offsets): in
+# page zero they link; elsewhere each is an error naming the module, or
+# the library member, the target and the address
+link dp-zp	-m -M -S dpzp.ld dpref.o dpvars.o
+link dp-far	-T 0xE000 -D 0x5000 dpref.o dpvars.o
+"$AR" rc libdp.a dpref.o
+link dp-lib	-T 0xE000 -D 0x5000 dpcall.o libdp.a dpvars.o
+rm -f libdp.a
+
 # the default script, as printed by -P, and linking with it: the output
 # must be the same as without a script, with or without the options
 "$LD" -P > default.ld 2> default.err
@@ -233,6 +242,11 @@ echo $? > sim-demo.rc
 "$SIM" -n 200 -d 0x0000-0x0003 -d 0x0080-0x008C -d 0x00F8-0x00FF \
 	manual-rom.out > sim-manual-rom.run 2>&1
 echo $? > sim-manual-rom.rc
+
+# dpref.s linked with its data in page zero: each one-byte reference
+# reads the right byte (A=$99 from local+2, after $17 and B=$42)
+"$SIM" -n 4 dp-zp.out > sim-dp-zp.run 2>&1
+echo $? > sim-dp-zp.rc
 
 # an illegal opcode ($02, after a NOP) is an error
 printf '\001\002' > illegal.bin
