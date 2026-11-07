@@ -83,6 +83,7 @@ EXTERN char INDEX_REG_EXP[];    /* "index register expected" */
 EXTERN char IND_REQ[];          /* "indirect expression required" */
 EXTERN char MISMATCHED_SIZE[];  /* "mismatched size" */
 EXTERN char NOIMPORT[];         /* "no imports with binary file output" */
+EXTERN char ORGREL[];           /* "ORG or BLOCK in relocatable module" */
 EXTERN char REENTER[];          /* "multiple ENTER pseudo-ops" */
 EXTERN char REL_REQ[];          /* "relative expression required" */
 EXTERN char REPEATED_DISPL[];   /* "repeated displacement" */

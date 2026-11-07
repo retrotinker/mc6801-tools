@@ -1,0 +1,17 @@
+00001                   ; orgrel.s - ORG and BLOCK in a relocatable module are errors: the linker
+00002                   ; places the module, so it can't have code at a fixed address
+00003 0000              	LOC	0
+00004 0000   01         start	nop
+00005 0100              	ORG	$100
+*****                                   ^ORG or BLOCK in relocatable module (needs -b)
+00006 0100   01         	nop
+00007 0200              	BLOCK	$200
+*****                                   ^ORG or BLOCK in relocatable module (needs -b)
+00008 0200   01         	nop
+00009                   	ENDB
+
+Symbols:
+start                       0 0000 R   
+
+00002 errors
+00000 warnings

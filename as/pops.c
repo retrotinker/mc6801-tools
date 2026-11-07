@@ -918,6 +918,10 @@ PUBLIC void porg(void)
 {
 	if (label != NUL_PTR)
 		labelerror(ILLAB);
+	/* a module is placed by the linker, which can't put code at a
+	   fixed address: only an absolute program (-b) can use ORG */
+	if (!binaryg)
+		error(ORGREL);
 	absexpres();
 	if (!((lcdata = lastexp.data) & UNDBIT)) {
 		accumulate_rmb(lastexp.offset - lc);
