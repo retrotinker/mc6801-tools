@@ -5,6 +5,7 @@ objdump01, nm01, size01 \- display information about MC6801 object files and exe
 .SH SYNOPSIS
 .B objdump01
 .RB [ \-n | \-s ]
+.RB [ \-d ]
 .RB [ \-o ]
 .I file
 \&...
@@ -82,7 +83,40 @@ for a 2\-byte reference to the symbol
 In object files, location counters 0 and 1 count as text and the
 others as data, as they are linked by
 .BR ld01 (1).
+.PP
+With
+.BR \-d ,
+the code is also disassembled.
 .SH OPTIONS
+.TP
+.B \-d
+After the rest of the output, disassemble the code: an executable\(aqs
+text segment, at the address of its
+.B __btext
+symbol, and location counters 0 and 1 of each object module, from
+offset 0.
+Each line gives the address, the instruction\(aqs bytes, a label if a
+symbol is defined there, the mnemonic and the operand, in
+.BR as01 (1)
+syntax.
+In object files, an operand that
+.BR ld01 (1)
+fills in is shown by name: the imported symbol, or the label nearest
+before the address in the module (such as
+.BR local+$2 ),
+with
+.B <
+for a direct address and
+.B #
+for an immediate.
+In executables, addresses and branch targets are shown by name where a
+symbol has that value.
+Bytes that aren\(aqt an instruction are shown with
+.BR fcb ,
+a relocated field that isn\(aqt an operand with
+.BR fdb ,
+and an area that wasn\(aqt loaded (\fBRMB\fP) with
+.BR rmb .
 .TP
 .B \-n
 Print only the symbol table, like
@@ -150,7 +184,9 @@ an error or no file was given.
 The mc6801\-tools User\(aqs Manual
 .RI ( mc6801\-tools\-manual.pdf ).
 .SH BUGS
-The text and data segments are shown as hex dumps, not disassembled.
+The disassembler can\(aqt tell data from code: data in a code segment,
+such as a string, is shown as instructions where its bytes happen to be
+opcodes.
 .PP
 Symbol names in executables are cut to 8 characters.
 .PP
