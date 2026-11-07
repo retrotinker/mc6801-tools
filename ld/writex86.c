@@ -212,45 +212,22 @@ PUBLIC void write_elks(char *outfilename, bool_pt argsepid,
 						else
 							extsym.n_sclass =
 							    C_STAT;
-						if (!(flags & I_MASK)
-						    || flags & C_MASK)
-							switch (flags &
-								(A_MASK |
-								 SEGM_MASK)) {
-#ifdef DATASEGS
-							case 0:
-#else
-							default:
-#endif
-								extsym.
-								    n_sclass |=
-								    N_TEXT;
-							case A_MASK:
-								break;
-#ifdef DATASEGS
-							default:
-#else
-							case 1:
-							case 2:
-							case 3:
-							case A_MASK | 1:
-							case A_MASK | 2:
-							case A_MASK | 3:
-#endif
-								if (flags &
-								    (C_MASK |
-								     SA_MASK))
-									extsym.
-									    n_sclass
-									    |=
-									    N_BSS;
-								else
-									extsym.
-									    n_sclass
-									    |=
-									    N_DATA;
-								break;
-							}
+						/* text: counters 0 and 1; bss: common
+						   blocks, and counters a script makes
+						   NOLOAD (.BSS, in the default layout) */
+						if ((!(flags & I_MASK) || flags & C_MASK)
+						    && !(flags & A_MASK)) {
+							int seg = flags & SEGM_MASK;
+
+							if (flags & (C_MASK | SA_MASK)
+							    || symptr->modptr->
+							    segnoload[seg])
+								extsym.n_sclass |= N_BSS;
+							else if (seg < 2)
+								extsym.n_sclass |= N_TEXT;
+							else
+								extsym.n_sclass |= N_DATA;
+						}
 						writeout((char *)&extsym,
 							 sizeof extsym);
 						++nsym;

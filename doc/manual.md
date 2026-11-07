@@ -985,8 +985,8 @@ $ nm01 main.o
 
 Here `DW clrscn` means that the two bytes after the `jsr` opcode
 (`bd`) are filled in with the address of `clrscn`. In object files,
-location counters 0 and 1 count as text and the others as data, as
-they are linked by `ld01`.
+location counters 0 and 1 count as text, counter 4 (`.BSS`) as bss,
+and the others as data, as they are linked by `ld01`.
 
 ## Disassembly
 

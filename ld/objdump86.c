@@ -239,10 +239,13 @@ void do_module(char *fname, char *archive)
 				break;
 
 			/* as86: segments 0, 4-E are text, 1-3 are data */
-			/* as01: segments 0-1 are text, 2-F are data */
+			/* as01: segments 0-1 are text, 4 (.BSS) is
+			   uninitialized data, and the rest are data */
 			for (i = 0; i < 16; i++) {
 				if (m6801 ? i < 2 : (i < 1 || i > 4))
 					size_text += segsizes[i];
+				else if (m6801 && i == 4)
+					size_bss += segsizes[i];
 				else
 					size_data += segsizes[i];
 			}
@@ -569,6 +572,8 @@ int m6801_symletter(unsigned int symtype, long offset)
 		letter = 'a';
 	else if ((symtype & 0xF) < 2)	/* segments 0-1 are text */
 		letter = 't';
+	else if ((symtype & 0xF) == 4)	/* .BSS */
+		letter = 'b';
 	else
 		letter = 'd';
 	if (symtype & 0x80)	/* exported */
