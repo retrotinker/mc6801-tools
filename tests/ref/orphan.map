@@ -6,18 +6,18 @@ Section         Address  Size     Load
     00000020 00000003 segs.o(LOC1)
     00000023 00000006 helper.o(LOC0)
     00000029 00000004 helper.o(COMMON0)
-.data           0000002d 00000033
+.data           0000002d 00000031
     0000002d 00000010 segs.o(LOC3)
     0000003d 00000007 helper.o(LOC3)
-    00000044 00000014 helper.o(COMMON3)
-    00000058 00000003 segs.o(LOC5)
-    0000005b 00000005 segs.o(LOC15)
+    00000044 00000012 helper.o(COMMON3)
+    00000056 00000003 segs.o(LOC5)
+    00000059 00000005 segs.o(LOC15)
 
-                segs                  far5  5  00000058  r
+                segs                  far5  5  00000056  r
                 segs               message  3  0000002d  r
                 segs                 local  0  0000001e  r
                 segs                 start  0  00000000  R N
-                segs                  last  f  0000005b  r
+                segs                  last  f  00000059  r
                 segs                  fast  1  00000020  r
               helper                 help2  0  00000028  r
               helper                helper  0  00000023  R

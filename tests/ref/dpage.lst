@@ -1,10 +1,10 @@
-00001                   ; dpage.s - DPAGE: references to page-zero data in location counter 4
+00001                   ; dpage.s - DPAGE: references to page-zero data in location counter 5
 00002                   ;
-00003                   ; Linked with dpshared.s and dpage.ld, which put counter 4 at $80; run on
+00003                   ; Linked with dpshared.s and dpage.ld, which put counter 5 at $80; run on
 00004                   ; the simulator, the values it loads show that each reference reached
 00005                   ; the right byte.  The comments give the expected opcodes.
-00006                   	DPAGE	4
-00007 0000              	LOC	4
+00006                   	DPAGE	5
+00007 0000              	LOC	5
 00008                   	IMPORT	shared		; another module's page-zero variable
 00009 0000          11  count	fcb	$11		; this module's: $80
 00010 0001          22  	fcb	$22
@@ -29,13 +29,13 @@
 00029 0022   20     FE  	bra	*
 00030 0024          00> table	fcb	count, shared, later, 7	; three addresses and a number
 00031 0028        0000> 	fdb	count
-00032 0004              	LOC	4
+00032 0004              	LOC	5
 00033 0004        0002  later	RMB	2
 
 Symbols:
-count                       4 0000 R   dpstart                     0 0000 R N 
-flags                       4 0001 R C later                       4 0004 R   
-result                      4 0002 R   shared                      4 0000 R I 
+count                       5 0000 R   dpstart                     0 0000 R N 
+flags                       5 0001 R C later                       5 0004 R   
+result                      5 0002 R   shared                      5 0000 R I 
 table                       0 0024 R   
 
 00000 errors

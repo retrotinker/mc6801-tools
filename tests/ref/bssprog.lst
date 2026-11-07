@@ -1,0 +1,36 @@
+00001                   ; bssprog.s - uninitialized data (.BSS and a common block), cleared by
+00002                   ; the start-up code, and initialized data
+00003 0000              	LOC	0
+00004                   	ENTRY	bstart
+00005                   	IMPORT	__bss_start, __bss_end
+00006 0000   CE   0000> bstart	ldx	#__bss_start	; clear .BSS and the common blocks
+00007 0003   8C   0000> clear	cpx	#__bss_end
+00008 0006   27     05  	beq	cleared
+00009 0008   6F     00  	clr	0,x
+00010 000A   08         	inx
+00011 000B   20     F6  	bra	clear
+00012 000D   86     11  cleared	ldaa	#$11
+00013 000F   B7   0000> 	staa	var1
+00014 0012   CC   2233  	ldd	#$2233
+00015 0015   FD   0003> 	std	table+2
+00016 0018   B6   0000> 	ldaa	init
+00017 001B   B7   0000> 	staa	copy
+00018 001E   20     FE  	bra	*
+00019                   
+00020 0000              	.DATA
+00021 0000          44  init	fcb	$44
+00022                   
+00023 0000              	.BSS
+00024 0000        0001  var1	rmb	1
+00025 0001        0004  table	rmb	4
+00026             0001> copy	COMM	1
+
+Symbols:
+__bss_end                   0 0000 R I __bss_start                 0 0000 R I 
+bstart                      0 0000 R N clear                       0 0003 R   
+cleared                     0 000D R   copy                        4 0001 R C 
+init                        3 0000 R   table                       4 0001 R   
+var1                        4 0000 R   
+
+00000 errors
+00000 warnings

@@ -1,10 +1,10 @@
-; dpage.s - DPAGE: references to page-zero data in location counter 4
+; dpage.s - DPAGE: references to page-zero data in location counter 5
 ;
-; Linked with dpshared.s and dpage.ld, which put counter 4 at $80; run on
+; Linked with dpshared.s and dpage.ld, which put counter 5 at $80; run on
 ; the simulator, the values it loads show that each reference reached
 ; the right byte.  The comments give the expected opcodes.
-	DPAGE	4
-	LOC	4
+	DPAGE	5
+	LOC	5
 	IMPORT	shared		; another module's page-zero variable
 count	fcb	$11		; this module's: $80
 	fcb	$22
@@ -29,5 +29,5 @@ dpstart	lds	#$7F
 	bra	*
 table	fcb	count, shared, later, 7	; three addresses and a number
 	fdb	count
-	LOC	4
+	LOC	5
 later	RMB	2

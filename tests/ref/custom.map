@@ -8,16 +8,16 @@ Section         Address  Size     Load
     00004010 00000020 segs.o(LOC0)
     00004030 00000003 segs.o(LOC1)
     00004033 00000004 helper.o(COMMON0)
-.data           00004100 00000036
+.data           00004100 00000034
     00004100 00000001 usesym.o(LOC3)
     00004101 00000010 segs.o(LOC3)
     00004111 00000003 segs.o(LOC5)
     00004114 00000007 helper.o(LOC3)
     0000411b 00000005 segs.o(LOC15)
-    00004122 00000014 helper.o(COMMON3)
+    00004122 00000012 helper.o(COMMON3)
 
               usesym                ioport  0  00000002  A
-              usesym              stacktop  3  00004176  R
+              usesym              stacktop  3  00004174  R
               usesym            __heap_top  0  00007000  A
               usesym                ustart  0  00004006  R N
               usesym                 ubyte  3  00004100  r

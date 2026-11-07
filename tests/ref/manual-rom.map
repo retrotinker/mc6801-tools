@@ -1,7 +1,7 @@
 Memory region   Origin   Length   Used
 ROM             0000e000 00001ff0 00000039
 VEC             0000fff0 00000010 00000010
-RAM             00000080 00000080 0000000d
+RAM             00000080 00000080 00000006
 
 Section         Address  Size     Load
 .vectors        0000fff0 00000010
@@ -11,9 +11,9 @@ Section         Address  Size     Load
     0000e02e 0000000a prog.o(LOC0)
 .data           00000080 00000001 0000e038
     00000080 00000001 prog.o(LOC3)
-.bss            00000081 0000000c (NOLOAD)
-    00000081 00000008 crt0.o(COMMON3)
-    00000089 00000004 prog.o(COMMON3)
+.bss            00000081 00000005 (NOLOAD)
+    00000081 00000004 crt0.o(COMMON3)
+    00000085 00000001 prog.o(COMMON3)
 
                 crt0          __data_start  3  00000080  R
                 crt0           __data_load  3  0000e038  R
@@ -24,8 +24,8 @@ Section         Address  Size     Load
                 crt0            __data_end  3  00000081  R
                 crt0                   run  0  0000e028  r
                 crt0                   dst  3  00000081  R C
-                crt0                   src  3  00000085  R C
-                prog                 count  3  00000089  R C
+                crt0                   src  3  00000083  R C
+                prog                 count  3  00000085  R C
                 prog                  loop  0  0000e030  r
                 prog                  main  0  0000e02e  R
                 prog                 PORT1  0  00000002  a

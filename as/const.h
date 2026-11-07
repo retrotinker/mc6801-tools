@@ -193,7 +193,7 @@ oops - ENTBIT misplaced
 
 /* special segments */
 
-#define BSSLOC		3
+#define BSSLOC		4	/* .BSS: uninitialized data */
 #define DATALOC		3
 #define DPLOC		2
 #define STRLOC		1

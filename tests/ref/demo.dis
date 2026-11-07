@@ -6,68 +6,59 @@ DISASSEMBLY
 4350  00                 fcb    $00
 4351  ce 43 4c  one      ldx    #$434c
 4354  3c                 pshx
-4355  bd 43 a5           jsr    prstring
+4355  bd 43 9d           jsr    prstring
 4358  31                 ins
 4359  31                 ins
 435a  39                 rts
-435b  00                 fcb    $00
-435c  54        msg_two  lsrb
-435d  57                 asrb
-435e  4f                 clra
-435f  0d                 sec
-4360  00                 fcb    $00
-4361  ce 43 5c  two      ldx    #$435c
-4364  3c                 pshx
-4365  bd 43 a5           jsr    prstring
+435b  54        msg_two  lsrb
+435c  57                 asrb
+435d  4f                 clra
+435e  0d                 sec
+435f  00                 fcb    $00
+4360  ce 43 5b  two      ldx    #$435b
+4363  3c                 pshx
+4364  bd 43 9d           jsr    prstring
+4367  31                 ins
 4368  31                 ins
-4369  31                 ins
-436a  39                 rts
-436b  00                 fcb    $00
-436c  54        msg_three lsrb
-436d  48                 asla
-436e  52                 fcb    $52
-436f  45                 fcb    $45
-4370  45                 fcb    $45
-4371  0d                 sec
-4372  00                 fcb    $00
-4373  ce 43 6c  three    ldx    #$436c
-4376  3c                 pshx
-4377  bd 43 a5           jsr    prstring
-437a  31                 ins
-437b  31                 ins
-437c  39                 rts
-437d  00                 fcb    $00
-437e  00                 fcb    $00
-437f  00                 fcb    $00
-4380  bd 43 84  __start  jsr    main
-4383  39                 rts
-4384  bd 43 94  main     jsr    clrscn
-4387  bd 43 51           jsr    one
-438a  bd 43 61           jsr    two
-438d  bd 43 73           jsr    three
-4390  39                 rts
-4391  00                 fcb    $00
-4392  00                 fcb    $00
-4393  00                 fcb    $00
-4394  ce 40 00  clrscn   ldx    #$4000
-4397  86 60              ldaa   #$60
-4399  c6 60              ldab   #$60
-439b  ed 00     clrsc.1  std    $00,x
-439d  08                 inx
-439e  08                 inx
-439f  8c 42 00           cpx    #$4200
-43a2  2d f7              blt    clrsc.1
-43a4  39                 rts
-43a5  30        prstring tsx
-43a6  ee 02              ldx    $02,x
-43a8  a6 00     prstlop  ldaa   $00,x
-43aa  27 0a              beq    prstxit
-43ac  08                 inx
-43ad  3c                 pshx
-43ae  fe ff de           ldx    $ffde
-43b1  ad 00              jsr    $00,x
-43b3  38                 pulx
-43b4  20 f2              bra    prstlop
-43b6  39        prstxit  rts
-43b7  00                 fcb    $00
+4369  39                 rts
+436a  54        msg_three lsrb
+436b  48                 asla
+436c  52                 fcb    $52
+436d  45                 fcb    $45
+436e  45                 fcb    $45
+436f  0d                 sec
+4370  00                 fcb    $00
+4371  ce 43 6a  three    ldx    #$436a
+4374  3c                 pshx
+4375  bd 43 9d           jsr    prstring
+4378  31                 ins
+4379  31                 ins
+437a  39                 rts
+437b  bd 43 7f  __start  jsr    main
+437e  39                 rts
+437f  bd 43 8c  main     jsr    clrscn
+4382  bd 43 51           jsr    one
+4385  bd 43 60           jsr    two
+4388  bd 43 71           jsr    three
+438b  39                 rts
+438c  ce 40 00  clrscn   ldx    #$4000
+438f  86 60              ldaa   #$60
+4391  c6 60              ldab   #$60
+4393  ed 00     clrsc.1  std    $00,x
+4395  08                 inx
+4396  08                 inx
+4397  8c 42 00           cpx    #$4200
+439a  2d f7              blt    clrsc.1
+439c  39                 rts
+439d  30        prstring tsx
+439e  ee 02              ldx    $02,x
+43a0  a6 00     prstlop  ldaa   $00,x
+43a2  27 0a              beq    prstxit
+43a4  08                 inx
+43a5  3c                 pshx
+43a6  fe ff de           ldx    $ffde
+43a9  ad 00              jsr    $00,x
+43ab  38                 pulx
+43ac  20 f2              bra    prstlop
+43ae  39        prstxit  rts
 

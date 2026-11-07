@@ -1,5 +1,5 @@
 00000002 a ioport
-00004176 D stacktop
+00004174 D stacktop
 00007000 a __heap_top
 00004006 T ustart
 00004100 d ubyte

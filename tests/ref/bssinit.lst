@@ -1,0 +1,13 @@
+00001                   ; bssinit.s - initialized data under .BSS: with the default layout, which
+00002                   ; doesn't write .BSS, a link error
+00003 0000              	LOC	0
+00004                   	ENTRY	binit
+00005 0000   39         binit	rts
+00006 0000              	.BSS
+00007 0000          01  bad	fcb	1
+
+Symbols:
+bad                         4 0000 R   binit                       0 0000 R N 
+
+00000 errors
+00000 warnings
