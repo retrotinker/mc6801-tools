@@ -23,12 +23,12 @@
 00023 0013   CE   0000> 	ldx	#count		; 16-bit immediate: CE
 00024 0016   86     00> 	ldaa	#count		; 8-bit immediate: 86
 00025 0018   C6     01> 	ldab	#shared+1	; 8-bit immediate, imported: C6
-00026 001A   FF   0004> 	stx	later		; extended, a forward reference: FF
-00027 001D   86     04> 	ldaa	#later		; 8-bit immediate, a forward reference: 86
-00028 001F   CE   0024> 	ldx	#table
-00029 0022   20     FE  	bra	*
-00030 0024          00> table	fcb	count, shared, later, 7	; three addresses and a number
-00031 0028        0000> 	fdb	count
+00026 001A   DF     04> 	stx	later		; direct, a forward reference: DF
+00027 001C   86     04> 	ldaa	#later		; 8-bit immediate, a forward reference: 86
+00028 001E   CE   0023> 	ldx	#table
+00029 0021   20     FE  	bra	*
+00030 0023          00> table	fcb	count, shared, later, 7	; three addresses and a number
+00031 0027        0000> 	fdb	count
 00032 0004              	LOC	5
 00033 0004        0002  later	RMB	2
 
@@ -36,7 +36,7 @@ Symbols:
 count                       5 0000 R   dpstart                     0 0000 R N 
 flags                       5 0001 R C later                       5 0004 R   
 result                      5 0002 R   shared                      5 0000 R I 
-table                       0 0024 R   
+table                       0 0023 R   
 
 00000 errors
 00000 warnings

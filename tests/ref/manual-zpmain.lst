@@ -9,8 +9,8 @@
 00009 0007   7C   0000>         inc     count           ; 7C xxxx: INC has no direct mode
 00010 000A   CE   0000>         ldx     #count          ; CE xxxx: a 16-bit immediate
 00011 000D   C6     00>         ldab    #flags          ; C6 xx: the address as a byte
-00012 000F   B6   0000>         ldaa    total           ; B6 xxxx: total isn't declared yet
-00013 0012   39                 rts
+00012 000F   96     00>         ldaa    total           ; 96 xx: direct, though total comes later
+00013 0011   39                 rts
 00014                   
 00015 0000                      LOC     5
 00016 0000        0002  total   rmb     2

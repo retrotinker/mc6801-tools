@@ -47,8 +47,6 @@ struct sym_s
 				/* zero offset because it is accessed most */
     unsigned char type;
     unsigned char data;		/* flags valid for expressions as well as syms*/
-    unsigned char early;	/* used in the first pass before it was
-				   defined, imported or declared COMM */
     union
     {
 	offset_t value;		/* value, if sym is a label */

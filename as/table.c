@@ -147,7 +147,6 @@ PUBLIC struct sym_s *lookup(void)
 	*hashptr = symptr = asalloc(sizeof(struct sym_s) + length);
 	symptr->type = 0;
 	symptr->data = inidata;
-	symptr->early = FALSE;
 	symptr->length = length;
 	symptr->value_reg_or_op.value = (offset_t) (symptr->next = NUL_PTR);
 	memcpy(symptr->name, nameptr, length);

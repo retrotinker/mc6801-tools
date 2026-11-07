@@ -324,9 +324,10 @@ are errors.
 | Relative | `bne loop` | Branches; target within -128 to +127 bytes |
 
 The assembler chooses between direct and extended addressing on its
-own. It uses direct addressing when the address is known in the first
-pass and is in `$00`–`$FF`. Forward references use extended
-addressing, and so do relocatable addresses, unless their location
+own. It uses direct addressing when the address is in `$00`–`$FF`, even
+for a symbol defined later in the source: it makes at least three
+passes, and more while instructions are still changing size.
+Relocatable addresses use extended addressing, unless their location
 counter is declared with `DPAGE` (see [Page-zero
 variables](#page-zero-variables)). You can force the choice by writing
 `<` (direct) or `>` (extended) before the operand:
@@ -346,8 +347,8 @@ The MC6801 has no direct mode for the read-modify-write instructions
 non-indexed operands, and `<` is an error with them.
 
 The MC6801 has 128 bytes of internal RAM at `$0080`–`$00FF` and its
-I/O registers at `$0000`–`$001F`. Define symbols for them *before*
-using them, so that the assembler can use direct addressing:
+I/O registers at `$0000`–`$001F`. Give them names with `EQU`, and the
+assembler uses direct addressing for them:
 
 ```
 PORT1   equ     $02
@@ -659,7 +660,8 @@ linked.
 
 `DPAGE` *n* tells the assembler that location counter *n* holds
 page-zero data. Put the variables in that counter, and declare it with
-`DPAGE` in every module that uses them, before using them:
+`DPAGE`, near the top of every module that uses them (it applies from
+where it appears):
 
 ```
 ; zpvars.s - variables in page zero, in location counter 5
@@ -682,7 +684,7 @@ start   ldaa    count           ; 96 xx: direct
         inc     count           ; 7C xxxx: INC has no direct mode
         ldx     #count          ; CE xxxx: a 16-bit immediate
         ldab    #flags          ; C6 xx: the address as a byte
-        ldaa    total           ; B6 xxxx: total isn't declared yet
+        ldaa    total           ; 96 xx: direct, though total comes later
         rts
 
         LOC     5
@@ -703,10 +705,9 @@ total   rmb     2
 * **Addresses as bytes.** The address of a page-zero symbol also fits
   where a byte is expected: in 8-bit immediates, such as `ldab #flags`,
   and in `FCB` data.
-* **Declare before use.** As with `EQU`, a symbol used before it is
-  defined, imported or declared gets extended addressing, as `total`
-  does. Immediates and `FCB` accept it, as their size doesn't depend on
-  it.
+* **Forward references.** A symbol used before it is defined, imported
+  or declared gets direct addressing too, as `total` does: the
+  assembler finds out in a later pass that it is in page zero.
 
 The linker script must put the counter, and its common blocks, in page
 zero, for example with
@@ -1675,9 +1676,6 @@ longer rounded up).
 
 # Known Limitations
 
-* **Page-zero variables used before they are declared** get extended
-  addressing, as `DPAGE` only applies to symbols the assembler already
-  knows.
 * **`objdump01 -d` can't tell data from code**, so data in a code
   segment, such as a string, is shown as instructions where its bytes
   happen to be opcodes.
