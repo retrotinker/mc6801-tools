@@ -144,6 +144,10 @@ int operation;
 
 char *archive;
 
+/* The new archive being written, removed if ar01 stops on an error.  */
+
+char *temp_archive;
+
 /* Descriptor on which we have locked the original archive file,
    or -1 if this has not been done.  */
 
@@ -894,9 +898,10 @@ void write_archive(struct mapelt *map, int appendflag)
 		   There can never be two invocations trying to do this at once,
 		   because of the lock made on the old archive file.  */
 
-		outdesc = open(tempname, O_WRONLY | O_CREAT, 0666);
+		outdesc = open(tempname, O_WRONLY | O_CREAT | O_TRUNC, 0666);
 		if (outdesc < 0)
 			pfatal_with_name(tempname);
+		temp_archive = tempname;
 		outname = tempname;
 		mywrite(outdesc, ARMAG, SARMAG, outname);
 	} else {
@@ -986,9 +991,11 @@ void write_archive(struct mapelt *map, int appendflag)
 #endif
 	close(outdesc);
 
-	if (!appendflag)
+	if (!appendflag) {
 		if (rename(tempname, archive))
 			pfatal_with_name(tempname);
+		temp_archive = 0;
+	}
 
 	close_archive();
 }
@@ -1862,6 +1869,8 @@ Usage: %s [d|m|p|q|r|t|x [[abi [position-name] [cilouv]] archive file...\n", pro
 void fatal(char *s1, char *s2)
 {
 	error(s1, s2);
+	if (temp_archive)
+		unlink(temp_archive);
 	exit(1);
 }
 
