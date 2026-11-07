@@ -28,6 +28,7 @@
 
 FILE *ifd;
 char *ifname;
+char *progname;			/* as invoked: objdump01, nm01 or size01 */
 
 #ifdef __STDC__
 #define _(x) x
@@ -99,6 +100,7 @@ int main(int argc, char **argv)
 		p++;
 	else
 		p = argv[0];
+	progname = p;
 
 	if (p[0] == 's')
 		display_mode = 1;
@@ -304,10 +306,8 @@ int error(char *str)
 	exit_status = 1;
 	switch (display_mode) {
 	case 1:
-		fprintf(stderr, "size: %s: %s\n", ifname, str);
-		break;
 	case 2:
-		fprintf(stderr, "nm: %s: %s\n", ifname, str);
+		fprintf(stderr, "%s: %s: %s\n", progname, ifname, str);
 		break;
 	default:
 		printf("Error: %s\n", str);
