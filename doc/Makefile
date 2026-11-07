@@ -12,7 +12,8 @@ MANDIR	= /usr/local/share/man
 MANPAGES = man/as01.1 man/ld01.1 man/ar01.1 man/objdump01.1 man/objcopy01.1
 REFS	= $(MANPAGES:man/%.1=build/%.md)
 
-DESIGNS	= design/ld01-linker-scripts.pdf design/direct-page.pdf
+DESIGNS	= design/ld01-linker-scripts.pdf design/direct-page.pdf \
+	  design/2.0-layout.pdf
 
 all: mc6801-tools-manual.pdf $(DESIGNS)
 
