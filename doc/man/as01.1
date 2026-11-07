@@ -351,11 +351,17 @@ or
 .TP
 .BI ORG " expr"
 Set the location counter.
+Only for an absolute program
+.RB ( \-b ):
+in a relocatable module, which the linker places, it is an error.
 .TP
 .BI BLOCK " expr \fRand\fP " ENDB
 Assemble the lines in between at
 .IR expr ,
 then restore the previous location counter.
+Like
+.BR ORG ,
+only for an absolute program.
 .TP
 .BI .ALIGN " n"
 Advance the location counter to a multiple of

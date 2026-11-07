@@ -456,11 +456,23 @@ and
 Each input section goes to the first statement that matches it.
 A statement adds its input sections in module order, and each module\(aqs
 in counter order.
+.PP
+A statement can start with
+.BI EXCLUDE_FILE( "file ..." )\fR,\fP
+naming files (patterns, as above) that it doesn\(aqt take input from,
+also inside
+.BR KEEP :
+.B EXCLUDE_FILE(vectors.o) *(LOC0 LOC1)
+takes counters 0 and 1 of every module except
+.BR vectors.o ,
+so that a later section can place it.
 .SS Orphans
 Input that no statement matches is added, with a warning, at the end of
 the last output section for its kind (counters 0 and 1, or the others)
 that takes input from all files
-.RB ( * ),
+.RB ( * ,
+without
+.BR EXCLUDE_FILE ),
 or else the last section for its kind.
 .B \-Z
 makes it an error.

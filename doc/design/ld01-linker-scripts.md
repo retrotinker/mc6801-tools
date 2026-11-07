@@ -810,7 +810,10 @@ Each phase can be merged and released on its own.
    set an absolute address. A forward `ORG` becomes a gap from the
    module's start, and a backward one makes `ld01` fail with "seg 0 has
    wrong size". Should `as01` reject `ORG` in relocatable modules, leaving
-   scripts as the way to place code at fixed addresses?
+   scripts as the way to place code at fixed addresses? Resolved: it is
+   an error without `-b`, and so is `BLOCK`.
 6. **Excluding files from patterns.** Should patterns support something
    like GNU's `EXCLUDE_FILE`, so that a catch-all such as `*(LOC0)` can
    skip modules that another section places later in the script?
+   Resolved: `EXCLUDE_FILE(file ...) pattern(sections)` is supported, also
+   inside `KEEP`.
