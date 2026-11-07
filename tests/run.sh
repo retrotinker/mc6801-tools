@@ -19,6 +19,7 @@ LD=$top/ld/ld01
 AR=$top/ar/ar01
 OD=$top/ld/objdump01
 OC=$top/ld/objcopy01
+SIM=$tests/sim/sim6801
 
 update=0
 if [ "${1:-}" = "-u" ]; then
@@ -195,6 +196,49 @@ for f in srec ihex wav; do
 	"$OC" -O $f -n MAIN demo.out demo.$f > /dev/null 2>&1
 	echo $? > demo.$f.rc
 done
+
+# programs run on the MC6801 simulator: the output is the registers and
+# memory at the end (and any characters printed), and the exit status
+
+# its instruction decoding must match the assembler's: every instruction
+# in every addressing mode, at the addresses in as01's listing (the
+# result is the differences, so it should be empty, and the count)
+"$AS" -w- -b allops.bin -l allops.lst "$tests"/sim/allops.s > /dev/null 2>&1
+awk -F'\t' '/^[0-9][0-9][0-9][0-9][0-9] [0-9A-F][0-9A-F][0-9A-F][0-9A-F] / {
+	split($1, f, " "); print f[2], f[3], toupper($2) }' allops.lst > allops.as
+"$SIM" -L -a 0 allops.bin | awk '{ print $1, $2, $3 }' > allops.sim
+diff allops.as allops.sim > sim-allops.diff
+wc -l < allops.as | tr -d ' ' > sim-allops.count
+rm -f allops.bin allops.lst allops.as allops.sim
+
+# instructions and their condition codes, worked out from the data sheet
+# (the sources' "expect" comments)
+for t in arith branch stack; do
+	"$AS" -w- -b $t.bin "$tests"/sim/$t.s > /dev/null 2>&1
+	"$SIM" -a 0x1000 -e 0x1000 -d 0x0080-0x00CF $t.bin \
+		> sim-$t.run 2>&1
+	echo $? > sim-$t.rc
+	rm -f $t.bin
+done
+
+# the demo, called like the MC-10's EXEC, printing through the ROM's
+# output routine (its address is at $FFDE): ONE, TWO and THREE, and a
+# cleared screen
+"$SIM" -s 0x4FFF -r 0xFF00 -w 0xFFDE=0xFF10 -p 0xFF10 -d 0x4000-0x401F \
+	demo.srec > sim-demo.run 2>&1
+echo $? > sim-demo.rc
+
+# the user's manual's ROM example, from the reset vector: its data copied
+# to RAM, and 45 times round main's loop
+"$SIM" -n 200 -d 0x0000-0x0003 -d 0x0080-0x008C -d 0x00F8-0x00FF \
+	manual-rom.out > sim-manual-rom.run 2>&1
+echo $? > sim-manual-rom.rc
+
+# an illegal opcode ($02, after a NOP) is an error
+printf '\001\002' > illegal.bin
+"$SIM" -a 0 -e 0 illegal.bin > sim-illegal.run 2>&1
+echo $? > sim-illegal.rc
+rm -f illegal.bin
 
 # the library also has file dates in its member headers: keep only the
 # member list
