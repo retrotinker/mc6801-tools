@@ -1,6 +1,6 @@
 Name:           mc6801-tools
-Version:        2.1.0
-Release:        2%{?dist}
+Version:        2.1.1
+Release:        1%{?dist}
 Summary:        Assembler, linker and binary utilities for the Motorola MC6801
 
 # ld/objcopy.c is GPL-2.0-only, ar/ar.c is GPL-2.0-or-later,
@@ -81,6 +81,9 @@ test -s demo-check/main.wav
 %doc doc/mc6801-tools-manual.pdf demo
 
 %changelog
+* Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 2.1.1-1
+- Update to 2.1.1: COPYING and ar.c give the FSF's current address
+
 * Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 2.1.0-2
 - Move the user's manual and the demo program into a -doc subpackage
 
