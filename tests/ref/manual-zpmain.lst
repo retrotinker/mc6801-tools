@@ -1,7 +1,7 @@
 00001                   ; zpmain.s - uses them
-00002                           DPAGE   4
-00003 0000                      LOC     4
-00004                           IMPORT  count, flags    ; imported while counter 4 is current
+00002                           DPAGE   5
+00003 0000                      LOC     5
+00004                           IMPORT  count, flags    ; imported while counter 5 is current
 00005 0000                      LOC     0
 00006 0000   96     00> start   ldaa    count           ; 96 xx: direct
 00007 0002   97     00>         staa    flags           ; 97 xx: direct
@@ -12,12 +12,12 @@
 00012 000F   B6   0000>         ldaa    total           ; B6 xxxx: total isn't declared yet
 00013 0012   39                 rts
 00014                   
-00015 0000                      LOC     4
+00015 0000                      LOC     5
 00016 0000        0002  total   rmb     2
 
 Symbols:
-count                       4 0000 R I flags                       4 0000 R I 
-start                       0 0000 R   total                       4 0000 R   
+count                       5 0000 R I flags                       5 0000 R I 
+start                       0 0000 R   total                       5 0000 R   
 
 00000 errors
 00000 warnings

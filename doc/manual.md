@@ -232,7 +232,7 @@ as01 [-gkuvw] [-b binfile] [-l [listfile]] [-m [listfile]]
 | `-n name` | Module name to store in the object file (default: from the source file name) |
 | `-g` | Put only global symbols in the object file |
 | `-u` | Treat undefined symbols as imported |
-| `-w-` | Enable warnings (they are off by default) |
+| `-w` | Turn warnings off (they are on by default; `-w-` turns them on) |
 | `-k` | Keep output files even if there are errors |
 | `-t n` | Put `.TEXT` sections in location counter *n*+3 |
 | `-v` | Print the version and exit |
@@ -425,7 +425,8 @@ spaces  rmb     8,$20           ; 8 bytes containing $20
 |:----------|:--------|
 | `LOC` *n* | Switch to location counter *n* (0–15) |
 | `.TEXT` | Switch to location counter 0 |
-| `.DATA`, `.ROM`, `.BSS` | Switch to location counter 3 |
+| `.DATA`, `.ROM` | Switch to location counter 3 |
+| `.BSS` | Switch to location counter 4, for uninitialized data (Section \ref{uninitialized-data}) |
 | `.SECT` *name* | Switch to section `.text`, `.data` or `.bss` |
 | `DPAGE` *n* | Location counter *n* holds page-zero data (see [Page-zero variables](#page-zero-variables)) |
 | `ORG` *expr* | Set the location counter to *expr* (only with `-b`) |
@@ -486,7 +487,7 @@ argument is empty.
 | `END` | End of the source; anything after it is ignored |
 | `FAIL` | Report an error (useful in conditionals) |
 | `.LIST`, `.MACLIST` [*n*] | Turn listing or macro listing on and off (only when `-l` or `-m` is used) |
-| `.WARN` [*n*] | Turn warnings on (`.WARN 1`) and off again (`.WARN`) |
+| `.WARN` [*n*] | Turn warnings off (`.WARN`) and on again (`.WARN 1`) |
 
 ## Listings and symbol files {#listings-and-symbol-files}
 
@@ -596,22 +597,55 @@ The assembler keeps 16 independent location counters, numbered 0 to
 assembled under different counters is kept apart, even if the source
 switches between them, and each module's counters start at 0.
 
-The linker gathers all modules' counters into two segments:
+The linker gathers all modules' counters into segments:
 
 | Counters | Segment |
 |:---------|:--------|
 | 0 and 1 | Text, placed at the `-T` address |
-| 2 to 15 | Data, placed after the text, or at the `-D` address |
+| 2, 3 and 5 to 15 | Data, placed after the text, or at the `-D` address |
+| 4, and all common blocks | Uninitialized data, after the data, not in the file |
 
-`.TEXT` selects counter 0, and `.DATA`, `.ROM` and `.BSS` all select
-counter 3. If counter 2 would cross a 256-byte page boundary, the
-linker moves it to the start of the next page.
+`.TEXT` selects counter 0, `.DATA` and `.ROM` select counter 3, and
+`.BSS` selects counter 4. Each module's part of a segment follows the
+one before it, with no gap. If counter 2 would cross a 256-byte page
+boundary, the linker moves it to the start of the next page.
 
 Most MC6801 programs need only counter 0. Start each module with
 `LOC 0` (or `.TEXT`) to make this explicit.
 
 This is the default layout. A linker script can place each module's
 counters anywhere (Chapter \ref{linker-scripts}).
+
+### Uninitialized data {#uninitialized-data}
+
+Space reserved with `RMB` under `.BSS`, and common blocks (`COMM`), are
+*uninitialized data*: the default layout gives them addresses after the
+data, but they aren't stored in the executable, so they take no space
+in the file, on cassette or in ROM. The a.out header records their size
+(the `bss` column of `size01`).
+
+Since they aren't loaded, they hold whatever was in memory before the
+program started. A program that needs them to be zero must clear them
+in its start-up code. The linker provides `__bss_start` and
+`__bss_end`, the start and end of the `.bss` section, for this:
+
+```
+        IMPORT  __bss_start, __bss_end
+        ldx     #__bss_start    ; clear .BSS and the common blocks
+clear   cpx     #__bss_end
+        beq     cleared
+        clr     0,x
+        inx
+        bra     clear
+cleared
+```
+
+Only reserved space can go under `.BSS`. Initialized data there, such as
+`FCB`, would be lost, so the linker reports it:
+
+```
+ld01: main.o: LOC4 has initialized data, but .bss is NOLOAD
+```
 
 ## Page-zero variables {#page-zero-variables}
 
@@ -628,9 +662,9 @@ page-zero data. Put the variables in that counter, and declare it with
 `DPAGE` in every module that uses them, before using them:
 
 ```
-; zpvars.s - variables in page zero, in location counter 4
-        DPAGE   4
-        LOC     4
+; zpvars.s - variables in page zero, in location counter 5
+        DPAGE   5
+        LOC     5
         EXPORT  count, flags
 count   rmb     1
 flags   rmb     1
@@ -638,9 +672,9 @@ flags   rmb     1
 
 ```
 ; zpmain.s - uses them
-        DPAGE   4
-        LOC     4
-        IMPORT  count, flags    ; imported while counter 4 is current
+        DPAGE   5
+        LOC     5
+        IMPORT  count, flags    ; imported while counter 5 is current
         LOC     0
 start   ldaa    count           ; 96 xx: direct
         staa    flags           ; 97 xx: direct
@@ -651,7 +685,7 @@ start   ldaa    count           ; 96 xx: direct
         ldaa    total           ; B6 xxxx: total isn't declared yet
         rts
 
-        LOC     4
+        LOC     5
 total   rmb     2
 ```
 
@@ -661,7 +695,7 @@ total   rmb     2
   import page-zero variables under their counter, as `zpmain.s` does.
   If the module that defines a variable uses a different counter, the
   linker warns, as in
-  `counter is imported under LOC0 in main.o, but defined in LOC4 in vars.o`,
+  `counter is imported under LOC0 in main.o, but defined in LOC5 in vars.o`,
   and the importing module doesn't get direct addressing for it.
 * **Direct addressing** is used wherever the instruction has a direct
   mode. `>` still forces extended addressing, and the read-modify-write
@@ -676,7 +710,7 @@ total   rmb     2
 
 The linker script must put the counter, and its common blocks, in page
 zero, for example with
-`.zpage (NOLOAD) : { *(LOC4) *(COMMON4) } > ZP`, where `ZP` is a
+`.zpage (NOLOAD) : { *(LOC5) *(COMMON5) } > ZP`, where `ZP` is a
 `MEMORY` region at `$0080`. The linker checks every one-byte address:
 if the script puts one outside page zero, the link fails with an error
 such as
@@ -819,14 +853,15 @@ crtstart        +crtstart.o
 main            +main.o
 screen          +screen.o
 Section         Address  Size     Load
-.text           0000434c 0000006c
+.text           0000434c 00000063
     0000434c 0000000f libnum.a:one.o(LOC0)
-    0000435c 0000000f libnum.a:two.o(LOC0)
-    0000436c 00000011 libnum.a:three.o(LOC0)
-    00004380 00000004 crtstart.o(LOC0)
-    00004384 0000000d main.o(LOC0)
-    00004394 00000023 screen.o(LOC0)
-.data           000043b8 00000000
+    0000435b 0000000f libnum.a:two.o(LOC0)
+    0000436a 00000011 libnum.a:three.o(LOC0)
+    0000437b 00000004 crtstart.o(LOC0)
+    0000437f 0000000d main.o(LOC0)
+    0000438c 00000023 screen.o(LOC0)
+.data           000043af 00000000
+.bss            000043af 00000000 (NOLOAD)
 
                  one               msg_one  0  0000434c  r
                  one                   one  0  00004351  R
@@ -834,9 +869,9 @@ Section         Address  Size     Load
 ```
 
 The modules are placed in command-line order: `-lnum` comes first, so
-the library members are at the start. Each module's part is padded to a
-multiple of 4 bytes, which is why `two.o` starts at `$435C` rather than
-`$435B`.
+the library members are at the start. Each module's part follows the one
+before it, with no gap. `.bss` holds the uninitialized data (`.BSS` and
+common blocks), which takes no space in the file; this program has none.
 
 # Libraries {#libraries-chapter}
 
@@ -884,19 +919,19 @@ OBJECTFILE 'main.aout'
 HLEN 32
 CPU  m6801 BIG_ENDIAN
 FLAGS: A_EXEC
-a_entry  = 0x00004380
-a_total  = 0x0000006c
-a_syms   = 0x00000130
+a_entry  = 0x0000437b
+a_total  = 0x00000063
+a_syms   = 0x00000140
 
 text    data    bss     dec     hex     filename
-108     0       0       108     6c      main.aout
+99      0       0       99      63      main.aout
 
 SYMBOLS
 0000434c t msg_one
 00004351 T one
 ...
 TEXTSEG
-: 4f 4e 45 0d 00 ce 43 4c  3c bd 43 a5 31 31 39 00  ONE...CL<.C.119.
+: 4f 4e 45 0d 00 ce 43 4c  3c bd 43 9d 31 31 39 54  ONE...CL<.C.119T
 ...
 ```
 
@@ -906,11 +941,11 @@ TEXTSEG
 ```
 $ size01 main.aout
 text    data    bss     dec     hex     filename
-108     0       0       108     6c      main.aout
+99      0       0       99      63      main.aout
 $ nm01 main.aout
 0000434c t msg_one
 00004351 T one
-00004380 T __start
+0000437b T __start
 00004000 a SCREEN
 ...
 ```
@@ -986,18 +1021,18 @@ calls and branches are shown by name:
 ```
 $ objdump01 -d main.aout
 ...
-4380  bd 43 84  __start  jsr    main
-4383  39                 rts
+437b  bd 43 7f  __start  jsr    main
+437e  39                 rts
 ...
-4394  ce 40 00  clrscn   ldx    #$4000
-4397  86 60              ldaa   #$60
-4399  c6 60              ldab   #$60
-439b  ed 00     clrsc.1  std    $00,x
-439d  08                 inx
-439e  08                 inx
-439f  8c 42 00           cpx    #$4200
-43a2  2d f7              blt    clrsc.1
-43a4  39                 rts
+438c  ce 40 00  clrscn   ldx    #$4000
+438f  86 60              ldaa   #$60
+4391  c6 60              ldab   #$60
+4393  ed 00     clrsc.1  std    $00,x
+4395  08                 inx
+4396  08                 inx
+4397  8c 42 00           cpx    #$4200
+439a  2d f7              blt    clrsc.1
+439c  39                 rts
 ```
 
 A direct address that the linker fills in is shown with `<`, such as
@@ -1114,7 +1149,7 @@ OUTPUT_FORMAT(aout)
 
 SECTIONS
 {
-    .text 0x434C : SUBALIGN(4)
+    .text 0x434C :
     {
         __btext = .;
         PROVIDE(__segoff = 0);
@@ -1171,8 +1206,9 @@ $ objcopy01 -O wav -n MAIN main.aout main.wav
 * `crtstart.o(LOC0)` comes before `*(LOC0 LOC1)`, so the start-up code
   goes first. `crtstart.o` is named on the command line here, but
   `-Cstart` would work too.
-* There's no `SUBALIGN`, so the modules aren't padded and the program is
-  9 bytes smaller than with the default layout.
+* `*(LOC*)` in `.data` also takes counter 4, `.BSS`, so any uninitialized
+  data is stored in the program as zeros, where the default layout
+  leaves it out (see section \ref{location-counters-and-segments}).
 * `__btext`, `__etext` and `__bdata` are defined so that `objcopy01` can
   find the load address. The default script defines them; your own
   script should too if you'll convert its output with `objcopy01`.
@@ -1309,11 +1345,12 @@ SECTIONS
 
     .data :
     {
-        *(LOC2 LOC3 LOC4 LOC5 LOC6 LOC7 LOC8 LOC9 LOC1?)
+        *(LOC2 LOC3 LOC5 LOC6 LOC7 LOC8 LOC9 LOC1?)
     } > RAM AT> ROM
 
     .bss (NOLOAD) :
     {
+        *(.bss)
         *(COMMON)
     } > RAM
 
@@ -1343,8 +1380,9 @@ $ ld01 -S rom.ld -o rom.s19 crt0.o vectors.o prog.o
   `__data_end`, the ROM and RAM addresses `crt0.s` copies between,
   because `crt0.s` imports them. Every output section gets such
   symbols: `__name_start`, `__name_end` and `__name_load`.
-* **`.bss`** holds the common blocks. `NOLOAD` means it isn't written to
-  the output: the variables only need addresses in RAM. A `NOLOAD`
+* **`.bss`** holds `.BSS` (`*(.bss)`, counter 4) and the common blocks.
+  `NOLOAD` means it isn't written to the output: the variables only
+  need addresses in RAM. A `NOLOAD`
   section can only hold common blocks and space reserved with `RMB`:
   initialized data there would be lost, so the linker reports it as an
   error.
@@ -1366,7 +1404,7 @@ The layout:
 Memory region   Origin   Length   Used
 ROM             0000e000 00001ff0 00000039
 VEC             0000fff0 00000010 00000010
-RAM             00000080 00000080 0000000d
+RAM             00000080 00000080 00000006
 
 Section         Address  Size     Load
 .vectors        0000fff0 00000010
@@ -1376,9 +1414,9 @@ Section         Address  Size     Load
     0000e02e 0000000a prog.o(LOC0)
 .data           00000080 00000001 0000e038
     00000080 00000001 prog.o(LOC3)
-.bss            00000081 0000000c (NOLOAD)
-    00000081 00000008 crt0.o(COMMON3)
-    00000089 00000004 prog.o(COMMON3)
+.bss            00000081 00000005 (NOLOAD)
+    00000081 00000004 crt0.o(COMMON3)
+    00000085 00000001 prog.o(COMMON3)
 ```
 
 The **Load** column shows that `.data` runs at `$0080` but is stored at
@@ -1388,10 +1426,10 @@ record:
 
 ```
 S00A0000726F6D2E7331399C
-S113E0008E00FFCE00808C0081271DCEE038DF8596
-S113E010CE0080DF81DE85A60008DF85DE81A700D3
+S113E0008E00FFCE00808C0081271DCEE038DF8398
+S113E010CE0080DF81DE83A60008DF83DE81A700D7
 S113E02008DF818C008126EDBDE02E20FE3B96802A
-S10BE0309702437C008920F8EB
+S10BE0309702437C008520F8EF
 S104E038558E
 S113FFF0E02DE02DE02DE02DE02DE02DE02DE000C2
 S5030006F6
@@ -1471,8 +1509,6 @@ deliberately.
   them declare their location counter with `DPAGE`, or write `<` before
   each reference (see [Page-zero variables](#page-zero-variables)). The
   linker checks that every such address ends up in page zero.
-* **Common blocks** are allocated in multiples of 4 bytes, as in the
-  default layout.
 
 # A Worked Example {#a-worked-example}
 
@@ -1608,9 +1644,37 @@ The linker pulls in `crtstart.o` because of `-Cstart`, and `one.o`,
 `two.o` and `three.o` from `libnum.a` because `main.o` uses them. Load
 `main.wav` on the MC-10 with `CLOADM` and run it with `EXEC`.
 
+# Migrating from 1.x {#migrating}
+
+Version 2.0 changes where `ld01` puts things, so a program linked with
+the default layout ends up at different addresses than with 1.x, and
+usually smaller:
+
+* **`.BSS` uses location counter 4**, not 3, and the default layout
+  leaves it, with the common blocks, out of the executable. A program
+  that relies on that memory being zero must now clear it at start-up
+  (Section \ref{uninitialized-data}). Writing `.DATA` instead of
+  `.BSS` gives the 1.x placement.
+* **No padding.** Each module's part of a section used to be padded to
+  a multiple of 4 bytes, and each common block rounded up to 4 bytes;
+  neither is any more.
+* **Counter 4** is `.BSS`. A program that keeps initialized data in
+  counter 4 with the default layout gets a link error; move it to
+  another counter. (The 1.x manual suggested counter 4 for page-zero
+  data; this manual uses counter 5.)
+* **Warnings are on.** `as01` reports warnings unless `-w` is given.
+  Warnings don't change the exit status or the output.
+* **`.bss`** in a linker script pattern means counter 4, as `.data`
+  means counter 3.
+
+To link with 1.x's layout, save the default script printed by
+`ld01 -P` from version 1.6 (with your `-T`, `-D` and `-H` options), and
+link with it using `-S`. It gives the same output as 1.6, except for
+`.BSS` data (which is in counter 4) and common blocks (which are no
+longer rounded up).
+
 # Known Limitations
 
-* **Warnings are off by default**; use `as01 -w-` or `.WARN 1`.
 * **Page-zero variables used before they are declared** get extended
   addressing, as `DPAGE` only applies to symbols the assembler already
   knows.

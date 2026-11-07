@@ -107,9 +107,9 @@ directive.
 .TP
 .B \-w
 Disable warnings.
-This is the default; use
+Warnings are on by default (since version 2.0);
 .B \-w\-
-to enable them.
+turns them on again.
 .TP
 .B \-v
 Print a version message and exit.
@@ -339,8 +339,18 @@ the counter, and declare it before using its symbols.
 .TP
 .BR .TEXT ", " .DATA ", " .ROM ", " .BSS
 Switch to location counter 0
-.RB ( .TEXT )
-or 3 (the others).
+.RB ( .TEXT ),
+3
+.RB ( .DATA ", " .ROM )
+or 4
+.RB ( .BSS ).
+.B .BSS
+is for uninitialized data, reserved with
+.BR RMB :
+the default layout of
+.BR ld01 (1)
+gives it addresses but leaves it out of the executable, so a program
+that needs it to be zero clears it at start\-up.
 .TP
 .BR .SECT " \fIname\fP"
 Switch to the named section
@@ -412,13 +422,13 @@ Add
 .I n
 (default \-1) to the warning counter.
 Warnings are shown while the counter is 0 or more.
-It starts at \-1, or at 0 with
-.BR \-w\- ,
+It starts at 0, or at \-1 with
+.BR \-w ,
 so
-.B .WARN 1
-turns warnings on and
 .B .WARN
-turns them off again.
+turns warnings off and
+.B .WARN 1
+turns them on again.
 .SH FILES
 .TP
 .I objfile
