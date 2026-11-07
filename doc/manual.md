@@ -918,7 +918,8 @@ $ nm01 main.aout
 In the symbol list, `T`/`t` are text symbols, `D`/`d` data symbols,
 `C`/`b` bss or common symbols and `a` absolute symbols. Upper case means
 global, lower case local, and `U` marks a symbol that is used but not
-defined. Symbol names in executables are cut to 8 characters.
+defined. Names of any length are kept in executables (`ld01 -y-`
+writes the older symbol table, which cuts them to 8 characters).
 
 The same tools work on object files made by `as01`, and on libraries
 made by `ar01`, which shows each module in turn. For an object file,
@@ -1606,7 +1607,6 @@ The linker pulls in `crtstart.o` because of `-Cstart`, and `one.o`,
 
 # Known Limitations
 
-* **Symbol names are cut to 8 characters** in executables.
 * **Warnings are off by default**; use `as01 -w-` or `.WARN 1`.
 * **Page-zero variables used before they are declared** get extended
   addressing, as `DPAGE` only applies to symbols the assembler already
