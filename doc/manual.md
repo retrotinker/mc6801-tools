@@ -428,8 +428,8 @@ spaces  rmb     8,$20           ; 8 bytes containing $20
 | `.DATA`, `.ROM`, `.BSS` | Switch to location counter 3 |
 | `.SECT` *name* | Switch to section `.text`, `.data` or `.bss` |
 | `DPAGE` *n* | Location counter *n* holds page-zero data (see [Page-zero variables](#page-zero-variables)) |
-| `ORG` *expr* | Set the location counter to *expr* |
-| `BLOCK` *expr* ... `ENDB` | Assemble the enclosed lines at *expr*, then return to the previous location |
+| `ORG` *expr* | Set the location counter to *expr* (only with `-b`) |
+| `BLOCK` *expr* ... `ENDB` | Assemble the enclosed lines at *expr*, then return to the previous location (only with `-b`) |
 | `.ALIGN` *n* | Advance to a multiple of *n* |
 | `.EVEN` | Advance to an even address |
 
@@ -534,6 +534,11 @@ highest, so this example produces an 8 KB file covering `$E000` to
 `$FFFF`. Gaps between `ORG` areas are filled with zeros. `IMPORT` and
 other external references are not allowed with `-b`.
 
+`ORG` and `BLOCK` are only for absolute programs. In a module for the
+linker, they are an error, since the linker decides where the module
+goes; place code at fixed addresses with a linker script instead
+(chapter \ref{linker-scripts}).
+
 ## Error messages
 
 Errors are shown in the listing under the line that caused them, with a
@@ -553,6 +558,7 @@ common messages:
 | `register used as identifier` | `A`, `B`, `D` or `X` used as a label |
 | `absolute expression required` | A relocatable value where a constant is needed |
 | `no imports with binary file output` | `IMPORT` used together with `-b` |
+| `ORG or BLOCK in relocatable module (needs -b)` | `ORG` or `BLOCK` without `-b`; use a linker script to place code |
 | `short branch would do` | (warning) a `JSR`/`JMP` target is close enough for a `BSR`/`BRA` |
 
 # Modules and Linking
@@ -1076,6 +1082,23 @@ it, so specific patterns come before general ones. A pattern adds its
 input sections in module order (the order of the command line), and
 each module's in counter order.
 
+A pattern can leave files out with `EXCLUDE_FILE`, which names the files
+(patterns too) before the pattern they apply to. The vector table can
+then go anywhere in the script:
+
+```
+    .text :
+    {
+        crt0.o(LOC0)
+        EXCLUDE_FILE(vectors.o) *(LOC0 LOC1)
+    } > ROM
+
+    .vectors :
+    {
+        KEEP(vectors.o(LOC0))
+    } > VEC
+```
+
 ## Starting from the default layout
 
 The default layout is itself a script, built into `ld01`. `-P` prints
@@ -1312,7 +1335,8 @@ $ ld01 -S rom.ld -o rom.s19 crt0.o vectors.o prog.o
 * **`.vectors`** uses `KEEP`, because no module refers to `vectors.o`.
   Without it, the linker would leave the module out. `.vectors` comes
   first in the script because `*(LOC0 LOC1)` in `.text` would otherwise
-  match `vectors.o` too.
+  match `vectors.o` too. (Or `.text` could leave it out with
+  `EXCLUDE_FILE(vectors.o) *(LOC0 LOC1)`.)
 * **`.data`** runs in RAM (`> RAM`) but is stored in ROM after the code
   (`AT> ROM`). The linker provides `__data_load`, `__data_start` and
   `__data_end`, the ROM and RAM addresses `crt0.s` copies between,
@@ -1430,7 +1454,10 @@ deliberately.
 
 * **Order matters.** The first matching pattern wins, so put sections
   that take particular modules, such as a vector table, before sections
-  with catch-all patterns.
+  with catch-all patterns, or leave those modules out of the catch-all
+  patterns with `EXCLUDE_FILE`. Input that a section excludes and no
+  other pattern takes is an orphan: it goes after a section that takes
+  all files without `EXCLUDE_FILE`, not back into that section.
 * **`objcopy01` needs `__btext`.** If you convert a script's a.out
   output with `objcopy01`, define `__btext`, `__etext` and `__bdata` as
   the default script does, or give `objcopy01` the addresses with `-T`
@@ -1581,8 +1608,6 @@ The linker pulls in `crtstart.o` because of `-Cstart`, and `one.o`,
 
 * **Symbol names are cut to 8 characters** in executables.
 * **Warnings are off by default**; use `as01 -w-` or `.WARN 1`.
-* **Linker script patterns can't exclude files**, so a section that
-  takes particular modules must come before catch-all patterns.
 * **Page-zero variables used before they are declared** get extended
   addressing, as `DPAGE` only applies to symbols the assembler already
   knows.
