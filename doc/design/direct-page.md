@@ -408,9 +408,9 @@ code generation can be checked by running it, not just by its bytes.
 
 | Phase | Work | Release |
 |:------|:-----|:--------|
-| 1 | `ld01` range check, tests, `ld01(1)` | bug fix (1.2.x) |
-| 2 | `as01` `DPAGE`, tests | |
-| 3 | Documentation and the manual's ROM example | new feature (1.3.0) |
+| 1 | `ld01` range check (and `as01`'s, for absolute and local addresses), tests, `ld01(1)` | 1.2.4. **Done.** |
+| 2 | `as01` `DPAGE`, tests | **Done.** |
+| 3 | Documentation and the manual's ROM example | new feature (1.3.0). **Done.** The manual's examples are assembled and linked by `make check`, and the ROM example is run on the simulator. |
 
 # Decisions
 

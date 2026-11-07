@@ -1,32 +1,32 @@
 Memory region   Origin   Length   Used
-ROM             0000e000 00001ff0 00000040
+ROM             0000e000 00001ff0 00000039
 VEC             0000fff0 00000010 00000010
 RAM             00000080 00000080 0000000d
 
 Section         Address  Size     Load
 .vectors        0000fff0 00000010
     0000fff0 00000010 vectors.o(LOC0)
-.text           0000e000 0000003f
-    0000e000 00000034 crt0.o(LOC0)
-    0000e034 0000000b prog.o(LOC0)
-.data           00000080 00000001 0000e03f
+.text           0000e000 00000038
+    0000e000 0000002e crt0.o(LOC0)
+    0000e02e 0000000a prog.o(LOC0)
+.data           00000080 00000001 0000e038
     00000080 00000001 prog.o(LOC3)
 .bss            00000081 0000000c (NOLOAD)
     00000081 00000008 crt0.o(COMMON3)
     00000089 00000004 prog.o(COMMON3)
 
                 crt0          __data_start  3  00000080  R
-                crt0           __data_load  3  0000e03f  R
+                crt0           __data_load  3  0000e038  R
                 crt0           __stack_top  3  000000ff  R
-                crt0                  copy  0  0000e017  r
-                crt0                ignore  0  0000e033  R
+                crt0                  copy  0  0000e015  r
+                crt0                ignore  0  0000e02d  R
                 crt0                 reset  0  0000e000  R N
                 crt0            __data_end  3  00000081  R
-                crt0                   run  0  0000e02e  r
+                crt0                   run  0  0000e028  r
                 crt0                   dst  3  00000081  R C
                 crt0                   src  3  00000085  R C
                 prog                 count  3  00000089  R C
-                prog                  loop  0  0000e037  r
-                prog                  main  0  0000e034  R
+                prog                  loop  0  0000e030  r
+                prog                  main  0  0000e02e  R
                 prog                 PORT1  0  00000002  a
                 prog               pattern  3  00000080  r

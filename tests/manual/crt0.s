@@ -1,5 +1,9 @@
 ; crt0.s - start-up code for a ROM program: sets up the stack, copies
 ; the initialized data from ROM to RAM, and calls main
+        DPAGE   3               ; this program's data is all in page zero
+        LOC     3
+src     COMM    2               ; copy pointers
+dst     COMM    2
         LOC     0
         ENTRY   reset
         EXPORT  ignore
@@ -26,7 +30,3 @@ run     jsr     main
         bra     *
 
 ignore  rti                     ; for interrupts that aren't used
-
-        LOC     3
-src     COMM    2               ; copy pointers
-dst     COMM    2

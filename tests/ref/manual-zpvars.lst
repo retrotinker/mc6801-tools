@@ -1,0 +1,12 @@
+00001                   ; zpvars.s - variables in page zero, in location counter 4
+00002                           DPAGE   4
+00003 0000                      LOC     4
+00004                           EXPORT  count, flags
+00005 0000        0001  count   rmb     1
+00006 0001        0001  flags   rmb     1
+
+Symbols:
+count                       4 0000 R E flags                       4 0001 R E 
+
+00000 errors
+00000 warnings
