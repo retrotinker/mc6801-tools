@@ -12,6 +12,11 @@
 
 /* imported, and not exported or a common block's size */
 #define PLAINIMPORT(flags) (((flags) & (E_MASK | I_MASK | SA_MASK)) == I_MASK)
+/* an import with no size (not a common block), and a symbol that has
+   storage: a definition, or a common block (an import with a size) */
+#define BAREIMPORT(flags, value) (PLAINIMPORT(flags) && (value) == 0)
+#define HASSTORAGE(flags, value) \
+	((flags) & E_MASK || (PLAINIMPORT(flags) && (value) != 0))
 
 /*
    Linking takes 2 passes. The 1st pass reads through all files specified
@@ -193,19 +198,22 @@ PRIVATE void readmodule(char *filename, char *archentry)
 				    ~(flags_t) SEGM_MASK | (symptr->
 							    flags & SEGM_MASK);
 			if ((flags ^ symptr->flags) & (A_MASK | SEGM_MASK)
-			    && ((PLAINIMPORT(flags) && symptr->flags & E_MASK)
-				|| (PLAINIMPORT(symptr->flags) && flags & E_MASK))) {
+			    && ((BAREIMPORT(flags, symdptr->dvalue)
+				 && HASSTORAGE(symptr->flags, symptr->value))
+				|| (BAREIMPORT(symptr->flags, symptr->value)
+				    && HASSTORAGE(flags, symdptr->dvalue)))) {
 				/*
-				   an import and the definition, in different
-				   counters or one absolute: an import's counter,
-				   and its being relocatable, are only what the
-				   importing module assumed, so the definition
-				   wins, whichever module comes first; a
-				   relocatable definition in another counter is
-				   worth a warning, since the importer may have
-				   chosen its addressing (DPAGE) on the assumption
+				   an import and the definition (or a common
+				   block), in different counters or one
+				   absolute: an import's counter, and its being
+				   relocatable, are only what the importing
+				   module assumed, so the definition wins,
+				   whichever module comes first; a relocatable
+				   definition in another counter is worth a
+				   warning, since the importer may have chosen
+				   its addressing (DPAGE) on the assumption
 				 */
-				if (flags & E_MASK) {
+				if (HASSTORAGE(flags, symdptr->dvalue)) {
 					if (!(flags & A_MASK))
 						import_counter(symname,
 						    symptr->flags & SEGM_MASK,

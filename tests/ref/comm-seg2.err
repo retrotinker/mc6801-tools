@@ -1,0 +1,1 @@
+ld01: warning: shared is imported under LOC0 in commseg.o, but defined in LOC3 in libcomm.a(commlib.o)

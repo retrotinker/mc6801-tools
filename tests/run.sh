@@ -174,6 +174,12 @@ link imp-ba	-m -T 0x1000 impdef.o impuse.o
 link comm-quiet	-m -M -T 0x1000 -lcomm commmain.o
 link comm-need	-m -M -T 0x1000 -lcomm commneed.o
 link comm-ref	-m -M -T 0x1000 -lcomm commref.o
+# an import under another counter than the member's common block (a
+# bare import says nothing of the counter): the common block wins, with
+# a warning naming both counters, read first or last (with the import
+# first, ld01 kept it and the symbol was undefined)
+link comm-seg	-m -M -T 0x1000 -lcomm commseg.o
+link comm-seg2	-m -M -T 0x1000 commseg.o -lcomm
 rm -f libcomm.a
 
 # DPAGE: direct addresses, 8-bit immediates and FCB data with page-zero
