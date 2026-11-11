@@ -1,0 +1,13 @@
+00001                   ; commlib.s - libcomm.a's member: the common block shared (larger than
+00002                   ; the programs'), and junk
+00003 0000              	LOC	0
+00004                   	EXPORT	junk
+00005 0000   39         junk	rts
+00006 0000              	LOC	3
+00007             0004> shared	COMM	4
+
+Symbols:
+junk                        0 0000 R E shared                      3 0004 R C 
+
+00000 errors
+00000 warnings

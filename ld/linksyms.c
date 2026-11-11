@@ -12,6 +12,7 @@
 #include "script.h"
 
 FORWARD void linkrefs P((struct modstruct * modptr));
+FORWARD bool_pt iscommon P((struct symstruct * symptr));
 PUBLIC bool_t reloc_output = 0;
 
 /* link all symbols connected to entry symbols */
@@ -71,16 +72,43 @@ PUBLIC void linksyms(bool_pt argreloc_output)
 		}
 	}
 	while (needlink);
+	/* a common block whose module isn't linked (it was given to the
+	   first with the largest size) goes to a linked module that has
+	   it, which allocates it */
+	for (modptr = modfirst; modptr != NUL_PTR; modptr = modptr->modnext)
+		if (modptr->loadflag) {
+			struct symstruct **symparray;
+			char *comflags;
+
+			for (symparray = modptr->symparray,
+			     comflags = modptr->comflags;
+			     (symptr = *symparray) != NUL_PTR;
+			     ++symparray, ++comflags)
+				if (*comflags && iscommon(symptr)
+				    && !symptr->modptr->loadflag)
+					symptr->modptr = modptr;
+		}
+}
+
+/* a symbol that only common blocks have (no module defines it) */
+PRIVATE bool_pt iscommon(struct symstruct *symptr)
+{
+	return (symptr->flags & (E_MASK | I_MASK)) == I_MASK
+	    && symptr->value != 0;
 }
 
 PRIVATE void linkrefs(struct modstruct *modptr)
 {
 	register struct symstruct **symparray;
 	register struct symstruct *symptr;
+	register char *comflags;
 
 	modptr->loadflag = TRUE;
-	for (symparray = modptr->symparray;
-	     (symptr = *symparray) != NUL_PTR; ++symparray)
-		if (symptr->modptr->loadflag == FALSE)
+	/* (not the module a common block was given to, for a common block
+	   here: one of the same name elsewhere is no reason to link it) */
+	for (symparray = modptr->symparray, comflags = modptr->comflags;
+	     (symptr = *symparray) != NUL_PTR; ++symparray, ++comflags)
+		if (symptr->modptr->loadflag == FALSE
+		    && !(*comflags && iscommon(symptr)))
 			linkrefs(symptr->modptr);
 }

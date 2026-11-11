@@ -42,6 +42,9 @@ or
 .BR start ,
 the linker includes every module that defines a symbol a linked module
 refers to.
+A common block that another module has too is no reason to include
+that module; the common block\(aqs storage comes with a linked module
+that has one, as large as the largest of any module\(aqs.
 Archives may appear anywhere on the command line.
 .PP
 A linker script controls where everything goes: which parts of which

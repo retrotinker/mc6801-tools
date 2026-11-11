@@ -1,0 +1,18 @@
+00001                   ; commneed.s - the common block shared, as commmain.s has it, and junk,
+00002                   ; which libcomm.a's member defines: the member is linked, and shared
+00003                   ; has one block of storage
+00004 0000              	LOC	0
+00005                   	ENTRY	start
+00006                   	IMPORT	junk
+00007 0000   FE   0000> start	ldx	shared
+00008 0003   BD   0000> 	jsr	junk
+00009 0006   39         	rts
+00010 0000              	LOC	3
+00011             0002> shared	COMM	2
+
+Symbols:
+junk                        0 0000 R I shared                      3 0002 R C 
+start                       0 0000 R N 
+
+00000 errors
+00000 warnings

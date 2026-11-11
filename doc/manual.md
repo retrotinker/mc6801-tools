@@ -758,10 +758,12 @@ ld01 [-dimMPrstyZ] [-o outfile] [-S script] [-A symbol=value]
 
 A module is linked only if the program uses it: starting from the
 module with the entry point, the linker includes every module that
-defines a symbol a linked module refers to. The order of objects and
-libraries on the command line doesn't matter for finding symbols,
-since the linker reads them all first, but the modules are placed in
-that order.
+defines a symbol a linked module refers to. A common block (`COMM`)
+that another module has too is no reason to include that module: the
+storage comes with a linked module that has the common block, as large
+as the largest of any module's. The order of objects and libraries on
+the command line doesn't matter for finding symbols, since the linker
+reads them all first, but the modules are placed in that order.
 
 Addresses and sizes are read like C numbers: hexadecimal with a `0x`
 or `$` prefix, octal with a leading `0`, and decimal otherwise. So

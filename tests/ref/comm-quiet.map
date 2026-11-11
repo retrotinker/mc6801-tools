@@ -1,0 +1,10 @@
+commmain        +commmain.o
+Section         Address  Size     Load
+.text           00001000 00000004
+    00001000 00000004 commmain.o(LOC0)
+.data           00001004 00000000
+.bss            00001004 00000004 (NOLOAD)
+    00001004 00000004 commmain.o(COMMON3)
+
+            commmain                 start  0  00001000  R N
+            commmain                shared  3  00001004  R C
