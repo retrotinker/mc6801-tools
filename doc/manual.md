@@ -1054,11 +1054,18 @@ objcopy01 [-O format] [-T textaddr] [-D dataaddr] [-n name] [-p]
 
 | Format | Output |
 |:-------|:-------|
-| `binary` | Raw image: text, then data (`-p` pads to put data at its address) |
+| `binary` | Raw image: text, then data (`-p` puts each at its address) |
 | `srec` | Motorola S-records (S0 name, S1 data, S5 count, S9 entry point) |
 | `ihex` | Intel hex, with the entry point in the end record |
 | `wav` | Cassette audio: 8-bit mono WAV at 43200 Hz, Color BASIC/MC-10 format |
 | `cas`, `c10` | The same cassette data as a byte stream, for emulators (`c10` matches the name used by MC-10 emulators) |
+
+A program's data needn't follow its text: `ld01 -D`, or a linker
+script, can put it elsewhere, above the text or below it. `srec` and
+`ihex` write each part at its address. `binary`, `wav` and `cas` hold
+one block, so they need `-p`, which writes one image from the lower
+address to the end of the higher, with zeros between (without it, `wav`
+and `cas` refuse such a program).
 
 The load addresses come from the `__btext` and `__bdata` symbols that
 the linker writes to the executable, so you don't normally need to
