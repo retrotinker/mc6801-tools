@@ -1,5 +1,5 @@
 Name:           mc6801-tools
-Version:        2.1.1
+Version:        2.2.0
 Release:        1%{?dist}
 Summary:        Assembler, linker and binary utilities for the Motorola MC6801
 
@@ -81,6 +81,14 @@ test -s demo-check/main.wav
 %doc doc/mc6801-tools-manual.pdf demo
 
 %changelog
+* Wed Nov 11 2026 John W. Linville <linville@tuxdriver.com> - 2.2.0-1
+- Update to 2.2.0: ld01 no longer links a library member only because it
+  has a common block of the same name; an import under another location
+  counter than a common block links, whichever is read first;
+  objcopy01 -p writes binary, wav and cas output for data apart from the
+  text, above it or below (binary -p wrote a 4 GB file for data below);
+  dev86's leftovers removed
+
 * Sat Nov 07 2026 John W. Linville <linville@tuxdriver.com> - 2.1.1-1
 - Update to 2.1.1: COPYING and ar.c give the FSF's current address
 
