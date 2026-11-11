@@ -13,7 +13,7 @@
 #endif
 
 
-#if __STDC__ && !defined(__minix)
+#if __STDC__
 #define P(x) x
 #else
 #define P(x) ()

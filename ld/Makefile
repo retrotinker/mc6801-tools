@@ -3,20 +3,8 @@ LIBDIR	=$(PREFIX)
 CFLAGS	=-O
 LDFLAGS	=
 
-# Will need some of these if you want native executables on non-Linux/i386
-# -DDETECTAOUT			# Turn on detection.
-# -DV7_A_OUT			# a.out.h is like V7
-# -DBSD_A_OUT			# a.out.h is like BSD
-# -DSTANDARD_GNU_A_OUT		# a.out.h is like GNU normal.
-#
-# -DREL_OUTPUT -DBUGCOMPAT	# -r Produces weird *.o files.
-#
 VERSION	:=$(shell cat ../VERSION)
 DEFS	=-DREL_OUTPUT -DVERSION=\"$(VERSION)\"
-
-# An alternative file for a non-standard a.out.h (eg i386 linux on an Alpha)
-#
-# NATIVE=-DA_OUT_INCL='"a_out_local.h"' 
 
 OBJS= dumps.o io.o ld.o readobj.o table.o typeconv.o linksyms.o mkar.o \
       script.o srec.o \
@@ -42,11 +30,11 @@ install: ld01 objdump01 objcopy01
 	install -m 755 objcopy01 $(DESTDIR)$(LIBDIR)
 
 clean realclean clobber:
-	rm -f *.o ld01 objchop catimage objdump01 objcopy01
+	rm -f *.o ld01 objdump01 objcopy01
 
 io.o: ../VERSION
 
-$(OBJS): align.h bindef.h byteord.h config.h const.h globvar.h obj.h \
+$(OBJS): align.h byteord.h config.h const.h globvar.h obj.h \
 	 syshead.h type.h x86_aout.h script.h srec.h
 
 .c.o:

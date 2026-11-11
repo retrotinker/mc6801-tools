@@ -6,8 +6,6 @@
 
 /* #define HOST_8BIT */	/* on 8-bit hosts: use char for small counts */
 
-/* Any machine can use long offsets but i386 needs them */
-
 /* these must be defined to suit the source libraries */
 
 #define CREAT_PERMS	0666	/* permissions for creat() */

@@ -197,7 +197,6 @@ PUBLIC void openout(char *filename)
 #endif
 		outputerror("cannot open");
 
-	/* Can't do this on MSDOS; it upsets share.exe */
 	oldmask = umask(0);
 	umask(oldmask);
 	outputperms = ((CREAT_PERMS | EXEC_PERMS) & ~oldmask);
