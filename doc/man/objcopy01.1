@@ -104,13 +104,22 @@ explicitly.
 .B \-p
 With
 .BR binary ,
-pad the gap between the text and data segments so that the data
-appears at its correct offset.
+.B wav
+or
+.B cas
+(formats of one block), for a program whose data isn't just after its
+text (above it or below it), write one image from the lower of their
+addresses to the end of the higher, the gap between them filled with
+zeros: each is then at its address's place, and the image loads at the
+lower address (the entry point is still the program's).
+Text and data that overlap, or span more than 64K, are an error.
 .SH FORMATS
 The format name may be abbreviated to its first three letters.
 .TP
 .B binary
-Raw memory image: the text segment followed by the data segment.
+Raw memory image: the text segment followed by the data segment (with
+.BR \-p ,
+each at its place).
 .TP
 .B srec
 Motorola S\-records: an S0 header containing the name, S1 data records
@@ -125,7 +134,9 @@ Cassette audio as an 8\-bit mono WAV file at 43200 Hz, in the
 Color BASIC tape format.
 This format is also used by the Tandy MC\-10, which loads it with
 .BR CLOADM .
-Text and data must be contiguous.
+A machine-language file is one block of memory, so data that isn't
+just after the text needs
+.BR \-p .
 .TP
 .BR cas ", " c10
 The same cassette data as

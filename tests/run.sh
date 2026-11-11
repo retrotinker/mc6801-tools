@@ -291,6 +291,28 @@ for f in srec ihex cas wav; do
 	echo $? > demo.$f.rc
 done
 
+# the data below the code (segs-low, -T0x8000 -D0x1000): S-records and
+# Intel hex put each part at its address; binary and cas are one block,
+# so -p writes one image from the data's address, the gap zeros; without
+# -p, cas refuses; and code and data that overlap
+link segs-low	-m -M -T0x8000 -D0x1000 segs.o helper.o
+"$OC" -O srec -n SEGS segs-low.out segs-low.srec > /dev/null 2>&1
+echo $? > segs-low.srec.rc
+"$OC" -O ihex segs-low.out segs-low.ihex > /dev/null 2>&1
+echo $? > segs-low.ihex.rc
+"$OC" -O binary -p segs-low.out segs-low.bin > /dev/null 2>&1
+echo $? > segs-low.bin.rc
+"$OC" -O cas -p -n SEGS segs-low.out segs-low.cas > /dev/null 2>&1
+echo $? > segs-low.cas.rc
+# (the messages without objcopy01's directory)
+"$OC" -O cas -n SEGS segs-low.out bad.out > segs-low-nop.err 2>&1
+echo $? > segs-low-nop.rc
+"$OC" -O binary -p -T 0x1000 -D 0x1004 segs-TD.out bad.out \
+	> overlap.err 2>&1
+echo $? > overlap.rc
+sed -i 's|^.*/objcopy01: |objcopy01: |' segs-low-nop.err overlap.err
+rm -f bad.out
+
 # programs run on the MC6801 simulator: the output is the registers and
 # memory at the end (and any characters printed), and the exit status
 
