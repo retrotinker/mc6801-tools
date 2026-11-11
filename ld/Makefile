@@ -12,7 +12,7 @@ LDFLAGS	=
 # -DREL_OUTPUT -DBUGCOMPAT	# -r Produces weird *.o files.
 #
 VERSION	:=$(shell cat ../VERSION)
-DEFS	=-DDATASEGS -DREL_OUTPUT -DVERSION=\"$(VERSION)\"
+DEFS	=-DREL_OUTPUT -DVERSION=\"$(VERSION)\"
 
 # An alternative file for a non-standard a.out.h (eg i386 linux on an Alpha)
 #
