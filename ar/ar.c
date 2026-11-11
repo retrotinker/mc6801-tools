@@ -29,7 +29,6 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include "ar.h"
-#include "rel_aout.h"
 
 #if defined(__BCC__) || defined(__HP_cc)
 #define HAVE_RENAME
@@ -41,16 +40,6 @@
 #undef  HAVE_FSYNC
 #endif
 #define HAVE_TRAILING_SLASH_IN_NAME
-
-#ifdef	__GNUC__
-# ifndef alloca
-#  define	alloca	__builtin_alloca
-# endif
-#else
-# if defined(sparc) || defined(HAVE_ALLOCA_H)
-#  include <alloca.h>
-# endif
-#endif
 
 #ifdef	USG
 #define	bcopy(source, dest, size)	memcpy((dest), (source), (size))

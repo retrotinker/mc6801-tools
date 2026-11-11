@@ -6,7 +6,7 @@ LIBDIR	=$(PREFIX)
 CFLAGS	=-O
 LDFLAGS	=
 DEFS	=
-OBJS= ar.o alloca.o
+OBJS= ar.o
 
 all: ar01
 
@@ -18,14 +18,7 @@ install: ar01
 	install -m 755 ar01 $(DESTDIR)$(LIBDIR)
 
 clean realclean clobber:
-	rm -f *.o ar01 rel_aout.h
-
-$(OBJS): rel_aout.h
-
-rel_aout.h:
-	test -f rel_aout.h || \
-	{ rm -f rel_aout.h ; ln -s ../ld/rel_aout.h . ; } || \
-	ln ../ld/rel_aout.h .
+	rm -f *.o ar01
 
 .c.o:
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(DEFS) -c $< -o $@
