@@ -166,6 +166,16 @@ rm -f libdp.a
 link imp-ab	-m -T 0x1000 impuse.o impdef.o
 link imp-ba	-m -T 0x1000 impdef.o impuse.o
 
+# a common block that a library member has too: not a reason to link
+# the member; a member linked for something else, which has the same
+# common block; and an import that only the member's common block
+# satisfies, which links it
+"$AR" rc libcomm.a commlib.o 2>> ar.err
+link comm-quiet	-m -M -T 0x1000 -lcomm commmain.o
+link comm-need	-m -M -T 0x1000 -lcomm commneed.o
+link comm-ref	-m -M -T 0x1000 -lcomm commref.o
+rm -f libcomm.a
+
 # DPAGE: direct addresses, 8-bit immediates and FCB data with page-zero
 # addresses; with counter 5 in page zero they link, elsewhere each is
 # an error

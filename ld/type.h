@@ -46,6 +46,7 @@ struct modstruct		/* module table entry format */
     char segsizedesc[NSEG / 4];	/* |SF|SE|..|S0|, 2 bits for #bytes for size */
 				/* 00 = 0, 01 = 1, 10 = 2, 11 = 4 */
     struct symstruct **symparray;	/* ^array of ptrs to referenced syms */
+    char *comflags;		/* for each, set if a common block here */
     struct modstruct *modnext;	/* next module in order of initial reading */
     bin_off_t segaddr[NSEG];	/* address of this module's part of each seg */
     bin_off_t comaddr[NSEG];	/* address of its common blocks in each seg */

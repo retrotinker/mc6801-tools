@@ -1,0 +1,15 @@
+00001                   ; commmain.s - a common block, shared, which libcomm.a's member has too:
+00002                   ; that is no reason to link the member (nothing else in it is needed),
+00003                   ; and shared's storage comes with the program
+00004 0000              	LOC	0
+00005                   	ENTRY	start
+00006 0000   FE   0000> start	ldx	shared
+00007 0003   39         	rts
+00008 0000              	LOC	3
+00009             0002> shared	COMM	2
+
+Symbols:
+shared                      3 0002 R C start                       0 0000 R N 
+
+00000 errors
+00000 warnings

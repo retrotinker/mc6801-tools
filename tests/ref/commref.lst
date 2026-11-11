@@ -1,0 +1,15 @@
+00001                   ; commref.s - shared imported (under its counter, 3), with no common
+00002                   ; block of its own: only libcomm.a's member has one, so the member is
+00003                   ; linked for it
+00004 0000              	LOC	0
+00005                   	ENTRY	start
+00006 0000   FE   0000> start	ldx	shared
+00007 0003   39         	rts
+00008 0000              	LOC	3
+00009                   	IMPORT	shared
+
+Symbols:
+shared                      3 0000 R I start                       0 0000 R N 
+
+00000 errors
+00000 warnings
