@@ -1,0 +1,15 @@
+00001                   ; commseg.s - shared imported under counter 0 (its counter isn't known
+00002                   ; here), with no common block of its own: libcomm.a's member has one, in
+00003                   ; counter 3, which wins whichever is read first, with a warning naming
+00004                   ; both counters (as for an import and a definition)
+00005 0000              	LOC	0
+00006                   	ENTRY	start
+00007                   	IMPORT	shared
+00008 0000   FE   0000> start	ldx	shared
+00009 0003   39         	rts
+
+Symbols:
+shared                      0 0000 R I start                       0 0000 R N 
+
+00000 errors
+00000 warnings
