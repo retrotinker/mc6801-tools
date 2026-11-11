@@ -13,8 +13,6 @@ PRIVATE char *asmbeg;		/* beginning of assembler code */
 				/* bss-init to zero = NULL and not changed */
 #endif
 
-/* Sneaky stuff, the start of a binary file can be _negative_ for the I80386
-   assembler. The -ve addresses are ones over 2GB (or "org -32") */
 PRIVATE offset_t binfbuf;	/* binary code buffer for file (counter) */
 PRIVATE offset_t binmax;	/* maximum value of binmbuf for pass 1 */
 PRIVATE offset_t binmin;	/* minimum value of binmbuf for pass 1 */

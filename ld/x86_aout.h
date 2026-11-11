@@ -10,13 +10,8 @@
 
 #include <endian.h>
 
-/* If the host isn't an x86 all bets are off, use chars. */
-#if defined(i386) || defined(__BCC__) || defined(MSDOS)
-typedef long Long;
-#else
 #include <stdint.h>
-typedef int32_t Long;
-#endif
+typedef int32_t Long;		/* (32 bits, whatever the host) */
 #define __OUT_OK 1
 
 struct	exec {			/* a.out header */

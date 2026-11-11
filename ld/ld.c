@@ -209,12 +209,6 @@ PUBLIC int main(int argc, char **argv)
 		usage();
 	script_orphan_error = flag['Z'];
 
-#ifdef BUGCOMPAT
-	if (icount == 1 && flag['r']) {
-		flag['r'] = 0;
-	}
-#endif
-
 #ifdef REL_OUTPUT
 	if (flag['r']) {
 		/* Do a relocatable link -- actually fake it with 'ar.c' */
