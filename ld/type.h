@@ -123,7 +123,6 @@ void outofmemory P((void));
 void prematureeof P((void));
 void redefined P((char *name, char *message, char *archentry,
 		  char *deffilename, char *defarchentry));
-void interseg P((char *fname, char *aname, char *name));
 void import_counter P((char *name, int iseg, char *ifname, char *ianame,
 		       int dseg, char *dfname, char *daname));
 void noload_data P((char *fname, char *aname, int seg, char *sectname));

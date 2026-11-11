@@ -494,26 +494,6 @@ PUBLIC void redefined(char *name, char *message, char *archentry,
 	putstrn("");
 }
 
-PUBLIC void interseg(char *fname, char *aname, char *name)
-{
-	++errcount;
-	refer();
-	putstr("error in ");
-	putstr(fname);
-	if (aname) {
-		putstr("(");
-		putstr(aname);
-		putstr(")");
-	}
-	putstr(" intersegment jump to ");
-	if (name)
-		putstr(name);
-	else
-		putstr("same file");
-
-	putstrn("");
-}
-
 /* a location counter, named as in linker scripts: LOC0 to LOC15 */
 
 PRIVATE void putloc(int seg)
