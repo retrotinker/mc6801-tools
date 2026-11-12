@@ -1,0 +1,8 @@
+Section         Address  Size     Load
+.text           00001000 00000004
+    00001000 00000004 fullpage2.o(LOC0)
+.data           00001080 00000101
+    00001100 00000081 fullpage2.o(LOC2)
+
+           fullpage2                fstart  0  00001000  R N
+           fullpage2                 dpvar  2  00001100  R

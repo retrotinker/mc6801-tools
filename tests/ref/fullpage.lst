@@ -1,0 +1,18 @@
+00001                   ; fullpage.s - location counter 2 fills its page to the end (from $1080
+00002                   ; with fullpage.ld), so the linker leaves it there; fullpage2.s's is a
+00003                   ; byte longer and must move to the next page
+00004 0000              	LOC	0
+00005                   	ENTRY	fstart
+00006 0000   CE   0000> fstart	ldx	#dpvar
+00007 0003   39         	rts
+00008                   
+00009 0000              	LOC	2
+00010                   	export	dpvar
+00011 0000        007F  dpvar	rmb	$7f
+00012 007F          01  	fcb	1
+
+Symbols:
+dpvar                       2 0000 R E fstart                      0 0000 R N 
+
+00000 errors
+00000 warnings

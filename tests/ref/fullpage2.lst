@@ -1,0 +1,17 @@
+00001                   ; fullpage2.s - fullpage.s with a byte more in location counter 2, which
+00002                   ; then crosses into the next page: the linker moves it there
+00003 0000              	LOC	0
+00004                   	ENTRY	fstart
+00005 0000   CE   0000> fstart	ldx	#dpvar
+00006 0003   39         	rts
+00007                   
+00008 0000              	LOC	2
+00009                   	export	dpvar
+00010 0000        0080  dpvar	rmb	$80
+00011 0080          01  	fcb	1
+
+Symbols:
+dpvar                       2 0000 R E fstart                      0 0000 R N 
+
+00000 errors
+00000 warnings

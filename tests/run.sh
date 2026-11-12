@@ -99,6 +99,10 @@ for f in syntax undef overlap range both settle entry unknown; do
 	link err-$f -S err-$f.ld segs.o helper.o
 done
 link err-onepage -S err-onepage.ld page.o
+# a ONEPAGE that its contents fill to the end of the page stays there
+# ($1080 to $10FF); a byte more, and it moves to the next one
+link fullpage	-M -S fullpage.ld fullpage.o
+link fullpage2	-M -S fullpage.ld fullpage2.o
 
 # ROM layout: MEMORY, AT>, NOLOAD, KEEP, FILL, BYTE, WORD, ASSERT,
 # INCLUDE, and the __name_load symbols
