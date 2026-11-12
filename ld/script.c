@@ -1613,7 +1613,9 @@ PRIVATE void walk(struct stmt *s, long subalign)
 			if (size > 0x100)
 				script_error(s->line,
 					     "ONEPAGE contents are larger than a page");
-			if (((start + size) ^ start) & ~0xFFL) {
+			/* (its last byte's page: one that ends at a page's
+			   end is still in its page) */
+			if (size > 0 && ((start + size - 1) ^ start) & ~0xFFL) {
 				/* move to the next page and lay it out again */
 				nextras = saveextras;
 				curfill = savefill;
