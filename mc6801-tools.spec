@@ -1,5 +1,5 @@
 Name:           mc6801-tools
-Version:        2.2.0
+Version:        2.2.1
 Release:        1%{?dist}
 Summary:        Assembler, linker and binary utilities for the Motorola MC6801
 
@@ -81,6 +81,10 @@ test -s demo-check/main.wav
 %doc doc/mc6801-tools-manual.pdf demo
 
 %changelog
+* Thu Nov 12 2026 John W. Linville <linville@tuxdriver.com> - 2.2.1-1
+- Update to 2.2.1: ld01 leaves a ONEPAGE whose contents end exactly at
+  the end of a page in that page (it moved them to the next page)
+
 * Wed Nov 11 2026 John W. Linville <linville@tuxdriver.com> - 2.2.0-1
 - Update to 2.2.0: ld01 no longer links a library member only because it
   has a common block of the same name; an import under another location
